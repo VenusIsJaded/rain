@@ -158,6 +158,10 @@ export const Contributors = {
     },
     tralwdwd: {
         name: "tralwdwdd",
-        id: 1278723517436788897n
+        id: 1278723517436788897n,
+    },
+    Dziurwa: {
+        name: "Dziurwa",
+        id: 1001086404203389018n,
     }
 } satisfies Record<string, developer>;
