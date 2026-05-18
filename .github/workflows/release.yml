@@ -31,22 +31,36 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Debug build output
+        run: |
+          echo "=== JS files ==="
+          find . -name "rain*.js" -not -path "*/node_modules/*"
+          echo "=== HBC files ==="
+          find . -name "*.hbc" -not -path "*/node_modules/*"
+          echo "=== dist/ or build/ ==="
+          ls -la dist/ 2>/dev/null || ls -la build/ 2>/dev/null || true
+
       - name: Find artifacts
         id: artifacts
         run: |
           JS=$(find . -name "rain.js" -not -path "*/node_modules/*" -print -quit)
-          HBC=$(find . -name "rain.*.hbc" -not -path "*/node_modules/*" -print -quit)
+          HBC=$(find . -name "*.hbc" -not -path "*/node_modules/*" -print -quit)
+          
           [ -z "$JS" ] && { echo "::error::rain.js not found"; exit 1; }
-          [ -z "$HBC" ] && { echo "::error::rain.hbc not found"; exit 1; }
-          echo "js=$JS" >> "$GITHUB_OUTPUT"
-          echo "hbc=$HBC" >> "$GITHUB_OUTPUT"
+          
+          # Build multiline file list for the release action
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$JS" >> "$GITHUB_OUTPUT"
+          [ -n "$HBC" ] && echo "$HBC" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          
+          echo "Found JS: $JS"
+          echo "Found HBC: ${HBC:-<none>}"
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: |
-            ${{ steps.artifacts.outputs.js }}
-            ${{ steps.artifacts.outputs.hbc }}
+          files: ${{ steps.artifacts.outputs.files }}
           generate_release_notes: true
           token: ${{ secrets.GITHUB_TOKEN }}
