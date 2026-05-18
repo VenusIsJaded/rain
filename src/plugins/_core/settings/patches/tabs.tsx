@@ -3,7 +3,6 @@ import { useSettings } from "@api/settings";
 import { TableRow } from "@metro/common/components";
 import { findByPropsLazy } from "@metro/wrappers";
 import React from "react";
-
 import { registeredSections } from "..";
 import { CustomPageRenderer, wrapOnPress } from "./shared";
 
@@ -19,8 +18,8 @@ export function patchTabsUI(unpatches: (() => void | boolean)[]) {
                 IconComponent: () => <TableRow.Icon source={row.icon} />,
                 usePredicate: row.usePredicate,
                 useTrailing: row.useTrailing,
-                useTitle: row.title,
-                onPress: wrapOnPress(row.onPress, null, row.render, row.title()),
+                useTitle: row.title || (() => row.label || row.key || ""),
+                onPress: wrapOnPress(row.onPress, null, row.render, row.title?.()),
                 withArrow: true,
                 ...row.rawTabsConfig
             }
@@ -90,5 +89,4 @@ export function patchTabsUI(unpatches: (() => void | boolean)[]) {
         }
         return ret;
     },));
-
 }
