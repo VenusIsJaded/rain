@@ -1,0 +1,53 @@
+name: Build Rain Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create release for'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Find artifacts
+        id: artifacts
+        run: |
+          JS=$(find . -name "rain.js" -not -path "*/node_modules/*" -print -quit)
+          HBC=$(find . -name "rain.*.hbc" -not -path "*/node_modules/*" -print -quit)
+          [ -z "$JS" ] && { echo "::error::rain.js not found"; exit 1; }
+          [ -z "$HBC" ] && { echo "::error::rain.hbc not found"; exit 1; }
+          echo "js=$JS" >> "$GITHUB_OUTPUT"
+          echo "hbc=$HBC" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            ${{ steps.artifacts.outputs.js }}
+            ${{ steps.artifacts.outputs.hbc }}
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
