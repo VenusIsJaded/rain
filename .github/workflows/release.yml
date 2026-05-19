@@ -25,22 +25,23 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Set version from tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+          echo "Building version: $VERSION"
+
       - name: Install dependencies
         run: bun install
 
       - name: Build
         run: bun run build --release-branch=main --build-bytecode
 
-      - name: Prepare release tag
-        id: tag
-        run: |
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
-          echo "name=$TAG" >> "$GITHUB_OUTPUT"
-
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.name }}
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: dist/*
           generate_release_notes: false
           body: ""
