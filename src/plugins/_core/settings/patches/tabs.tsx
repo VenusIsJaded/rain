@@ -3,6 +3,7 @@ import { useSettings } from "@api/settings";
 import { TableRow } from "@metro/common/components";
 import { findByPropsLazy } from "@metro/wrappers";
 import React from "react";
+
 import { registeredSections } from "..";
 import { CustomPageRenderer, wrapOnPress } from "./shared";
 
@@ -14,11 +15,11 @@ export function patchTabsUI(unpatches: (() => void | boolean)[]) {
         .flatMap(sect => sect.map(row => ({
             [row.key]: {
                 type: "pressable",
+                title: row.title,
                 icon: row.icon,
                 IconComponent: () => <TableRow.Icon source={row.icon} />,
                 usePredicate: row.usePredicate,
                 useTrailing: row.useTrailing,
-                title: row.title,
                 useTitle: row.title,
                 onPress: wrapOnPress(row.onPress, null, row.render, row.title()),
                 withArrow: true,
@@ -37,6 +38,7 @@ export function patchTabsUI(unpatches: (() => void | boolean)[]) {
             ...rendererConfigValue,
             RAIN_CUSTOM_PAGE: {
                 type: "route",
+                title: () => "Rain",
                 useTitle: () => "Rain",
                 screen: {
                     route: "RAIN_CUSTOM_PAGE",
