@@ -7,7 +7,7 @@ globalThis.window = globalThis;
 async function initializeRain() {
     try {
         // Make 'freeze' and 'seal' do nothing
-        Object.freeze = Object.seal = Object;
+        // Object.freeze = Object.seal = Object; // Disabled: breaks V8 hidden classes & Hermes optimizations
 
         await require("@metro/internals/caches").initMetroCache();
         await require(".").default();

@@ -12,8 +12,8 @@ export const pluginInstances = new Map<string, t.rainPlugin>();
 let _setupPromise: Promise<void> | null = null;
 
 // these are the things we use to set how quickly plugins start
-const BATCH_SIZE = 5;
-const BATCH_DELAY_MS = 32;
+const BATCH_SIZE = 15;
+const BATCH_DELAY_MS = 0;
 
 interface PluginSettingsStore {
     settings: t.PluginSettingsStorage;
