@@ -6,7 +6,7 @@ import { useLoaderConfig, useSettings } from "@api/settings";
 import { openAlert } from "@api/ui/alerts";
 import { CodebergIcon, RainIcon } from "@assets";
 import { Strings } from "@i18n";
-import { CODEBERG } from "@lib/info";
+import { CODEBERG, GITHUB } from "@lib/info";
 import { AlertActionButton, AlertActions, AlertModal, Button, Stack, TableRow, TableRowGroup } from "@metro/common/components";
 import { supportedVersions } from "rain-build-info";
 import { useState } from "react";
@@ -14,13 +14,24 @@ import { Linking, Platform, ScrollView, View } from "react-native";
 
 let _setIsChecking: ((v: boolean) => void) | null = null;
 
+/**
+ * Compares two version strings.
+ *
+ * Handles both plain semver ("v0.9.2") and suffixed semver ("v0.9.2-20260518-202953")
+ * by splitting on both dots and hyphens, then comparing each numeric segment left-to-right.
+ */
 function isNewerVersion(remoteVersion: string, currentVersion: string): boolean {
-    const parseVersion = (version: string) => version.replace(/^v/, "").split(".").map(Number);
-    const [remoteMajor, remoteMinor, remotePatch] = parseVersion(remoteVersion);
-    const [currentMajor, currentMinor, currentPatch] = parseVersion(currentVersion);
-    if (remoteMajor !== currentMajor) return remoteMajor > currentMajor;
-    if (remoteMinor !== currentMinor) return remoteMinor > currentMinor;
-    return remotePatch > currentPatch;
+    const parseVersion = (version: string) =>
+        version.replace(/^v/, "").split(/[.\-]/).map(Number);
+    const remote = parseVersion(remoteVersion);
+    const current = parseVersion(currentVersion);
+
+    for (let i = 0; i < Math.max(remote.length, current.length); i++) {
+        const r = remote[i] ?? 0;
+        const c = current[i] ?? 0;
+        if (r !== c) return r > c;
+    }
+    return false;
 }
 
 export function downloadUpdate() {
@@ -34,9 +45,15 @@ export function checkForUpdate() {
 
     React.useEffect(() => {
         if (useLoaderConfig.getState().customLoadUrl.enabled) return;
-        fetch("https://codeberg.org/api/v1/repos/raincord/rain/releases?limit=1")
+
+        // Check GitHub releases (where the bundle is actually downloaded from)
+        fetch("https://api.github.com/repos/VenusIsJaded/rain/releases/latest")
             .then(r => r.json())
-            .then(([latestRelease]) => setHasUpdate(!!latestRelease && isNewerVersion(latestRelease.tag_name, getDebugInfo().rain.version)));
+            .then(latestRelease => {
+                if (!latestRelease || !latestRelease.tag_name) return;
+                setHasUpdate(isNewerVersion(latestRelease.tag_name, getDebugInfo().rain.version));
+            })
+            .catch(() => {}); // Silently ignore network errors
     }, []);
 
     return hasUpdate;

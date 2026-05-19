@@ -23,12 +23,16 @@ jobs:
         run: bun install
 
       - name: Build
-        run: bun run build
+        run: bun run build --release-branch=main --build-bytecode
 
       - name: Generate release tag
         id: tag
         run: |
-          VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*: "\(.*\)",/\1/')
+          if [ -f dist/info.json ]; then
+            VERSION=$(jq -r '.version' dist/info.json)
+          else
+            VERSION=$(grep '"version"' package.json 2>/dev/null | head -1 | sed 's/.*: "\(.*\)",/1/' || echo "0.0.0")
+          fi
           BUILD=$(date +%Y%m%d-%H%M%S)
           echo "name=v${VERSION}-${BUILD}" >> "$GITHUB_OUTPUT"
 
@@ -36,7 +40,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
-          files: dist/rain.js
+          files: dist/*
           generate_release_notes: false
           make_latest: true
           token: ${{ secrets.GITHUB_TOKEN }}
