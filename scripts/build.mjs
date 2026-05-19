@@ -10,6 +10,9 @@ import { fileURLToPath } from "url";
 import yargs from "yargs-parser";
 import fs from "fs/promises";
 
+const buildPackageJson = JSON.parse(await fs.readFile("./package.json", "utf-8"));
+const bundleVersion = `v${String(buildPackageJson.version).replace(/^v/, "")}`;
+
 import { printBuildSuccess, printBytecodeBuildSuccess } from "./util.mjs";
 import { pluginsImporterPlugin } from "./build/plugins/plugins-importer.mjs";
 
@@ -79,7 +82,7 @@ const config = {
                                 constModules: {
                                     globals: {
                                         "rain-build-info": {
-                                            version: `"v0.9.2"`,
+                                            version: JSON.stringify(bundleVersion),
                                             // idk why ios uses funny version names
                                             supportedVersions: '["320012", "96094"]'
                                         }
