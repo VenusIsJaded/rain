@@ -18,8 +18,9 @@ export function patchTabsUI(unpatches: (() => void | boolean)[]) {
                 IconComponent: () => <TableRow.Icon source={row.icon} />,
                 usePredicate: row.usePredicate,
                 useTrailing: row.useTrailing,
-                useTitle: row.title || (() => row.label || row.key || ""),
-                onPress: wrapOnPress(row.onPress, null, row.render, row.title?.()),
+                title: row.title,
+                useTitle: row.title,
+                onPress: wrapOnPress(row.onPress, null, row.render, row.title()),
                 withArrow: true,
                 ...row.rawTabsConfig
             }
