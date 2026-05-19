@@ -33,6 +33,8 @@ export interface LoaderConfig {
     url: string;
   };
   loadReactDevTools: boolean;
+  usePrereleases: boolean;
+  disableInjection?: boolean;
 }
 
 interface SettingsStore extends Settings {
@@ -101,6 +103,7 @@ export const useLoaderConfig = create<LoaderConfigStore>()(
                 url: "http://localhost:4040/rain.js",
             },
             loadReactDevTools: false,
+            usePrereleases: false,
             updateLoaderConfig: newConfig => set(state => ({ ...state, ...newConfig })),
         }),
         {

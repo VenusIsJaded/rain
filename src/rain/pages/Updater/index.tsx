@@ -5,32 +5,109 @@ import { useLoaderConfig, useSettings } from "@api/settings";
 import { openAlert } from "@api/ui/alerts";
 import { CodebergIcon, RainIcon } from "@assets";
 import { Strings } from "@i18n";
-import { CODEBERG, GITHUB } from "@lib/info";
-import { AlertActionButton, AlertActions, AlertModal, Button, Stack, TableRow, TableRowGroup } from "@metro/common/components";
+import { CODEBERG } from "@lib/info";
+import { AlertActionButton, AlertActions, AlertModal, Button, Stack, TableRow, TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import { supportedVersions } from "rain-build-info";
 import { useState } from "react";
 import { Linking, Platform, ScrollView, View } from "react-native";
 
+interface GitHubRelease {
+    tag_name?: string;
+    prerelease?: boolean;
+    draft?: boolean;
+    published_at?: string;
+}
+
+interface ParsedVersion {
+    major: number;
+    minor: number;
+    patch: number;
+    prerelease: string[];
+}
+
 let _setIsChecking: ((v: boolean) => void) | null = null;
 
-/**
- * Compares two version strings.
- *
- * Handles both plain semver ("v0.9.2") and suffixed semver ("v0.9.2-20260518-202953")
- * by splitting on both dots and hyphens, then comparing each numeric segment left-to-right.
- */
-function isNewerVersion(remoteVersion: string, currentVersion: string): boolean {
-    const parseVersion = (version: string) =>
-        version.replace(/^v/, "").split(/[.\-]/).map(Number);
-    const remote = parseVersion(remoteVersion);
-    const current = parseVersion(currentVersion);
+function parseVersion(version: string): ParsedVersion | null {
+    const sanitized = version.replace(/^v/, "").split("+")[0];
+    const [core, prereleasePart] = sanitized.split(/-(.+)/, 2);
+    const [major, minor, patch] = core.split(".").map(Number);
 
-    for (let i = 0; i < Math.max(remote.length, current.length); i++) {
-        const r = remote[i] ?? 0;
-        const c = current[i] ?? 0;
-        if (r !== c) return r > c;
+    if ([major, minor, patch].some(Number.isNaN)) return null;
+
+    return {
+        major,
+        minor,
+        patch,
+        prerelease: prereleasePart ? prereleasePart.split(/[.\-]/).filter(Boolean) : [],
+    };
+}
+
+function comparePrereleaseIdentifiers(left: string, right: string): number {
+    const leftNumber = Number(left);
+    const rightNumber = Number(right);
+    const leftIsNumeric = !Number.isNaN(leftNumber);
+    const rightIsNumeric = !Number.isNaN(rightNumber);
+
+    if (leftIsNumeric && rightIsNumeric) return leftNumber - rightNumber;
+    if (leftIsNumeric) return -1;
+    if (rightIsNumeric) return 1;
+    return left.localeCompare(right);
+}
+
+function compareVersions(left: string, right: string): number {
+    const parsedLeft = parseVersion(left);
+    const parsedRight = parseVersion(right);
+
+    if (!parsedLeft || !parsedRight) return left.localeCompare(right);
+
+    for (const key of ["major", "minor", "patch"] as const) {
+        if (parsedLeft[key] !== parsedRight[key]) {
+            return parsedLeft[key] - parsedRight[key];
+        }
     }
-    return false;
+
+    const leftPrerelease = parsedLeft.prerelease;
+    const rightPrerelease = parsedRight.prerelease;
+
+    if (leftPrerelease.length === 0 && rightPrerelease.length === 0) return 0;
+    if (leftPrerelease.length === 0) return 1;
+    if (rightPrerelease.length === 0) return -1;
+
+    for (let i = 0; i < Math.max(leftPrerelease.length, rightPrerelease.length); i++) {
+        const leftIdentifier = leftPrerelease[i];
+        const rightIdentifier = rightPrerelease[i];
+
+        if (leftIdentifier == null) return -1;
+        if (rightIdentifier == null) return 1;
+
+        const comparison = comparePrereleaseIdentifiers(leftIdentifier, rightIdentifier);
+        if (comparison !== 0) return comparison;
+    }
+
+    return 0;
+}
+
+function isNewerVersion(remoteVersion: string, currentVersion: string): boolean {
+    return compareVersions(remoteVersion, currentVersion) > 0;
+}
+
+function selectRelease(releases: GitHubRelease[], usePrereleases: boolean) {
+    const stableReleases = releases.filter(release => !release.draft && !release.prerelease && release.tag_name);
+    const prereleaseReleases = releases.filter(release => !release.draft && release.prerelease && release.tag_name);
+    const candidates = usePrereleases && prereleaseReleases.length > 0 ? prereleaseReleases : stableReleases;
+
+    return candidates.sort((left, right) => {
+        const versionComparison = compareVersions(right.tag_name!, left.tag_name!);
+        if (versionComparison !== 0) return versionComparison;
+        return (right.published_at ?? "").localeCompare(left.published_at ?? "");
+    })[0] ?? null;
+}
+
+async function fetchSelectedRelease(usePrereleases: boolean): Promise<GitHubRelease | null> {
+    const response = await fetch("https://api.github.com/repos/VenusIsJaded/rain/releases");
+    const releases = await response.json();
+    if (!Array.isArray(releases)) return null;
+    return selectRelease(releases, usePrereleases);
 }
 
 export async function downloadUpdate() {
@@ -44,19 +121,30 @@ export async function downloadUpdate() {
 
 export function checkForUpdate() {
     const [hasUpdate, setHasUpdate] = React.useState(false);
+    const usePrereleases = useLoaderConfig(state => state.usePrereleases);
+    const customLoadUrlEnabled = useLoaderConfig(state => state.customLoadUrl.enabled);
 
     React.useEffect(() => {
-        if (useLoaderConfig.getState().customLoadUrl.enabled) return;
+        let cancelled = false;
 
-        // Check GitHub releases (where the bundle is actually downloaded from)
-        fetch("https://api.github.com/repos/VenusIsJaded/rain/releases/latest")
-            .then(r => r.json())
+        if (customLoadUrlEnabled) {
+            setHasUpdate(false);
+            return;
+        }
+
+        fetchSelectedRelease(usePrereleases)
             .then(latestRelease => {
-                if (!latestRelease || !latestRelease.tag_name) return;
+                if (cancelled || !latestRelease?.tag_name) return;
                 setHasUpdate(isNewerVersion(latestRelease.tag_name, getDebugInfo().rain.version));
             })
-            .catch(() => {}); // Silently ignore network errors
-    }, []);
+            .catch(() => {
+                if (!cancelled) setHasUpdate(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [usePrereleases, customLoadUrlEnabled]);
 
     return hasUpdate;
 }
@@ -64,7 +152,6 @@ export function checkForUpdate() {
 export async function versionCheck() {
     if (useLoaderConfig.getState().customLoadUrl.enabled === true) return;
 
-    // Wait for settings to hydrate before checking
     const checkSettings = () => {
         if (useSettings.getState().disableUpdateWarnings === true) return;
 
@@ -99,14 +186,16 @@ export async function versionCheck() {
         }
     };
 
-    // Use setTimeout to ensure settings has had a chance to load
     setTimeout(checkSettings, 100);
 }
 
 export default function Updater() {
     const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false);
     _setIsChecking = setIsCheckingForUpdates;
+
     const debugInfo = getDebugInfo();
+    const loaderConfig = useLoaderConfig();
+    const usePrereleases = loaderConfig.usePrereleases;
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
@@ -125,6 +214,18 @@ export default function Updater() {
                         onPress={() => Linking.openURL(CODEBERG)}
                     />
                 </TableRowGroup>
+                <TableRowGroup title={Strings.SETTINGS}>
+                    <TableSwitchRow
+                        label={Strings.PRERELEASE_CHANNEL}
+                        subLabel={Strings.PRERELEASE_CHANNEL_DESC}
+                        icon={<TableRow.Icon source={findAssetId("ic_warning_24px")} />}
+                        value={usePrereleases}
+                        onValueChange={(value: boolean) => {
+                            loaderConfig.updateLoaderConfig({ usePrereleases: value });
+                            void UpdateModule.nativeSetUsePrereleases(value).catch(() => {});
+                        }}
+                    />
+                </TableRowGroup>
                 {checkForUpdate() && <View style={{ flexShrink: 1 }}>
                     <Button
                         text={Strings.UPDATE}
@@ -132,6 +233,9 @@ export default function Updater() {
                         disabled={isCheckingForUpdates}
                         loading={isCheckingForUpdates}
                         onPress={async () => {
+                            try {
+                                await UpdateModule.nativeSetUsePrereleases(usePrereleases);
+                            } catch {}
                             await downloadUpdate();
                             openAlert(
                                 "rain-update-restart-alert",
@@ -144,6 +248,7 @@ export default function Updater() {
                                                 text={Strings.RESTART_NOW}
                                                 variant="primary"
                                                 onPress={() => {
+                                                    void UpdateModule.nativeSetUsePrereleases(usePrereleases).catch(() => {});
                                                     UpdateModule.nativeReload();
                                                 }}
                                             />

@@ -1,7 +1,8 @@
 import { callBridgeMethod } from "../bridge";
 
 export default {
-    nativeBundleClear: () => callBridgeMethod("updater.clear"),
-    nativeDownload:    () => callBridgeMethod("updater.download"),
-    nativeReload:      () => callBridgeMethod("updater.reload"),
+    nativeBundleClear:      () => callBridgeMethod("updater.clear"),
+    nativeDownload:         () => callBridgeMethod("updater.download"),
+    nativeReload:           () => callBridgeMethod("updater.reload"),
+    nativeSetUsePrereleases: (enabled: boolean) => callBridgeMethod("updater.setUsePrereleases", enabled),
 };
