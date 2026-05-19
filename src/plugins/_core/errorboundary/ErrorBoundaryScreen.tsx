@@ -1,11 +1,12 @@
 import { getDebugInfo } from "@api/debug";
 import { BundleUpdaterManager } from "@api/native/modules";
+import UpdateModule from "@api/native/modules/update";
 import { useSettings } from "@api/settings";
 import { Codeblock, ErrorBoundary } from "@api/ui/components";
 import { createStyles } from "@api/ui/styles";
 import { tokens } from "@metro/common";
 import { Button, Card, SafeAreaProvider, SafeAreaView, Text } from "@metro/common/components";
-import { checkForUpdate, downloadUpdate } from "@rain/pages/Updater";
+import { checkForUpdate } from "@rain/pages/Updater";
 import { ScrollView, View } from "react-native";
 
 import ErrorComponentStackCard from "./ErrorComponentStackCard";
@@ -47,7 +48,7 @@ export default function ErrorBoundaryScreen(props: {
                 <Card style={{ gap: 6 }}>
                     <Button text="Reload Discord" onPress={() => BundleUpdaterManager.reload()} />
                     {!safeMode && <Button text="Reload in Safe Mode" onPress={() => updateSettings({ safeMode: true })} />}
-                    {checkForUpdate() && <Button text="Download latest Rain update" onPress={() => { downloadUpdate(); BundleUpdaterManager.reload(); }} />}
+                    {checkForUpdate() && <Button text="Download latest Rain update" onPress={() => { UpdateModule.nativeReload(); }} />}
                     <Button variant="destructive" text="Retry Render" onPress={() => props.rerender()} />
                 </Card>
             </SafeAreaView>

@@ -1,6 +1,5 @@
 import { findAssetId } from "@api/assets";
 import { getDebugInfo } from "@api/debug";
-import { BundleUpdaterManager } from "@api/native/modules";
 import UpdateModule from "@api/native/modules/update";
 import { useLoaderConfig, useSettings } from "@api/settings";
 import { openAlert } from "@api/ui/alerts";
@@ -34,10 +33,13 @@ function isNewerVersion(remoteVersion: string, currentVersion: string): boolean 
     return false;
 }
 
-export function downloadUpdate() {
+export async function downloadUpdate() {
     _setIsChecking?.(true);
-    UpdateModule.nativeDownload();
-    _setIsChecking?.(false);
+    try {
+        await UpdateModule.nativeDownload();
+    } finally {
+        _setIsChecking?.(false);
+    }
 }
 
 export function checkForUpdate() {
@@ -129,8 +131,8 @@ export default function Updater() {
                         icon={findAssetId("DownloadIcon")}
                         disabled={isCheckingForUpdates}
                         loading={isCheckingForUpdates}
-                        onPress={() => {
-                            downloadUpdate();
+                        onPress={async () => {
+                            await downloadUpdate();
                             openAlert(
                                 "rain-update-restart-alert",
                                 <AlertModal
@@ -142,7 +144,7 @@ export default function Updater() {
                                                 text={Strings.RESTART_NOW}
                                                 variant="primary"
                                                 onPress={() => {
-                                                    BundleUpdaterManager.reload();
+                                                    UpdateModule.nativeReload();
                                                 }}
                                             />
                                             <AlertActionButton text={Strings.RESTART_LATER} variant="secondary" />
