@@ -2,8 +2,14 @@ name: Build and Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create release for'
+        required: true
+        type: string
 
 jobs:
   build:
@@ -25,16 +31,11 @@ jobs:
       - name: Build
         run: bun run build --release-branch=main --build-bytecode
 
-      - name: Generate release tag
+      - name: Prepare release tag
         id: tag
         run: |
-          if [ -f dist/info.json ]; then
-            VERSION=$(jq -r '.version' dist/info.json)
-          else
-            VERSION=$(grep '"version"' package.json 2>/dev/null | head -1 | sed 's/.*: "\(.*\)",/1/' || echo "0.0.0")
-          fi
-          BUILD=$(date +%Y%m%d-%H%M%S)
-          echo "name=v${VERSION}-${BUILD}" >> "$GITHUB_OUTPUT"
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "name=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
