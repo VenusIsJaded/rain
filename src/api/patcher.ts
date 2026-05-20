@@ -23,6 +23,10 @@ type AfterFn = PatchFn<(args: any[], ret: any) => unknown>;
 
 function create(fn: Function) {
     function patchFn(this: any, ...args: any[]) {
+        if (args[1] && typeof args[1] === "object") {
+            patchTargets.add(args[1]);
+        }
+
         if (typeof args[1][_patcherDelaySymbol] === "function") {
             const delayCallback: DelayCallback = args[1][_patcherDelaySymbol];
 
@@ -31,6 +35,9 @@ function create(fn: Function) {
 
             delayCallback(target => {
                 if (cancel) return;
+                if (target && typeof target === "object") {
+                    patchTargets.add(target);
+                }
                 args[1] = target;
                 unpatch = fn.apply(this, args);
             });
@@ -50,6 +57,9 @@ function create(fn: Function) {
 
         thenable.then(target => {
             if (cancel) return;
+            if (target && typeof target === "object") {
+                patchTargets.add(target);
+            }
             args[1] = target;
             unpatch = patchFn.apply(this, args);
         });
