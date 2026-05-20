@@ -34,6 +34,7 @@ export default function unifyRainPlugin(
         id: manifest.id,
         name: manifest.name,
         description: manifest.description,
+        icon: undefined,
         developers,
         contributors,
         isEnabled: () => isPluginEnabled(manifest.id),

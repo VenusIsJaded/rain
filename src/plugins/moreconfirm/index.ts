@@ -1,8 +1,6 @@
-/*!
+/*
  * https://github.com/amsyarasyiq/aliucordrn-plugins/blob/6c0be39ca673c6ebcf48c0f397246b76d578aa26/MoarConfirm/index.tsx
- *
  * Copyright (c) 2022 Amsyar Rasyiq
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +19,7 @@ import patcher from "@api/patcher";
 import { logger } from "@lib/utils/logger";
 import { findByProps, findByStoreName } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
-import { Contributors,Developers } from "@rain/Developers";
+import { Contributors, Developers } from "@rain/Developers";
 
 const dialog = findByProps("show", "confirm", "close");
 const relationshipManager = findByProps("addRelationship");
@@ -85,10 +83,10 @@ export default definePlugin({
                         } catch (e) {
                             logger.error("Failed to add relationship", e);
                         } finally {
-                            clearInterval(hideASInterval);
+                            clearTimeout(hideASTimeout);
                         }
                     },
-                    onCancel: () => void clearInterval(hideASInterval)
+                    onCancel: () => void clearTimeout(hideASTimeout)
                 });
             });
         }));

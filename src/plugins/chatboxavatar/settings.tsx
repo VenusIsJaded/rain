@@ -6,11 +6,11 @@ export default function ChatboxAvatarSettings() {
     const settings = useChatboxAvatarSettings();
     const [, forceUpdate] = React.useReducer(x => ~x, 0);
     const setPressAction = (value: string) => {
-        useChatboxAvatarSettings.getState().updateSettings?.({ pressAction: value as ChatboxAvatarSettings["pressAction"] });
+        useChatboxAvatarSettings.getState().updateSettings?.({ pressAction: value as any });
         forceUpdate();
     };
     const setLongPressAction = (value: string) => {
-        useChatboxAvatarSettings.getState().updateSettings?.({ longPressAction: value as ChatboxAvatarSettings["longPressAction"] });
+        useChatboxAvatarSettings.getState().updateSettings?.({ longPressAction: value as any });
         forceUpdate();
     };
     return (
