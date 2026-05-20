@@ -23,6 +23,8 @@ export function deleteJsxCreate(Component: string, callback: Callback) {
  */
 export function patchJsx() {
     const callback = ([Component]: unknown[], ret: JSX.Element) => {
+        if (!ret) return ret;
+
         // Band-aid fix for iOS invalid element type crashes
         if (typeof ret.type === "undefined") {
             ret.type = "RCTView";

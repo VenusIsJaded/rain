@@ -45,11 +45,6 @@ function create(fn: Function) {
             return () => unpatch();
         }
 
-      // Register target to ensure future patches can always access it
-      if (args[1] && typeof args[1] === "object") {
-          patchTargets.add(args[1]);
-      }
-
         return fn.apply(this, args);
     }
 
