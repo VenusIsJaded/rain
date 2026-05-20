@@ -86,8 +86,8 @@ function patchMessageDeleteHandler() {
                 const message = MessageStore.getMessage?.(channelId, id);
 
                 if (!message) return args;
-                if(storage.ignoreLists.user.split(" ").indexOf(message?.author?.id.toString()) !== -1) return args;
-                if(storage.ignoreLists.channel.split(" ").indexOf(message?.channel_id.toString()) !== -1) return args;
+                if (message?.author?.id && storage.ignoreLists.user.split(" ").indexOf(message.author.id.toString()) !== -1) return args;
+                if (message?.channel_id && storage.ignoreLists.channel.split(" ").indexOf(message.channel_id.toString()) !== -1) return args;
 
                 if (shouldIgnoreMessage(message, storage)) return args;
 
@@ -175,8 +175,8 @@ function patchMessageEditHandler() {
 
                 if (storage.filters?.ignoreSelfEdits && message?.author?.id === findByStoreName("UserStore").getCurrentUser().id) return args;
 
-                if(storage.ignoreLists.user.split(" ").indexOf(message?.author?.id.toString()) !== -1) return args;
-                if(storage.ignoreLists.channel.split(" ").indexOf(message?.channel_id.toString()) !== -1) return args;
+                if (message?.author?.id && storage.ignoreLists.user.split(" ").indexOf(message.author.id.toString()) !== -1) return args;
+                if (message?.channel_id && storage.ignoreLists.channel.split(" ").indexOf(message.channel_id.toString()) !== -1) return args;
                 const prevMessage = MessageStore.getMessage?.(message.channel_id || message.channelId, message.id);
                 if (!prevMessage || !prevMessage.content || prevMessage.content === message.content) return args;
 
@@ -314,7 +314,6 @@ export default definePlugin({
     version: "2.0.0",
     settings: Settings,
     start() {
-        clearLogs();
         repairCorruptedLogs();
         patches.push(patchDeleteAction());
         patches.push(patchMessageDeleteHandler());

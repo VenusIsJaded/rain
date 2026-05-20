@@ -1,4 +1,5 @@
 import { fileExists, readFile, writeFile } from "@api/native/fs";
+import { debounce } from "es-toolkit";
 
 const LOG_FILE = "public/message_logs.json";
 const MAX_LOGS = 1000;
@@ -23,6 +24,14 @@ interface LogData {
     logs: MessageLogEntry[];
 }
 
+let cachedLogData: LogData | null = null;
+
+const flushLogsToDisk = debounce(async () => {
+    if (cachedLogData) {
+        await writeFile(LOG_FILE, JSON.stringify(cachedLogData));
+    }
+}, 1500);
+
 async function safeParseJSON<T>(data: string | null, fallback: T): Promise<T> {
     if (!data) return fallback;
     try {
@@ -37,22 +46,29 @@ async function safeParseJSON<T>(data: string | null, fallback: T): Promise<T> {
 }
 
 async function writeLogData(data: LogData): Promise<void> {
-    const content = JSON.stringify(data);
-    await writeFile(LOG_FILE, content);
+    cachedLogData = data;
+    flushLogsToDisk();
 }
 
 async function readLogData(): Promise<LogData> {
+    if (cachedLogData) return cachedLogData;
+
     const exists = await fileExists(LOG_FILE);
-    if (!exists) return { version: 1, logs: [] };
+    if (!exists) {
+        cachedLogData = { version: 1, logs: [] };
+        return cachedLogData;
+    }
 
     const content = await readFile(LOG_FILE);
     const parsed = await safeParseJSON<LogData | MessageLogEntry[]>(content, { version: 1, logs: [] });
 
     if (Array.isArray(parsed)) {
-        return { version: 1, logs: parsed };
+        cachedLogData = { version: 1, logs: parsed };
+    } else {
+        cachedLogData = parsed;
     }
 
-    return parsed;
+    return cachedLogData;
 }
 
 export async function addLogEntry(entry: MessageLogEntry): Promise<void> {
@@ -96,7 +112,8 @@ export async function getLogEntry(messageId: string): Promise<MessageLogEntry | 
 }
 
 export async function clearLogs(): Promise<void> {
-    await writeLogData({ version: 1, logs: [] });
+    cachedLogData = { version: 1, logs: [] };
+    await writeFile(LOG_FILE, JSON.stringify(cachedLogData));
 }
 
 export async function repairCorruptedLogs(): Promise<boolean> {

@@ -4,6 +4,7 @@ import { logger } from "@lib/utils/logger";
 import { findByProps } from "@metro";
 import { clipboard } from "@metro/common";
 import { findByProps as findByPropsWrappers } from "@metro/wrappers";
+import { before } from "@api/patcher";
 
 // For robust chat input manipulation
 let getChatInputRef: ((channelId: string, idx?: number) => any) | null = null;
@@ -192,7 +193,7 @@ export default function getUploaderPatch(): (() => boolean)[] {
         return true;
     };
 
-    // Patch sendMessage to support the "insert link" mode
+    // Patch sendMessage to support the "insert link" mode safely with framework patcher
     const sendMessagePatch = patchSendMessage();
 
     return [unpatch, sendMessagePatch];
@@ -202,10 +203,9 @@ export default function getUploaderPatch(): (() => boolean)[] {
 let pendingInsertLink: string | null = null;
 
 function patchSendMessage(): () => boolean {
-    const original = MessageSender?.sendMessage;
-    if (!original) return () => true;
+    if (!MessageSender) return () => true;
 
-    MessageSender.sendMessage = function (...args: any[]) {
+    return before("sendMessage", MessageSender, args => {
         const message = args[1];
         if (pendingInsertLink && message?.content !== undefined) {
             message.content = message.content
@@ -213,11 +213,5 @@ function patchSendMessage(): () => boolean {
                 : pendingInsertLink;
             pendingInsertLink = null;
         }
-        return original.apply(this, args);
-    };
-
-    return () => {
-        MessageSender.sendMessage = original;
-        return true;
-    };
+    });
 }
