@@ -3,6 +3,7 @@ const {
     before: _before,
     instead: _instead
 } = require("sublimation");
+const { patchTargets } = require("@lib/utils/patchTargets");
 
 /** @internal */
 export const _patcherDelaySymbol = Symbol.for("rain.api.patcher.delay");
