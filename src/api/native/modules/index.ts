@@ -6,7 +6,7 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
     if (!rawModule) return undefined;
     if (rawModule.__isRainProxied) return rawModule;
 
-    // Local safe storage for patches and modifications
+    // Safe shadow object to store patches and intercepted modifications
     const shadow: Record<string | symbol, any> = {};
 
     return new Proxy(rawModule, {
@@ -16,7 +16,7 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
             
             const value = Reflect.get(target, prop, receiver);
             if (typeof value === "function") {
-                // Ensure native functions run bound to the correct raw native context
+                // Bind original C++ native functions to keep context intact
                 return value.bind(target);
             }
             return value;
@@ -26,7 +26,7 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
             return true;
         },
         defineProperty(target, prop, descriptor) {
-            // Divert write operations away from JSI C++ HostObjects to safe JS shadow memory
+            // Divert defineProperty writes away from JSI C++ objects to JS shadow memory
             Object.defineProperty(shadow, prop, descriptor);
             return true;
         },
@@ -56,7 +56,7 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
                         writable: true
                     };
                 }
-                // Synthesize a writable descriptor for dynamic JSI C++ methods
+                // Synthesize a descriptor for dynamic JSI functions so sublimation doesn't complain
                 if (typeof target[prop] === "function") {
                     return {
                         configurable: true,

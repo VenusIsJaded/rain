@@ -9,11 +9,8 @@ import { _colorRef } from "../updater";
 const mmkvStorage = proxyLazy(() => {
     const newModule = findByProps("impl");
     if (typeof newModule?.impl === "object") {
-        // Safe wrap the C++ native storage module so it can be patched without bridge crashes
-        if (!newModule.impl.__isRainProxied) {
-            newModule.impl = wrapNativeModule(newModule.impl);
-        }
-        return newModule.impl;
+        // Safe-wrap the C++ MMKV module and return it directly without mutating newModule
+        return wrapNativeModule(newModule.impl);
     }
     return findByProps("storage");
 });
