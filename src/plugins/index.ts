@@ -6,12 +6,12 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import * as t from "./types";
-export const pluginInstances = new Map<string, t.rainPlugin>();
+
+export const pluginInstances = new Map();
 let _setupPromise: Promise<void> | null = null;
 
-// these are the things we use to set how quickly plugins start
-const BATCH_SIZE = 15;
-const BATCH_DELAY_MS = 0;
+const BATCH_SIZE = 10;
+const BATCH_DELAY_MS = 50;
 
 interface PluginSettingsStore {
     settings: t.PluginSettingsStorage;
@@ -21,17 +21,14 @@ interface PluginSettingsStore {
     setHasHydrated: (state: boolean) => void;
 }
 
-export const usePluginSettings = create<PluginSettingsStore>()(
+export const usePluginSettings = create()(
     persist(
         (set, get) => ({
             settings: {},
             _hasHydrated: false,
             updatePluginSetting: (id: string, enabled: boolean) => {
                 set(state => ({
-                    settings: {
-                        ...state.settings,
-                        [id]: { enabled },
-                    },
+                    settings: { ...state.settings, [id]: { enabled } },
                 }));
             },
             getPluginSetting: (id: string) => get().settings[id],
@@ -40,9 +37,7 @@ export const usePluginSettings = create<PluginSettingsStore>()(
         {
             name: "plugin-settings",
             storage: createJSONStorage(() => createFileStorage("plugins/settings.json")),
-            onRehydrateStorage: () => state => {
-                state?.setHasHydrated(true);
-            },
+            onRehydrateStorage: () => state => state?.setHasHydrated(true),
         }
     )
 );
@@ -55,17 +50,14 @@ export const pluginSettings = new Proxy({} as t.PluginSettingsStorage, {
     },
 });
 
-function assert<T>(condition: T, id: string, attempt: string): asserts condition {
+function assert(condition: any, id: string, attempt: string): asserts condition {
     if (!condition) throw new Error(`[${id}] Attempted to ${attempt}`);
 }
 
 async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): Promise<void> {
     const instance = pluginInstances.get(id);
-    assert(instance, id, `run ${method} on unknown plugin`);
-
-    const settings = useSettings.getState();
-    if (settings.safeMode && !isPluginCore(id)) {
-        logger.log(`[${id}] Skipped in safe mode`);
+    if (!instance) {
+        logger.warn(`[plugins] Skipped loading null/empty plugin matching ID: "${id}"`);
         return;
     }
 
@@ -73,38 +65,27 @@ async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): P
         await instance[method]?.();
         usePluginSettings.getState().updatePluginSetting(id, true);
     } catch (error) {
-        const errorMsg = `[${id}] Failed: ${error}`;
-        method === "start" ? showToast(errorMsg) : console.error(errorMsg, error);
-        throw error;
+        const errorMsg = `[${id}] Failed to ${method}: ${error}`;
+        console.error(errorMsg, error);
+        if (method === "start") showToast(errorMsg);
     }
 }
 
-export const startPlugin = (id: string): Promise<void> => runPluginLifecycle(id, "start");
-export const startEagerPlugin = (id: string): Promise<void> => runPluginLifecycle(id, "eagerStart");
+export const startPlugin = (id: string) => runPluginLifecycle(id, "start");
+export const startEagerPlugin = (id: string) => runPluginLifecycle(id, "eagerStart");
 
 export async function stopPlugin(id: string): Promise<void> {
     const instance = pluginInstances.get(id);
-    assert(instance, id, "stop a non-started plugin");
-
-    try {
-        await instance.stop?.();
-        usePluginSettings.getState().updatePluginSetting(id, false);
-    } catch (error) {
-        console.error(`[${id}] Failed to stop:`, error);
-        throw error;
-    }
+    if (instance) await instance.stop?.();
 }
 
-export const findPluginById = (id: string): boolean => pluginInstances.has(id);
-
-export const isPluginCore = (id: string): boolean => id.startsWith("core");
-
-export function isPluginEnabled(id: string): boolean {
+export const isPluginCore = (id: string): boolean => id.startsWith("core.");
+export const isPluginEnabled = (id: string): boolean => {
     const setting = usePluginSettings.getState().settings[id];
     return setting?.enabled ?? isPluginCore(id);
-}
+};
 
-function ensureSetup(): Promise<void> {
+async function ensureSetup(): Promise<void> {
     if (_setupPromise) return _setupPromise;
 
     _setupPromise = (async () => {
@@ -115,12 +96,8 @@ function ensureSetup(): Promise<void> {
 
         for (const [id, plugin] of Object.entries(rainPlugins)) {
             const instance = plugin as t.rainPlugin;
-            if (!instance) {
-                logger.warn(`[plugins] Skipped loading null/empty plugin matching ID: "${id}"`);
-                continue;
-            }
+            if (!instance) continue;
             instance.id = id;
-
             pluginInstances.set(id, instance);
         }
     })();
@@ -128,44 +105,30 @@ function ensureSetup(): Promise<void> {
     return _setupPromise;
 }
 
-// tldr: plugins were causing discord to start slow as they made the load take longer even though they technically were lazy, so we now do this to let the app render :P
 async function startBatched(ids: string[], method: "start" | "eagerStart"): Promise<void> {
+    await new Promise(r => setTimeout(r, 1500)); // Wait for Discord internals to be ready
+
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
         const batch = ids.slice(i, i + BATCH_SIZE);
-
         await Promise.allSettled(
-            batch.map(async id => {
-                try {
-                    await (method === "start" ? startPlugin(id) : startEagerPlugin(id));
-                } catch (error) {
-                    logger.log(`Failed to ${method} ${id}:`, error);
-                }
-            })
+            batch.map(id => runPluginLifecycle(id, method))
         );
-
         if (i + BATCH_SIZE < ids.length) {
-            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+            await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
         }
     }
 }
 
 export async function initPlugins(): Promise<void> {
     await ensureSetup();
-
     const ids = Array.from(pluginInstances.keys()).filter(isPluginEnabled);
     await startBatched(ids, "start");
 }
 
 export async function initEagerPlugins(): Promise<void> {
     await ensureSetup();
-
     const ids = Array.from(pluginInstances.keys()).filter(isPluginEnabled);
-    await Promise.allSettled(
-        ids.map(async id => {
-            try { await startEagerPlugin(id); }
-            catch (error) { logger.log(`Failed to eagerStart ${id}:`, error); }
-        })
-    );
+    await startBatched(ids, "eagerStart");
 }
 
 export function definePlugin(instance: t.rainPlugin): t.rainPlugin {
@@ -175,5 +138,5 @@ export function definePlugin(instance: t.rainPlugin): t.rainPlugin {
 }
 
 export function getPluginSettingsComponent(id: string): (() => any) | null {
-    return pluginInstances.get(id)?.settings || null;
+    return pluginInstances.get(id)?.settings ?? null;
 }
