@@ -4,45 +4,6 @@ const { instead } = require("sublimation");
 // @ts-ignore - window is defined later in the bundle, so we assign it early
 globalThis.window = globalThis;
 
-// Prevent writing to nativeModuleProxy from throwing C++ bridge exceptions
-try {
-    const rawNMP = globalThis.nativeModuleProxy;
-    if (rawNMP && !rawNMP.__isRainSafeProxy) {
-        const shadowNMP: Record<string, any> = {};
-        const safeProxy = new Proxy(rawNMP, {
-            get(target, prop) {
-                if (prop === "__isRainSafeProxy") return true;
-                if (prop in shadowNMP) return shadowNMP[prop as string];
-                try {
-                    return rawNMP[prop as string];
-                } catch {
-                    return undefined;
-                }
-            },
-            set(target, prop, value) {
-                shadowNMP[prop as string] = value;
-                return true;
-            },
-            defineProperty(target, prop, descriptor) {
-                Object.defineProperty(shadowNMP, prop as string, descriptor);
-                return true;
-            },
-            has(target, prop) {
-                return prop in shadowNMP || prop in rawNMP;
-            }
-        });
-
-        // Use Object.defineProperty to bypass read-only restriction if configurable
-        Object.defineProperty(globalThis, "nativeModuleProxy", {
-            value: safeProxy,
-            configurable: true,
-            writable: true,
-            enumerable: true
-        });
-    }
-} catch (e) {
-    console.warn("[Raincord] Failed to globally proxy nativeModuleProxy safely:", e);
-}
 
 async function initializeRain() {
     try {
