@@ -10,8 +10,8 @@ import * as t from "./types";
 export const pluginInstances = new Map();
 let _setupPromise: Promise<void> | null = null;
 
-const BATCH_SIZE = 5;
-const BATCH_DELAY_MS = 32;
+const BATCH_SIZE = 15;
+const BATCH_DELAY_MS = 0;
 
 interface PluginSettingsStore {
     settings: t.PluginSettingsStorage;

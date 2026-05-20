@@ -6,8 +6,23 @@ globalThis.window = globalThis;
 
 async function initializeRain() {
   try {
-    // Make 'freeze' and 'seal' do nothing
-    Object.freeze = Object.seal = Object;
+    // Hybrid freeze bypass — only freeze React elements ($$typeof) to preserve
+    // Hermes hidden-class optimizations for smooth scrolling, while leaving
+    // all other module objects mutable so plugins can patch them freely.
+    const _origFreeze = Object.freeze;
+    const _origSeal = Object.seal;
+    Object.freeze = function<T>(obj: T): T {
+      if (obj && typeof obj === "object" && (obj as any).$$typeof) {
+        return _origFreeze.call(Object, obj) as T;
+      }
+      return obj;
+    } as typeof Object.freeze;
+    Object.seal = function<T>(obj: T): T {
+      if (obj && typeof obj === "object" && (obj as any).$$typeof) {
+        return _origSeal.call(Object, obj) as T;
+      }
+      return obj;
+    } as typeof Object.seal;
 
     await require("@metro/internals/caches").initMetroCache();
     await require(".").default();
