@@ -42,7 +42,11 @@
     "type-fest": "^5.5.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1",
-    "yargs-parser": "^22.0.0"
+    "yargs-parser": "^22.0.0",
+    "react-native": "0.84.1",
+    "react-native-reanimated": "^4.2.3",
+    "react-native-image-picker": "^8.2.1",
+    "react-devtools": "^7.0.1"
   },
   "dependencies": {
     "@gullerya/object-observer": "^6.1.4",
@@ -51,10 +55,6 @@
     "fuzzysort": "^3.1.0",
     "intl-messageformat": "^11.2.0",
     "moment": "2.30.1",
-    "react-devtools": "^7.0.1",
-    "react-native": "0.84.1",
-    "react-native-image-picker": "^8.2.1",
-    "react-native-reanimated": "^4.2.3",
     "sublimation": "^1.0.0",
     "zustand": "^5.0.12"
   },

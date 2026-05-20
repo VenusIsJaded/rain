@@ -39,7 +39,7 @@ const config = {
     outfile: "dist/rain.js",
     format: "iife",
     splitting: false,
-    external: [],
+    external: ["react-native", "react", "react-native-reanimated", "react-native-image-picker", "react-devtools"],
     supported: {
         // Hermes does not actually support const and let, even though it syntactically
         // accepts it, but it's treated just like 'var' and causes issues
@@ -96,7 +96,7 @@ const config = {
                         // https://github.com/facebook/hermes/blob/3815fec63d1a6667ca3195160d6e12fee6a0d8d5/doc/Features.md
                         // https://github.com/facebook/hermes/issues/696#issuecomment-1396235791
                         env: {
-                            targets: "fully supports es6",
+                            targets: "chrome 80, ios 13",
                             include: [
                                 "transform-block-scoping",
                                 "transform-classes",
