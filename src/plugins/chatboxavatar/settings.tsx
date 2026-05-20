@@ -1,7 +1,7 @@
 import { Stack, TableRadioGroup, TableRadioRow } from "@metro/common/components";
 import React from "react";
 
-import { ChatboxAvatarSettings, useChatboxAvatarSettings } from "./storage";
+import { useChatboxAvatarSettings } from "./storage";
 export default function ChatboxAvatarSettings() {
     const settings = useChatboxAvatarSettings();
     const [, forceUpdate] = React.useReducer(x => ~x, 0);

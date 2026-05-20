@@ -5,7 +5,7 @@ import { findByName, findByProps, findByStoreName } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { Forms } from "@metro/common/components";
 
-import { Preset } from "../../lib/api";
+import type { Preset } from "../../lib/api";
 import { useCurrentUserDecorationsStore } from "../../lib/stores/CurrentUserDecorationsStore";
 import DecorationCard from "./DecorationCard";
 
