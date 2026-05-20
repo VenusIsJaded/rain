@@ -2,10 +2,13 @@ import { RNModules } from "./types";
 
 const nmp = window.nativeModuleProxy;
 
-function wrapNativeModule<T = any>(rawModule: any): T | undefined {
+export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
     if (!rawModule) return undefined;
+    if (rawModule.__isRainProxied) return rawModule;
     
-    const wrapper: any = {};
+    const wrapper: any = {
+        __isRainProxied: true
+    };
     const keys = new Set<string | symbol>();
     let current = rawModule;
     
@@ -16,7 +19,7 @@ function wrapNativeModule<T = any>(rawModule: any): T | undefined {
     }
     
     for (const key of keys) {
-        if (key === "constructor") continue;
+        if (key === "constructor" || key === "__isRainProxied") continue;
         
         try {
             const value = rawModule[key];
@@ -57,7 +60,6 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
         }
 
         if (rawModule) {
-            // Return our clean, writable JS clone instead of the locked JSI HostObject
             return wrapNativeModule<T>(rawModule);
         }
     }
