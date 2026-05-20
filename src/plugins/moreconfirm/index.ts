@@ -65,8 +65,11 @@ export default definePlugin({
             const { username, discriminator } = UserStore.getUser(args[0].userId);
 
             // This is hacky, but it *works*
-            const hideASInterval = setInterval(() => actionSheetManager.hideActionSheet(), 100);
-            setTimeout(() => clearInterval(hideASInterval), 3000);
+            // Optimized: Immediate close + single backup close instead of 30x intensive loops
+            actionSheetManager.hideActionSheet();
+            const hideASTimeout = setTimeout(() => {
+                actionSheetManager.hideActionSheet();
+            }, 300);
 
             const block = args[0].type === 2;
             return new Promise(r => {

@@ -1,3 +1,4 @@
+import { shallowEqual } from "../../../lib/utils/shallowEqual";
 import { useSettings } from "@api/settings";
 import { logger } from "@lib/utils/logger";
 import { FluxDispatcher } from "@metro/common";
@@ -49,7 +50,7 @@ export default definePlugin({
     start() {
         // im too lazy to add this to the ui
         unsubscribeSettings = useSettings.subscribe((state, prevState) => {
-            if (JSON.stringify(state) !== JSON.stringify(prevState)) {
+            if (!shallowEqual(state, prevState)) {
                 FluxDispatcher.dispatch({ type: "RAIN_SETTING_UPDATED" });
             }
         });

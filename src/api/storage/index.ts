@@ -1,3 +1,4 @@
+import { shallowEqual } from "../../lib/utils/shallowEqual";
 import { fileExists, readFile, writeFile } from "@api/native/fs";
 import { FluxDispatcher } from "@metro/common";
 import { create } from "zustand";
@@ -110,7 +111,7 @@ export function createPluginStore<T extends object>(
     );
 
     useStore.subscribe((state, prevState) => {
-        if (state._hasHydrated && JSON.stringify(state) !== JSON.stringify(prevState)) {
+        if (state._hasHydrated && !shallowEqual(state, prevState)) {
             FluxDispatcher.dispatch({ type: "RAIN_SETTING_UPDATED" });
         }
     });
