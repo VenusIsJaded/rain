@@ -1,0 +1,9 @@
+
+> rain@0.9.5 build
+> node scripts/build.mjs
+
+✔ Built bundle (f6be02d) (local) in 299.290ms
+hermesc not found, skipping bytecode compilation
+
+Available paths: dist/rain.js
+Info file written to dist/info.json

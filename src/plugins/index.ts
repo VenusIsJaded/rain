@@ -10,8 +10,8 @@ import * as t from "./types";
 export const pluginInstances = new Map();
 let _setupPromise: Promise<void> | null = null;
 
-const BATCH_SIZE = 10;
-const BATCH_DELAY_MS = 50;
+const BATCH_SIZE = 5;
+const BATCH_DELAY_MS = 32;
 
 interface PluginSettingsStore {
     settings: t.PluginSettingsStorage;
@@ -106,7 +106,6 @@ async function ensureSetup(): Promise<void> {
 }
 
 async function startBatched(ids: string[], method: "start" | "eagerStart"): Promise<void> {
-    await new Promise(r => setTimeout(r, 1500)); // Wait for Discord internals to be ready
 
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
         const batch = ids.slice(i, i + BATCH_SIZE);
