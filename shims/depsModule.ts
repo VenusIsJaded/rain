@@ -1,12 +1,10 @@
 import { findByPropsLazy } from "@metro/wrappers";
 
 module.exports = {
-    "react": findByPropsLazy("createElement"),
-    "react-native": findByPropsLazy("AppRegistry"),
-    "util": findByPropsLazy("inspect", "isNullOrUndefined"),
-    "moment": findByPropsLazy("isMoment"),
-    "chroma-js": findByPropsLazy("brewer"),
-    "lodash": findByPropsLazy("forEachRight"),
-    "react-native-reanimated": findByPropsLazy("useSharedValue", "useAnimatedStyle"),
-    "react-native-image-picker": findByPropsLazy("launchImageLibrary", "launchCamera"),
+  "react": findByPropsLazy("createElement"),
+  "react-native": findByPropsLazy("AppRegistry"),
+  "util": findByPropsLazy("inspect", "isNullOrUndefined"),
+  "moment": findByPropsLazy("isMoment"),
+  "chroma-js": findByPropsLazy("brewer"),
+  "lodash": findByPropsLazy("forEachRight"),
 };
