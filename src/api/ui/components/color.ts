@@ -20,12 +20,12 @@ const baseRawColors = (color?.default?.unsafe_rawColors ?? constants?.Colors) as
 export const rawColors = (color?.default?.unsafe_rawColors ?? constants?.Colors) as Record<string, string>;
 
 const ThemeStore = findByStoreNameLazy("ThemeStore");
-const colorResolver = color.default.meta ??= color.default.internal;
+const colorResolver = color?.default ? (color.default.meta ??= color.default.internal) : null;
 
 export function isSemanticColor(sym: any): boolean {
-    return colorResolver.isSemanticColor(sym);
+    return colorResolver?.isSemanticColor ? colorResolver.isSemanticColor(sym) : false;
 }
 
 export function resolveSemanticColor(sym: any, theme = ThemeStore.theme): string {
-    return colorResolver.resolveSemanticColor(theme, sym);
+    return colorResolver?.resolveSemanticColor ? colorResolver.resolveSemanticColor(theme, sym) : "";
 }

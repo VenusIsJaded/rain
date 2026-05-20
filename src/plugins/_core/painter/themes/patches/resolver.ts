@@ -8,7 +8,7 @@ import { _colorRef } from "../updater";
 const tokenReference = findByProps("SemanticColor");
 const themeTypes = findByProps("ThemeTypes")?.ThemeTypes;
 
-const origRawColor = { ...tokenReference.RawColor };
+const origRawColor = tokenReference?.RawColor ? { ...tokenReference.RawColor } : {};
 let origDarker: string;
 let origLight: string;
 
@@ -44,21 +44,25 @@ export default function patchDefinitionAndResolver() {
         });
     }
 
-    Object.keys(tokenReference.RawColor).forEach(key => {
-        Object.defineProperty(tokenReference.RawColor, key, {
-            configurable: true,
-            enumerable: true,
-            get: () => {
-                const ret = _colorRef.current?.raw[key];
-                if (ret) return ret;
-                return _colorRef.current?.raw[key] || origRawColor[key];
-            }
+    if (tokenReference?.RawColor) {
+        Object.keys(tokenReference.RawColor).forEach(key => {
+            Object.defineProperty(tokenReference.RawColor, key, {
+                configurable: true,
+                enumerable: true,
+                get: () => {
+                    const ret = _colorRef.current?.raw[key];
+                    if (ret) return ret;
+                    return _colorRef.current?.raw[key] || origRawColor[key];
+                }
+            });
         });
-    });
+    }
 
-    const unpatches = [
+    const targetResolver = tokenReference?.default?.meta ?? tokenReference?.default?.internal;
+
+    const unpatches: any[] = [
         before("updateTheme", NativeThemeModule, callback),
-        instead("resolveSemanticColor", tokenReference.default.meta ?? tokenReference.default.internal, (args: any[], orig: any) => {
+        targetResolver && instead("resolveSemanticColor", targetResolver, (args: any[], orig: any) => {
             if (!_colorRef.current) return orig(...args);
             if (args[0] !== _colorRef.key) return orig(...args);
 
@@ -95,13 +99,15 @@ export default function patchDefinitionAndResolver() {
                     configurable: true, writable: true, value: origLight
                 });
             }
-            Object.defineProperty(tokenReference, "RawColor", {
-                configurable: true,
-                writable: true,
-                value: origRawColor
-            });
+            if (tokenReference) {
+                Object.defineProperty(tokenReference, "RawColor", {
+                    configurable: true,
+                    writable: true,
+                    value: origRawColor
+                });
+            }
         }
-    ];
+    ].filter(Boolean);
 
     return () => unpatches.forEach(p => p());
 }
