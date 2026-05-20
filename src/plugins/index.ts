@@ -112,7 +112,7 @@ async function startBatched(ids: string[], method: "start" | "eagerStart"): Prom
         await Promise.allSettled(
             batch.map(id => runPluginLifecycle(id, method))
         );
-        if (i + BATCH_SIZE < ids.length) {
+        if (BATCH_DELAY_MS > 0 && i + BATCH_SIZE < ids.length) {
             await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
         }
     }
