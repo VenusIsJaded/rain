@@ -2,7 +2,7 @@ import { createFilterDefinition } from "./factories";
 import { metroModules } from "./internals/modules";
 
 export const byProps = createFilterDefinition(
-  (props, m) => props.length === 0 ? m[props[0]] : props.every(p => m[p]),
+  (props, m) => props.length === 1 ? m[props[0]] : props.every(p => m[p]),
   props => `rain.metro.byProps(${props.join(",")})`
 );
 

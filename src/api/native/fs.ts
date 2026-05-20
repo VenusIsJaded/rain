@@ -66,7 +66,7 @@ export async function readFile(path: string, options: { prefix?: string, encodin
     try {
         return await NativeFileModule.readFile(`${NativeFileModule.getConstants().DocumentsDirPath}/${finalPrefix}${path}`, encoding);
     } catch (err) {
-        throw new Error(`An error occured while writing to '${path}'`, { cause: err });
+        throw new Error(`An error occurred while reading from '${path}'`, { cause: err });
     }
 }
 

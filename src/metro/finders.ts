@@ -105,7 +105,7 @@ export function findAllModuleId(filter: FilterFn) {
  */
 export function findAllExports(filter: FilterFn) {
   return findAllModule(filter).map(ret => {
-    if (!ret.id) return;
+    if (ret.id == null) return;
 
     const { id, defaultExport } = ret;
     return defaultExport ? requireModule(id).default : requireModule(id);

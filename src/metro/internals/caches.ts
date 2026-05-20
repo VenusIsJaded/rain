@@ -92,7 +92,7 @@ export function getCacherForUniq(uniq: string, allFind: boolean) {
 
     return {
         cacheId(moduleId: number, exports: any) {
-            indexObject[moduleId] ??= extractExportsFlags(exports);
+            indexObject[moduleId] ??= 1;
             saveCache();
         },
         finish(notFound: boolean) {

@@ -35,6 +35,7 @@ let originalConsoleWarn: any;
 let originalLoggerLog: any;
 let originalLoggerError: any;
 let originalLoggerWarn: any;
+let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
 
 const VERSION = 1;
 
@@ -362,6 +363,10 @@ export function getDebugInfo() {
 }
 
 export function hotReloadTheme() {
+    if (hotReloadIntervalId !== undefined) {
+        clearInterval(hotReloadIntervalId);
+        hotReloadIntervalId = undefined;
+    }
     let lastHash: string | null = null;
 
     const hashString = (str: string): string => {
@@ -372,7 +377,7 @@ export function hotReloadTheme() {
         return hash.toString(16);
     };
 
-    setInterval(async () => {
+    hotReloadIntervalId = setInterval(async () => {
         const currentSettings = settings();
         if (!currentSettings.hotReloadThemeUrl) return;
 
