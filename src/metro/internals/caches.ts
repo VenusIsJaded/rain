@@ -4,7 +4,7 @@ import { debounce } from "es-toolkit";
 
 import { ModuleFlags, ModulesMapInternal } from "./enums";
 
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 const RAIN_METRO_CACHE_PATH = "caches/metro_modules.json";
 
 type ModulesMap = {
