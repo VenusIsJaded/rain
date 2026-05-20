@@ -1,8 +1,8 @@
-import { getCacherForUniq } from "./internals/caches";
-import { getModules, requireModule } from "./internals/modules";
-import { FilterFn } from "./types";
+import { getCacherForUniq } from "./internals/caches";                                  
+import { getModules, requireModule } from "./internals/modules";                        
+import { FilterFn } from "./types";         
 
-function filterExports<A extends unknown[]>(
+function filterExports<A extends unknown[]>(    
     moduleExports: any,
     moduleId: number,
     filter: FilterFn<A>,
@@ -18,7 +18,7 @@ function filterExports<A extends unknown[]>(
         };
     }
 
-    if (!filter.raw && filter(moduleExports, moduleId, false)) {
+    if (filter(moduleExports, moduleId, false)) {
         return { exports: moduleExports, defaultExport: false };
     }
 
@@ -105,7 +105,7 @@ export function findAllModuleId<A extends unknown[]>(filter: FilterFn<A>) {
  */
 export function findAllExports<A extends unknown[]>(filter: FilterFn<A>) {
     return findAllModule(filter).map(ret => {
-        if (!ret.id) return;
+        if (ret.id == null) return;
 
         const { id, defaultExport } = ret;
         return defaultExport ? requireModule(id).default : requireModule(id);
