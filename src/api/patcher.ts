@@ -3,7 +3,7 @@ const {
     before: _before,
     instead: _instead
 } = require("sublimation");
-const { patchTargets } = require("@lib/utils/patchTargets");
+const { patchTargets } = require("../lib/utils/patchTargets");
 
 /** @internal */
 export const _patcherDelaySymbol = Symbol.for("rain.api.patcher.delay");
@@ -44,6 +44,11 @@ function create(fn: Function) {
 
             return () => unpatch();
         }
+
+      // Register target to ensure future patches can always access it
+      if (args[1] && typeof args[1] === "object") {
+          patchTargets.add(args[1]);
+      }
 
         return fn.apply(this, args);
     }

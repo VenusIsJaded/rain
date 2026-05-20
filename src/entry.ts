@@ -1,5 +1,5 @@
 import type { Metro } from "@metro/types";
-import { patchTargets } from "@lib/utils/patchTargets";
+import { patchTargets } from "./lib/utils/patchTargets";
 const { instead } = require("sublimation");
 
 // @ts-ignore - window is defined later in the bundle, so we assign it early
