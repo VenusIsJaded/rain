@@ -1,5 +1,4 @@
 import { RNModules } from "./types";
-
 const nmp = window.nativeModuleProxy;
 
 export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
@@ -15,7 +14,7 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
         get(target, prop, receiver) {
             if (prop === "__isRainProxied") return true;
             if (prop in shadow) return shadow[prop];
-            
+
             const value = rawModule[prop];
             if (typeof value === "function") {
                 // Ensure native functions run bound to the correct raw native context
@@ -79,12 +78,23 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
             } catch {}
         }
 
-        if (!rawModule && nmp && nmp[name]) {
-            rawModule = nmp[name];
+        if (!rawModule && nmp) {
+            try {
+                // Wrap nativeModuleProxy access in a safe block to catch C++ bridge errors
+                if (name in nmp) {
+                    rawModule = nmp[name];
+                }
+            } catch (e) {
+                console.warn(`[Raincord] Safeguarded crash on native lookup for: ${name}. Error: ${e}`);
+            }
         }
 
         if (rawModule) {
-            return wrapNativeModule<T>(rawModule);
+            try {
+                return wrapNativeModule<T>(rawModule);
+            } catch (e) {
+                console.error(`[Raincord] Failed to wrap module: ${name}`, e);
+            }
         }
     }
 
