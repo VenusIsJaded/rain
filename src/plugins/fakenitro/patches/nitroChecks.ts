@@ -7,7 +7,7 @@ const { getCurrentUser } = findByStoreName("UserStore");
 
 
 function patchReaction(args: any[], result: any, response: any) {
-    if (args[0]?.intention === 0 && result === null && getCurrentUser?.().premiumType === null) {
+    if (args[0]?.intention === 0 && result === null && getCurrentUser?.()?.premiumType !== 2) {
         const { emoji, guildId, channel } = args[0];
         if (emoji.type === 0) return result; // type 0 is twemoji
         const currentGuildId = guildId ?? channel?.getGuildId?.();
@@ -19,7 +19,7 @@ function patchReaction(args: any[], result: any, response: any) {
 }
 
 function patchNitro(orig: Function, args: any[]) {
-    if (getCurrentUser?.().premiumType !== null)
+    if (getCurrentUser?.()?.premiumType === 2)
         return orig(...args);
     return true;
 }
@@ -40,7 +40,7 @@ export default function getPatches() {
 
         // blocks reactions from the quick selector
         after("isEmojiPremiumLocked", emojiUtils, (args, result) => {
-            patchReaction(args, result, true);
+            return patchReaction(args, result, true);
         }),
 
         // sticker patch credits: https://github.com/aliernfrog/vd-plugins/blob/master/plugins/FreeStickers/src/patches/nitro.ts

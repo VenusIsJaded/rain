@@ -14,13 +14,15 @@ function extractUnusableEmojis(messageString: string, size: number) {
     for (const emojiString of emojiStrings) {
         // Fetch required info about the emoji
         const emoji = getCustomEmojiById(emojiString[2]);
+        if (!emoji) continue;
+
         // Check emoji usability
         if (emoji.guildId !== getGuildId() || emoji.animated) {
             // Remove emote from original msg
             messageString = messageString.replace(emojiString[0], "");
             const url =
-				emoji?.url ??
-				`https://cdn.discordapp.com/emojis/${emoji.id}.webp?size=44&animated=${emoji.animated}`;
+                                emoji?.url ??
+                                `https://cdn.discordapp.com/emojis/${emoji.id}.webp?size=44&animated=${emoji.animated}`;
             const animated = emoji.animated
                 ? `&animated=${emoji.animated}`
                 : "";
