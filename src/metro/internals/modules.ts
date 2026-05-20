@@ -55,6 +55,37 @@ for (let i = 0; i < moduleKeys.length; i++) {
             };
 
             origFunc(...args);
+            
+            // ✅ CRITICAL INTERCEPTION LAYER: Wrap the exports in a non-destructive Proxy
+            if (moduleObject.exports && typeof moduleObject.exports === "object") {
+                if (moduleObject.exports.NativeModules || moduleObject.exports.nativeModuleProxy) {
+                    moduleObject.exports = new Proxy(moduleObject.exports, {
+                        get(target, prop, receiver) {
+                            if (prop === "NativeModules") {
+                                return wrapNativeModuleProxy(target.NativeModules);
+                            }
+                            if (prop === "nativeModuleProxy") {
+                                return wrapNativeModuleProxy(target.nativeModuleProxy);
+                            }
+                            if (prop === "default" && target.default && typeof target.default === "object") {
+                                return new Proxy(target.default, {
+                                    get(t, p, r) {
+                                        if (p === "NativeModules") {
+                                            return wrapNativeModuleProxy(t.NativeModules);
+                                        }
+                                        if (p === "nativeModuleProxy") {
+                                            return wrapNativeModuleProxy(t.nativeModuleProxy);
+                                        }
+                                        return Reflect.get(t, p, r);
+                                    }
+                                });
+                            }
+                            return Reflect.get(target, prop, receiver);
+                        }
+                    });
+                }
+            }
+
             if (!isBadExports(moduleObject.exports)) {
                 onModuleRequire(moduleObject.exports, id);
             } else {
@@ -176,32 +207,6 @@ function isBadExports(exports: any) {
 
 function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
     indexExportsFlags(id, moduleExports);
-
-    // ✅ FIXED: Use Object.defineProperty in a try-catch to bypass read-only getter restrictions
-    if (moduleExports && typeof moduleExports === "object") {
-        try {
-            if (moduleExports.NativeModules && !moduleExports.NativeModules.__isRainProxied) {
-                const proxied = wrapNativeModuleProxy(moduleExports.NativeModules);
-                Object.defineProperty(moduleExports, "NativeModules", {
-                    value: proxied,
-                    configurable: true,
-                    writable: true,
-                    enumerable: true
-                });
-            }
-        } catch {}
-        try {
-            if (moduleExports.nativeModuleProxy && !moduleExports.nativeModuleProxy.__isRainProxied) {
-                const proxied = wrapNativeModuleProxy(moduleExports.nativeModuleProxy);
-                Object.defineProperty(moduleExports, "nativeModuleProxy", {
-                    value: proxied,
-                    configurable: true,
-                    writable: true,
-                    enumerable: true
-                });
-            }
-        } catch {}
-    }
 
     // Temporary fixes
     moduleExports.initSentry &&= () => undefined;

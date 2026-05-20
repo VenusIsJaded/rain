@@ -1,6 +1,6 @@
 import { RNModules } from "./types";
 
-function wrapIndividualNativeModule(rawModule: any) {
+export function wrapIndividualNativeModule(rawModule: any) {
     if (!rawModule || rawModule.__isRainProxied) return rawModule;
     
     const shadow: Record<string | symbol, any> = {};
@@ -50,7 +50,7 @@ function wrapIndividualNativeModule(rawModule: any) {
     });
 }
 
-function wrapNativeModuleProxy(originalNMP: any) {
+export function wrapNativeModuleProxy(originalNMP: any) {
     if (!originalNMP || originalNMP.__isRainProxied) return originalNMP;
     
     const nmpShadow: Record<string | symbol, any> = {};
@@ -82,20 +82,7 @@ function wrapNativeModuleProxy(originalNMP: any) {
     });
 }
 
-// Safely patch window.nativeModuleProxy using defineProperty
-try {
-    if (window.nativeModuleProxy && !(window.nativeModuleProxy as any).__isRainProxied) {
-        const proxied = wrapNativeModuleProxy(window.nativeModuleProxy);
-        Object.defineProperty(window, "nativeModuleProxy", {
-            value: proxied,
-            configurable: true,
-            writable: true,
-            enumerable: true
-        });
-    }
-} catch {}
-
-const nmp = window.nativeModuleProxy;
+const nmp = wrapNativeModuleProxy(window.nativeModuleProxy);
 
 export function getNativeModule<T = any>(...names: string[]): T | undefined {
     for (const name of names) {
