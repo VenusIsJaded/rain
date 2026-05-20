@@ -2,38 +2,32 @@ import { createFilterDefinition } from "./factories";
 import { metroModules } from "./internals/modules";
 
 export const byProps = createFilterDefinition(
-  (props, m) => {
-    if (!m || typeof m !== "object") return false;
-    for (let i = 0; i < props.length; i++) {
-      if (!(props[i] in m)) return false;
-    }
-    return true;
-  },
+  (props, m) => props.length === 0 ? m[props[0]] : props.every(p => m[p]),
   props => `rain.metro.byProps(${props.join(",")})`
 );
 
 export const byName = createFilterDefinition<[string]>(
-  ([name], m) => m?.name === name,
+  ([name], m) => m.name === name,
   name => `rain.metro.byName(${name})`
 );
 
 export const byDisplayName = createFilterDefinition<[string]>(
-  ([displayName], m) => m?.displayName === displayName,
+  ([displayName], m) => m.displayName === displayName,
   name => `rain.metro.byDisplayName(${name})`
 );
 
 export const byTypeName = createFilterDefinition<[string]>(
-  ([typeName], m) => m?.type?.name === typeName,
+  ([typeName], m) => m.type?.name === typeName,
   name => `rain.metro.byTypeName(${name})`
 );
 
 export const byStoreName = createFilterDefinition<[string]>(
-  ([name], m) => m?.getName?.length === 0 && m.getName() === name,
+  ([name], m) => m.getName?.length === 0 && m.getName() === name,
   name => `rain.metro.byStoreName(${name})`
 );
 
 export const byTypeDisplayName = createFilterDefinition<[string]>(
-  ([displayName], m) => m?.type?.displayName === displayName,
+  ([displayName], m) => m.type?.displayName === displayName,
   name => `rain.metro.byTypeDisplayName(${name})`
 );
 
