@@ -74,9 +74,10 @@ function blacklistModule(id: number) {
 
 function isBadExports(exports: any) {
     if (exports === null || exports === undefined || exports === window) return true;
-    
+
     const type = typeof exports;
-    if (type !== "object" && type !== "function") return true;
+    // Primitive non-object exports (like asset numbers) are perfectly valid!
+    if (type !== "object") return false;
 
     try {
         if (exports[BAD_EXPORTS_CHECK_STRING] === null) return true;
