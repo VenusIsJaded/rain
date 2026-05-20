@@ -82,7 +82,20 @@ function wrapNativeModuleProxy(originalNMP: any) {
     });
 }
 
-const nmp = wrapNativeModuleProxy(window.nativeModuleProxy);
+// Safely patch window.nativeModuleProxy using defineProperty
+try {
+    if (window.nativeModuleProxy && !(window.nativeModuleProxy as any).__isRainProxied) {
+        const proxied = wrapNativeModuleProxy(window.nativeModuleProxy);
+        Object.defineProperty(window, "nativeModuleProxy", {
+            value: proxied,
+            configurable: true,
+            writable: true,
+            enumerable: true
+        });
+    }
+} catch {}
+
+const nmp = window.nativeModuleProxy;
 
 export function getNativeModule<T = any>(...names: string[]): T | undefined {
     for (const name of names) {

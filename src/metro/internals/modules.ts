@@ -72,6 +72,89 @@ function blacklistModule(id: number) {
     indexBlacklistFlag(id);
 }
 
+// Global wrap helpers
+function wrapIndividualNativeModule(rawModule: any) {
+    if (!rawModule || rawModule.__isRainProxied) return rawModule;
+    
+    const shadow: Record<string | symbol, any> = {};
+    return new Proxy(rawModule, {
+        get(target, prop, receiver) {
+            if (prop === "__isRainProxied") return true;
+            if (prop in shadow) return shadow[prop];
+            const value = Reflect.get(target, prop, receiver);
+            if (typeof value === "function") {
+                return value.bind(target);
+            }
+            return value;
+        },
+        set(target, prop, value) {
+            shadow[prop] = value;
+            return true;
+        },
+        defineProperty(target, prop, descriptor) {
+            Object.defineProperty(shadow, prop, descriptor);
+            return true;
+        },
+        deleteProperty(target, prop) {
+            delete shadow[prop];
+            return true;
+        },
+        has(target, prop) {
+            return prop in shadow || Reflect.has(target, prop);
+        },
+        ownKeys(target) {
+            return Array.from(new Set([...Reflect.ownKeys(target), ...Reflect.ownKeys(shadow)]));
+        },
+        getOwnPropertyDescriptor(target, prop) {
+            if (prop in shadow) {
+                return { configurable: true, enumerable: true, writable: true, value: shadow[prop] };
+            }
+            try {
+                if (typeof target[prop] === "function") {
+                    return { configurable: true, enumerable: true, writable: true, value: target[prop] };
+                }
+                const desc = Reflect.getOwnPropertyDescriptor(target, prop);
+                if (desc) {
+                    return { ...desc, configurable: true };
+                }
+            } catch {}
+            return undefined;
+        }
+    });
+}
+
+function wrapNativeModuleProxy(originalNMP: any) {
+    if (!originalNMP || originalNMP.__isRainProxied) return originalNMP;
+    
+    const nmpShadow: Record<string | symbol, any> = {};
+    return new Proxy(originalNMP, {
+        get(target, prop, receiver) {
+            if (prop === "__isRainProxied") return true;
+            if (prop in nmpShadow) return nmpShadow[prop];
+            const value = Reflect.get(target, prop, receiver);
+            if (value && typeof value === "object") {
+                return wrapIndividualNativeModule(value);
+            }
+            return value;
+        },
+        set(target, prop, value) {
+            nmpShadow[prop] = value;
+            return true;
+        },
+        defineProperty(target, prop, descriptor) {
+            Object.defineProperty(nmpShadow, prop, descriptor);
+            return true;
+        },
+        deleteProperty(target, prop) {
+            delete nmpShadow[prop];
+            return true;
+        },
+        has(target, prop) {
+            return prop in nmpShadow || Reflect.has(target, prop);
+        }
+    });
+}
+
 function isBadExports(exports: any) {
     if (exports === null || exports === undefined || exports === window) return true;
 
@@ -94,14 +177,30 @@ function isBadExports(exports: any) {
 function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
     indexExportsFlags(id, moduleExports);
 
-    // Dynamic Interception Layer: Hook NativeModules as they exit Metro imports
+    // ✅ FIXED: Use Object.defineProperty in a try-catch to bypass read-only getter restrictions
     if (moduleExports && typeof moduleExports === "object") {
-        if (moduleExports.NativeModules && !moduleExports.NativeModules.__isRainProxied) {
-            moduleExports.NativeModules = wrapNativeModuleProxy(moduleExports.NativeModules);
-        }
-        if (moduleExports.nativeModuleProxy && !moduleExports.nativeModuleProxy.__isRainProxied) {
-            moduleExports.nativeModuleProxy = wrapNativeModuleProxy(moduleExports.nativeModuleProxy);
-        }
+        try {
+            if (moduleExports.NativeModules && !moduleExports.NativeModules.__isRainProxied) {
+                const proxied = wrapNativeModuleProxy(moduleExports.NativeModules);
+                Object.defineProperty(moduleExports, "NativeModules", {
+                    value: proxied,
+                    configurable: true,
+                    writable: true,
+                    enumerable: true
+                });
+            }
+        } catch {}
+        try {
+            if (moduleExports.nativeModuleProxy && !moduleExports.nativeModuleProxy.__isRainProxied) {
+                const proxied = wrapNativeModuleProxy(moduleExports.nativeModuleProxy);
+                Object.defineProperty(moduleExports, "nativeModuleProxy", {
+                    value: proxied,
+                    configurable: true,
+                    writable: true,
+                    enumerable: true
+                });
+            }
+        } catch {}
     }
 
     // Temporary fixes
@@ -366,87 +465,5 @@ export function waitForModule<T = any>(
 ): Promise<T> {
     return new Promise(resolve => {
         waitFor(filter, exports => resolve(exports), options);
-    });
-}
-
-function wrapIndividualNativeModule(rawModule: any) {
-    if (!rawModule || rawModule.__isRainProxied) return rawModule;
-    
-    const shadow: Record<string | symbol, any> = {};
-    return new Proxy(rawModule, {
-        get(target, prop, receiver) {
-            if (prop === "__isRainProxied") return true;
-            if (prop in shadow) return shadow[prop];
-            const value = Reflect.get(target, prop, receiver);
-            if (typeof value === "function") {
-                return value.bind(target);
-            }
-            return value;
-        },
-        set(target, prop, value) {
-            shadow[prop] = value;
-            return true;
-        },
-        defineProperty(target, prop, descriptor) {
-            Object.defineProperty(shadow, prop, descriptor);
-            return true;
-        },
-        deleteProperty(target, prop) {
-            delete shadow[prop];
-            return true;
-        },
-        has(target, prop) {
-            return prop in shadow || Reflect.has(target, prop);
-        },
-        ownKeys(target) {
-            return Array.from(new Set([...Reflect.ownKeys(target), ...Reflect.ownKeys(shadow)]));
-        },
-        getOwnPropertyDescriptor(target, prop) {
-            if (prop in shadow) {
-                return { configurable: true, enumerable: true, writable: true, value: shadow[prop] };
-            }
-            try {
-                if (typeof target[prop] === "function") {
-                    return { configurable: true, enumerable: true, writable: true, value: target[prop] };
-                }
-                const desc = Reflect.getOwnPropertyDescriptor(target, prop);
-                if (desc) {
-                    return { ...desc, configurable: true };
-                }
-            } catch {}
-            return undefined;
-        }
-    });
-}
-
-function wrapNativeModuleProxy(originalNMP: any) {
-    if (!originalNMP || originalNMP.__isRainProxied) return originalNMP;
-    
-    const nmpShadow: Record<string | symbol, any> = {};
-    return new Proxy(originalNMP, {
-        get(target, prop, receiver) {
-            if (prop === "__isRainProxied") return true;
-            if (prop in nmpShadow) return nmpShadow[prop];
-            const value = Reflect.get(target, prop, receiver);
-            if (value && typeof value === "object") {
-                return wrapIndividualNativeModule(value);
-            }
-            return value;
-        },
-        set(target, prop, value) {
-            nmpShadow[prop] = value;
-            return true;
-        },
-        defineProperty(target, prop, descriptor) {
-            Object.defineProperty(nmpShadow, prop, descriptor);
-            return true;
-        },
-        deleteProperty(target, prop) {
-            delete nmpShadow[prop];
-            return true;
-        },
-        has(target, prop) {
-            return prop in nmpShadow || Reflect.has(target, prop);
-        }
     });
 }
