@@ -2,7 +2,6 @@ import { getMetroCache, indexBlacklistFlag, indexExportsFlags } from "@metro/int
 import { Metro } from "@metro/types";
 
 import { ModuleFlags, ModulesMapInternal } from "./enums";
-
 const { before, instead } = require("sublimation");
 
 export const metroModules: Metro.ModuleList = window.modules;
@@ -20,10 +19,11 @@ let _importingModuleId: number = -1;
 
 const BAD_EXPORTS_CHECK_STRING = "<!@ this string is very bad! @>";
 
-const moduleKeys = Object.keys(metroModules);
+// Pre-map keys to numbers once to eliminate massive parsing overhead in hot loops
+export const moduleKeys = Object.keys(metroModules).map(Number);
 
-for (const key of moduleKeys) {
-    const id = Number(key);
+for (let i = 0; i < moduleKeys.length; i++) {
+    const id = moduleKeys[i];
     const metroModule = metroModules[id];
 
     const cache = getMetroCache().flagsIndex[id];
@@ -69,21 +69,26 @@ for (const key of moduleKeys) {
 function blacklistModule(id: number) {
     Object.defineProperty(metroModules, id, { enumerable: false });
     blacklistedIds.add(id);
-    indexBlacklistFlag(Number(id));
+    indexBlacklistFlag(id);
 }
 
 function isBadExports(exports: any) {
-    if (!exports) return true;
+    if (exports === null || exports === undefined || exports === window) return true;
+    
+    const type = typeof exports;
+    if (type !== "object" && type !== "function") return true;
 
-    if (exports === window) return true;
+    try {
+        if (exports[BAD_EXPORTS_CHECK_STRING] === null) return true;
 
-    if (exports[BAD_EXPORTS_CHECK_STRING] === null) return true;
+        if (Object.getPrototypeOf(exports) === Object.prototype) {
+            if (Reflect.ownKeys(exports).length === 0) return true;
+        }
 
-    if (exports.__proto__ === Object.prototype) {
-        if (Reflect.ownKeys(exports).length === 0) return true;
-    }
+        if (exports.default?.[Symbol.toStringTag] === "IntlMessagesProxy") return true;
+    } catch {}
 
-    return exports.default?.[Symbol.toStringTag] === "IntlMessagesProxy";
+    return false;
 }
 
 function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
@@ -148,10 +153,10 @@ function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
         });
     }
 
-    const subs = moduleSubscriptions.get(Number(id));
+    const subs = moduleSubscriptions.get(id);
     if (subs) {
         subs.forEach(s => s());
-        moduleSubscriptions.delete(Number(id));
+        moduleSubscriptions.delete(id);
     }
 }
 
@@ -173,7 +178,7 @@ export function requireModule(id: Metro.ModuleID) {
 
     if (!metroModules[0]?.isInitialized) metroRequire(0);
 
-    if (Number(id) === -1) return require("@metro/polyfills/redesign");
+    if (id === -1) return require("@metro/polyfills/redesign");
 
     const module = metroModules[id];
     if (module?.isInitialized && !module.hasError) {
@@ -210,14 +215,15 @@ export function* getModules(uniq: string, all = false) {
             if (id[0] === "_") continue;
             const exports = requireModule(Number(id));
             if (isBadExports(exports)) continue;
-            yield [id, exports];
+            yield [Number(id), exports];
         }
     }
 
-    for (const id of moduleKeys) {
+    for (let i = 0; i < moduleKeys.length; i++) {
+        const id = moduleKeys[i];
         if (useCache && cache![id]) continue;
 
-        const exports = requireModule(Number(id));
+        const exports = requireModule(id);
         if (isBadExports(exports)) continue;
         yield [id, exports];
     }
@@ -233,14 +239,15 @@ export function* getCachedPolyfillModules(name: string) {
         if (id[0] === "_") continue;
         const exports = requireModule(Number(id));
         if (isBadExports(exports)) continue;
-        yield [id, exports];
+        yield [Number(id), exports];
     }
 
     if (!fullLookup) {
-        for (const id of moduleKeys) {
+        for (let i = 0; i < moduleKeys.length; i++) {
+            const id = moduleKeys[i];
             if (cache[id]) continue;
 
-            const exports = requireModule(Number(id));
+            const exports = requireModule(id);
             if (isBadExports(exports)) continue;
             yield [id, exports];
         }
@@ -318,22 +325,22 @@ export function waitFor<T = any>(
     }
 
     if (isActive) {
-        for (const id of moduleKeys) {
+        for (let i = 0; i < moduleKeys.length; i++) {
             if (!isActive) break;
-            const numId = Number(id);
+            const id = moduleKeys[i];
 
-            if (metroModules[numId]?.isInitialized && !metroModules[numId]?.hasError) {
-                if (checkModule(numId)) return cleanup;
+            if (metroModules[id]?.isInitialized && !metroModules[id]?.hasError) {
+                if (checkModule(id)) return cleanup;
             }
         }
     }
 
     if (isActive) {
-        for (const id of moduleKeys) {
-            const numId = Number(id);
-            if (!metroModules[numId]?.isInitialized) {
-                const unsub = subscribeModule(numId, () => {
-                    checkModule(numId);
+        for (let i = 0; i < moduleKeys.length; i++) {
+            const id = moduleKeys[i];
+            if (!metroModules[id]?.isInitialized) {
+                const unsub = subscribeModule(id, () => {
+                    checkModule(id);
                 });
                 unsubscribers.push(unsub);
             }
