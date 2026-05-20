@@ -6,18 +6,20 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
     if (!rawModule) return undefined;
     if (rawModule.__isRainProxied) return rawModule;
 
-    // Safe shadow object to store patches and intercepted modifications
+    // Local safe storage for patches and modifications
     const shadow: Record<string | symbol, any> = {};
 
-    return new Proxy(rawModule, {
+    // Using an empty object {} as the Proxy target eliminates JSI C++ proxy invariants,
+    // allowing sublimation to perform writes/defineProperties with 100% safety.
+    return new Proxy({}, {
         get(target, prop, receiver) {
             if (prop === "__isRainProxied") return true;
             if (prop in shadow) return shadow[prop];
             
-            const value = Reflect.get(target, prop, receiver);
+            const value = rawModule[prop];
             if (typeof value === "function") {
-                // Bind original C++ native functions to keep context intact
-                return value.bind(target);
+                // Ensure native functions run bound to the correct raw native context
+                return value.bind(rawModule);
             }
             return value;
         },
@@ -26,7 +28,7 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
             return true;
         },
         defineProperty(target, prop, descriptor) {
-            // Divert defineProperty writes away from JSI C++ objects to JS shadow memory
+            // Intercept defineProperty writes completely away from JSI C++ memory
             Object.defineProperty(shadow, prop, descriptor);
             return true;
         },
@@ -35,11 +37,11 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
             return true;
         },
         has(target, prop) {
-            return prop in shadow || Reflect.has(target, prop);
+            return prop in shadow || prop in rawModule;
         },
         ownKeys(target) {
             return Array.from(new Set([
-                ...Reflect.ownKeys(target),
+                ...Reflect.ownKeys(rawModule),
                 ...Reflect.ownKeys(shadow)
             ]));
         },
@@ -48,22 +50,18 @@ export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
                 return Object.getOwnPropertyDescriptor(shadow, prop);
             }
             try {
-                const desc = Reflect.getOwnPropertyDescriptor(target, prop);
-                if (desc) {
-                    return {
-                        ...desc,
-                        configurable: true,
-                        writable: true
-                    };
-                }
-                // Synthesize a descriptor for dynamic JSI functions so sublimation doesn't complain
-                if (typeof target[prop] === "function") {
+                // Synthesize a clean, configurable descriptor for the patcher
+                if (typeof rawModule[prop] === "function") {
                     return {
                         configurable: true,
                         enumerable: true,
                         writable: true,
-                        value: target[prop].bind(target)
+                        value: rawModule[prop].bind(rawModule)
                     };
+                }
+                const desc = Object.getOwnPropertyDescriptor(rawModule, prop);
+                if (desc) {
+                    return { ...desc, configurable: true, writable: true };
                 }
             } catch {}
             return undefined;

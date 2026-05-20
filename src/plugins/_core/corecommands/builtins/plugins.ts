@@ -3,8 +3,7 @@ import { messageUtil } from "@metro/common";
 import { pluginInstances } from "@plugins";
 import unifyRainPlugin from "@rain/pages/Plugins/models/rain";
 
-// todo: i18n
-export default () => <ApplicationCommand>{
+export default () => ({
     name: "plugins",
     description: "Send your plugin info to the current channel",
     execute([ephemeral], ctx) {
@@ -29,4 +28,4 @@ export default () => <ApplicationCommand>{
             messageUtil.sendMessage(ctx.channel.id, { content }, void 0, { nonce:fixNonce });
         }
     }
-};
+} as ApplicationCommand);

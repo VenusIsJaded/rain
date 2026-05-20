@@ -27,6 +27,12 @@ export function patchCommands() {
 }
 
 export function registerCommand(command: RainApplicationCommand): () => void {
+    // Safety check to prevent client registration crashes on malformed/unresolved imports
+    if (!command) {
+        logger.error("Failed to register command: command is null or undefined");
+        return () => {};
+    }
+
     // Get built in commands
     let builtInCommands: ApplicationCommand[];
     try {

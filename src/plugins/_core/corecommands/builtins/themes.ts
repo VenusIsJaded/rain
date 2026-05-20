@@ -13,7 +13,7 @@ const addonAuthors = (authors: any): string => {
         .join("; ") || "Unknown";
 };
 
-export default (): ApplicationCommand => <ApplicationCommand>{
+export default () => ({
     name: "themes",
     description: "Send your theme list to the current channel",
     options: [],
@@ -58,4 +58,4 @@ export default (): ApplicationCommand => <ApplicationCommand>{
             messageUtil.sendMessage(ctx.channel.id, { content }, void 0, { nonce: fixNonce });
         }
     }
-};
+} as ApplicationCommand);

@@ -2,8 +2,7 @@ import { ApplicationCommand } from "@api/commands/types";
 import { getDebugInfo } from "@api/debug";
 import { messageUtil } from "@metro/common";
 
-// todo: i18n
-export default () => <ApplicationCommand>{
+export default () => ({
     name: "debug",
     description: "Send debug info about rain to the current channel",
     execute([ephemeral], ctx) {
@@ -25,4 +24,4 @@ export default () => <ApplicationCommand>{
             messageUtil.sendMessage(ctx.channel.id, { content }, void 0, { nonce:fixNonce });
         }
     }
-};
+} as ApplicationCommand);
