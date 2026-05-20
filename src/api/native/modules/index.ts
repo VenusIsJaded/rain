@@ -9,7 +9,7 @@ function wrapNativeModule<T = any>(rawModule: any): T | undefined {
     const keys = new Set<string | symbol>();
     let current = rawModule;
     
-    // Gather all properties/methods from the raw C++ JSI object prototype chain
+    // Gather all properties and methods from the raw C++ JSI object prototype chain
     while (current && current !== Object.prototype) {
         Reflect.ownKeys(current).forEach(k => keys.add(k));
         current = Object.getPrototypeOf(current);
@@ -21,12 +21,10 @@ function wrapNativeModule<T = any>(rawModule: any): T | undefined {
         try {
             const value = rawModule[key];
             if (typeof value === "function") {
-                // Copy method as a plain, fully writable JS function
-                wrapper[key] = function (this: any, ...args: any[]) {
-                    return value.apply(rawModule, args);
-                };
+                // Safely copy the native method as a plain, writable JS function bound to original context
+                wrapper[key] = value.bind(rawModule);
             } else {
-                // Forward properties and constants dynamically
+                // Set up dynamically forwarding getters/setters for raw constants
                 Object.defineProperty(wrapper, key, {
                     get: () => rawModule[key],
                     set: (v) => {
@@ -59,7 +57,7 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
         }
 
         if (rawModule) {
-            // Return our clean, safe writable JS clone instead of the locked JSI HostObject
+            // Return our clean, writable JS clone instead of the locked JSI HostObject
             return wrapNativeModule<T>(rawModule);
         }
     }
