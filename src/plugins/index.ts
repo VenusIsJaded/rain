@@ -115,6 +115,10 @@ function ensureSetup(): Promise<void> {
 
         for (const [id, plugin] of Object.entries(rainPlugins)) {
             const instance = plugin as t.rainPlugin;
+            if (!instance) {
+                logger.warn(`[plugins] Skipped loading null/empty plugin matching ID: "${id}"`);
+                continue;
+            }
             instance.id = id;
 
             pluginInstances.set(id, instance);
