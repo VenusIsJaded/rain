@@ -1,7 +1,7 @@
 import { after } from "@api/patcher";
 import { findByPropsLazy } from "@metro";
 
-type Callback = (Component: any, ret: JSX.Element) => JSX.Element;
+type Callback = (Component: any, ret: any) => any;
 const callbacks = new Map<string, Callback[]>();
 
 const jsxRuntime = findByPropsLazy("jsx", "jsxs");
@@ -22,7 +22,7 @@ export function deleteJsxCreate(Component: string, callback: Callback) {
  * @internal
  */
 export function patchJsx() {
-    const callback = ([Component]: unknown[], ret: JSX.Element) => {
+    const callback = ([Component]: unknown[], ret: any) => {
         if (!ret) return ret;
 
         // Band-aid fix for iOS invalid element type crashes

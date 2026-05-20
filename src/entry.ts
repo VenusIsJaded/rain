@@ -1,30 +1,29 @@
 import type { Metro } from "@metro/types";
 import { patchTargets } from "@lib/utils/patchTargets";
-const { instead } = require("sublimation");
-
+const { instead } = require("sublimation"); 
 // @ts-ignore - window is defined later in the bundle, so we assign it early
 globalThis.window = globalThis;
 
 async function initializeRain() {
     try {
         // Make 'freeze' and 'seal' do nothing
-        // // Hybrid freeze bypass — protects React element performance while allowing plugins to patch
-    const _origFreeze = Object.freeze;
-    const _origSeal = Object.seal;
-    (Object as any).freeze = function<T extends object>(obj: T): T {
-        if (patchTargets.has(obj)) return obj;
-        if (obj && (obj as any).$$typeof) {
-            return _origFreeze.call(Object, obj);
-        }
-        return obj;
-    };
-    (Object as any).seal = function<T extends object>(obj: T): T {
-        if (patchTargets.has(obj)) return obj;
-        if (obj && (obj as any).$$typeof) {
-            return _origSeal.call(Object, obj);
-        }
-        return obj;
-    };Object; // Disabled: breaks V8 hidden classes & Hermes optimizations
+        // Hybrid freeze bypass — protects React element performance while allowing plugins to patch
+        const _origFreeze = Object.freeze;
+        const _origSeal = Object.seal;
+        (Object as any).freeze = function<T extends object>(obj: T): T {
+            if (patchTargets.has(obj)) return obj;
+            if (obj && (obj as any).$$typeof) {
+                return _origFreeze.call(Object, obj) as any;
+            }
+            return obj;
+        };
+        (Object as any).seal = function<T extends object>(obj: T): T {
+            if (patchTargets.has(obj)) return obj;
+            if (obj && (obj as any).$$typeof) {
+                return _origSeal.call(Object, obj) as any;
+            }
+            return obj;
+        };
 
         await require("@metro/internals/caches").initMetroCache();
         await require(".").default();

@@ -1,12 +1,12 @@
 import { isPyonLoader, isRainLoader } from "./loader";
 import { NativeFileModule } from "./modules";
 
-let prefix = "rain/";
+let defaultPrefix = "rain/";
 
 if (isRainLoader()) {
-    prefix = "rain/";
+    defaultPrefix = "rain/";
 } else if (isPyonLoader()) {
-    prefix = "pyoncord/";
+    defaultPrefix = "pyoncord/";
 }
 
 /**
@@ -15,7 +15,7 @@ if (isRainLoader()) {
  */
 export async function clearFolder(path: string = "") {
     if (typeof NativeFileModule.clearFolder !== "function") throw new Error("'fs.clearFolder' is not supported");
-    return void await NativeFileModule.clearFolder("documents", `${prefix}${path}`);
+    return void await NativeFileModule.clearFolder("documents", `${defaultPrefix}${path}`);
 }
 
 /**
@@ -24,7 +24,7 @@ export async function clearFolder(path: string = "") {
  */
 export async function removeFile(path: string = "") {
     if (typeof NativeFileModule.removeFile !== "function") throw new Error("'fs.removeFile' is not supported");
-    return void await NativeFileModule.removeFile("documents", `${prefix}${path}`);
+    return void await NativeFileModule.removeFile("documents", `${defaultPrefix}${path}`);
 }
 
 /**
@@ -33,15 +33,16 @@ export async function removeFile(path: string = "") {
  */
 export async function removeCacheFile(path: string = "") {
     if (typeof NativeFileModule.removeFile !== "function") throw new Error("'fs.removeFile' is not supported");
-    return void await NativeFileModule.removeFile("cache", `${prefix}${path}`);
+    return void await NativeFileModule.removeFile("cache", `${defaultPrefix}${path}`);
 }
 
 /**
  * Check if the file or directory given by the path exists
  * @param path Path to the file
  */
-export async function fileExists(path: string = "") {
-    return await NativeFileModule.fileExists(`${NativeFileModule.getConstants().DocumentsDirPath}/${prefix}${path}`);
+export async function fileExists(path: string = "", options?: { prefix?: string }) {
+    const finalPrefix = options?.prefix ?? defaultPrefix;
+    return await NativeFileModule.fileExists(`${NativeFileModule.getConstants().DocumentsDirPath}/${finalPrefix}${path}`);
 }
 
 /**
@@ -51,7 +52,7 @@ export async function fileExists(path: string = "") {
  */
 export async function writeFile(path: string, data: string): Promise<void> {
     if (typeof data !== "string") throw new Error("Argument 'data' must be a string");
-    return void await NativeFileModule.writeFile("documents", `${prefix}${path}`, data, "utf8");
+    return void await NativeFileModule.writeFile("documents", `${defaultPrefix}${path}`, data, "utf8");
 }
 
 /**
@@ -59,9 +60,11 @@ export async function writeFile(path: string, data: string): Promise<void> {
  * @param path Path to the file
  * @param fallback Fallback data to return if the file doesn't exist, and will be written to the file
  */
-export async function readFile(path: string, { encoding = "utf8" }: { prefix?: string, encoding?: "utf8" | "base64" } = {}): Promise<string> {
+export async function readFile(path: string, options: { prefix?: string, encoding?: "utf8" | "base64" } = {}): Promise<string> {
+    const { encoding = "utf8", prefix: customPrefix } = options;
+    const finalPrefix = customPrefix ?? defaultPrefix;
     try {
-        return await NativeFileModule.readFile(`${NativeFileModule.getConstants().DocumentsDirPath}/${prefix}${path}`, encoding);
+        return await NativeFileModule.readFile(`${NativeFileModule.getConstants().DocumentsDirPath}/${finalPrefix}${path}`, encoding);
     } catch (err) {
         throw new Error(`An error occured while writing to '${path}'`, { cause: err });
     }
@@ -81,5 +84,5 @@ export async function downloadFile(url: string, path: string) {
     const arrayBuffer = await response.arrayBuffer();
     const data = Buffer.from(arrayBuffer).toString("base64");
 
-    await NativeFileModule.writeFile("documents", `${prefix}${path}`, data, "base64");
+    await NativeFileModule.writeFile("documents", `${defaultPrefix}${path}`, data, "base64");
 }
