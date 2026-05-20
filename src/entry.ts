@@ -130,5 +130,4 @@ if (typeof window.__r === "undefined") {
         }
     });
 } else {
-    initializeRain();
-}
+    initializeRconfigurableable
