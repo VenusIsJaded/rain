@@ -7,4 +7,6 @@ module.exports = {
     "moment": findByPropsLazy("isMoment"),
     "chroma-js": findByPropsLazy("brewer"),
     "lodash": findByPropsLazy("forEachRight"),
+    "react-native-reanimated": findByPropsLazy("useSharedValue", "useAnimatedStyle"),
+    "react-native-image-picker": findByPropsLazy("launchImageLibrary", "launchCamera"),
 };

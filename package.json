@@ -22,9 +22,9 @@
     "@semantic-release/git": "^10.0.1",
     "@swc/core": "^1.15.21",
     "@swc/helpers": "^0.5.19",
-    "@types/node": "^25.5.0",
     "@types/chroma-js": "~3.1.2",
     "@types/lodash": "~4.17.24",
+    "@types/node": "^25.5.0",
     "@types/react": "19.2.14",
     "@types/yargs-parser": "^21.0.3",
     "@typescript-eslint/typescript-estree": "^8.57.1",
@@ -39,9 +39,9 @@
     "globals": "^17.4.0",
     "hermes-compiler": "0.16.0",
     "semantic-release": "^25.0.3",
+    "type-fest": "^5.5.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1",
-    "type-fest": "^5.5.0",
     "yargs-parser": "^22.0.0"
   },
   "dependencies": {
@@ -62,5 +62,8 @@
     "@swc/core",
     "electron",
     "esbuild"
-  ]
+  ],
+  "optionalDependencies": {
+    "@swc/core-android-arm64": "^1.3.11"
+  }
 }
