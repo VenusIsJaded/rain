@@ -2,12 +2,10 @@ import { useSettings } from "@api/settings";
 import { createFileStorage, waitForHydration } from "@api/storage";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { JSX } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import * as t from "./types";
-
 export const pluginInstances = new Map<string, t.rainPlugin>();
 let _setupPromise: Promise<void> | null = null;
 
@@ -172,6 +170,6 @@ export function definePlugin(instance: t.rainPlugin): t.rainPlugin {
     return instance;
 }
 
-export function getPluginSettingsComponent(id: string): (() => JSX.Element) | null {
+export function getPluginSettingsComponent(id: string): (() => any) | null {
     return pluginInstances.get(id)?.settings || null;
 }
