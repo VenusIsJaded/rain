@@ -7,8 +7,18 @@ globalThis.window = globalThis;
 
 async function initializeRain() {
     try {
-        // Make 'freeze' and 'seal' do nothing
-        // Object.freeze = Object.seal = Object; // Disabled: breaks V8 hidden classes & Hermes optimizations
+        const originalFreeze = Object.freeze;
+        const originalSeal = Object.seal;
+
+        Object.freeze = function freeze<T>(obj: T): T {
+            if (patchTargets.has(obj as any)) return obj;
+            return originalFreeze(obj);
+        } as any;
+
+        Object.seal = function seal<T>(obj: T): T {
+            if (patchTargets.has(obj as any)) return obj;
+            return originalSeal(obj);
+        } as any;
 
         await require("@metro/internals/caches").initMetroCache();
         await require(".").default();
@@ -18,10 +28,8 @@ async function initializeRain() {
 }
 
 if (typeof window.__r === "undefined") {
-    // Used for storing the current require function for the global.__r getter defined below
     let _requireFunc: any;
 
-    // Calls from the native side are deferred until the index.ts(x) is loaded
     interface DeferredQueue {
         object: any;
         method: string;
@@ -45,37 +53,26 @@ if (typeof window.__r === "undefined") {
                 deferredCalls.push(queue);
                 return returnWith ? returnWith(queue) : undefined;
             }
-
-            // If the condition is not met, we execute the original method immediately
             return original.apply(this, args);
         });
-
         unpatches.add(restore);
     };
 
     const resumeDeferred = () => {
         for (const queue of deferredCalls) {
             const { object, method, args, resume } = queue;
-
-            if (resume) {
-                resume(queue);
-            } else {
-                object[method](...args);
-            }
+            if (resume) resume(queue);
+            else object[method](...args);
         }
-
         deferredCalls.length = 0;
     };
 
     const onceIndexRequired = (originalRequire: Metro.RequireFn) => {
-        // We hold calls from the native side
         if (window.__fbBatchedBridge) {
             const batchedBridge = window.__fbBatchedBridge;
             deferMethodExecution(
                 batchedBridge,
                 "callFunctionReturnFlushedQueue",
-                // If the call is to AppRegistry, we want to defer it because it is not yet registered (we delay it)
-                // Same goes to the non-callable modules, which are not registered yet, so we ensure that only registered ones can get through
                 (...args) => args[0] === "AppRegistry" || !batchedBridge.getCallableModule(args[0]),
                 ({ args }) => {
                     if (batchedBridge.getCallableModule(args[0])) {
@@ -86,24 +83,19 @@ if (typeof window.__r === "undefined") {
             );
         }
 
-        // Introduced since RN New Architecture
         if (window.RN$AppRegistry) {
             deferMethodExecution(window.RN$AppRegistry, "runApplication");
         }
 
         const startDiscord = async () => {
             await initializeRain();
-
             unpatches.forEach(fn => fn());
             unpatches.clear();
-
             originalRequire(0);
             resumeDeferred();
-
             const { initPlugins } = require(".");
             setTimeout(() => initPlugins(), 0);
         };
-
         startDiscord();
     };
 
@@ -112,9 +104,7 @@ if (typeof window.__r === "undefined") {
             configurable: true,
             get: () => _requireFunc,
             set(v) {
-                // _requireFunc is required here, because using 'this' here errors for some unknown reason
                 _requireFunc = function patchedRequire(a: number) {
-                    // Initializing index.ts(x)
                     if (a === 0) {
                         if (window.modules instanceof Map) window.modules = Object.fromEntries(window.modules);
                         onceIndexRequired(v);
@@ -126,7 +116,6 @@ if (typeof window.__r === "undefined") {
         __d: {
             configurable: true,
             get() {
-                // @ts-ignore - I got an error where 'Object' is undefined *sometimes*, which is literally never supposed to happen
                 if (window.Object && !window.modules) {
                     window.modules = window.__c?.();
                     Object.defineProperty(globalThis, "__d", {
