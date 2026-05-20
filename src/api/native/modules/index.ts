@@ -1,5 +1,34 @@
 import { RNModules } from "./types";
 
+// Globally wrap nativeModuleProxy to prevent direct write crashes anywhere in the app
+if (window.nativeModuleProxy && !(window.nativeModuleProxy as any).__isRainProxied) {
+    const originalNMP = window.nativeModuleProxy;
+    const nmpShadow: Record<string | symbol, any> = {};
+    
+    window.nativeModuleProxy = new Proxy(originalNMP, {
+        get(target, prop, receiver) {
+            if (prop === "__isRainProxied") return true;
+            if (prop in nmpShadow) return nmpShadow[prop];
+            return Reflect.get(target, prop, receiver);
+        },
+        set(target, prop, value) {
+            nmpShadow[prop] = value;
+            return true;
+        },
+        defineProperty(target, prop, descriptor) {
+            Object.defineProperty(nmpShadow, prop, descriptor);
+            return true;
+        },
+        deleteProperty(target, prop) {
+            delete nmpShadow[prop];
+            return true;
+        },
+        has(target, prop) {
+            return prop in nmpShadow || Reflect.has(target, prop);
+        }
+    });
+}
+
 const nmp = window.nativeModuleProxy;
 
 export function getNativeModule<T = any>(...names: string[]): T | undefined {
@@ -17,7 +46,6 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
         }
 
         if (rawModule) {
-            // Return a writable proxy wrapper around the read-only C++ native module
             const shadow: Record<string | symbol, any> = {};
             return new Proxy(rawModule, {
                 get(target, prop, receiver) {
@@ -26,13 +54,21 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
                     }
                     const value = Reflect.get(target, prop, receiver);
                     if (typeof value === "function") {
-                        // Ensure native functions run with correct native context
                         return value.bind(target);
                     }
                     return value;
                 },
                 set(target, prop, value) {
                     shadow[prop] = value;
+                    return true;
+                },
+                defineProperty(target, prop, descriptor) {
+                    // Trap Object.defineProperty calls from sublimation/patchers
+                    Object.defineProperty(shadow, prop, descriptor);
+                    return true;
+                },
+                deleteProperty(target, prop) {
+                    delete shadow[prop];
                     return true;
                 },
                 has(target, prop) {
@@ -47,8 +83,7 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
                     }
                     const desc = Reflect.getOwnPropertyDescriptor(target, prop);
                     if (desc) {
-                        desc.configurable = true; // Make it configurable for sublimation/patcher
-                        return desc;
+                        return { ...desc, configurable: true }; // Force configurable so sublimation can overwrite it
                     }
                     return undefined;
                 }
