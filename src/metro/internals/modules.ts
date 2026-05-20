@@ -19,6 +19,7 @@ let patchedNativeComponentRegistry = false;
 let _importingModuleId: number = -1;
 
 const BAD_EXPORTS_CHECK_STRING = "";
+const _ncrKeys = ["customBubblingEventTypes", "customDirectEventTypes", "register", "get"];
 
 // Pre-map keys to numbers once to eliminate string-to-number parsing in hot loops
 export const moduleKeys = Object.keys(metroModules).map(Number);
@@ -93,7 +94,7 @@ function isBadExports(exports: any) {
 }
 
 function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
-  indexExportsFlags(id, moduleExports);
+  // indexExportsFlags skipped — extractExportsFlags always returns EXISTS which is filtered out
 
   moduleExports.initSentry &&= () => undefined;
   if (moduleExports.default?.track && moduleExports.default.trackMaker)
@@ -103,7 +104,7 @@ function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
     require("@api/assets/patches").patchAssets(moduleExports);
   }
 
-  if (!patchedNativeComponentRegistry && ["customBubblingEventTypes", "customDirectEventTypes", "register", "get"].every(x => moduleExports[x])) {
+  if (!patchedNativeComponentRegistry && _ncrKeys.every(x => moduleExports[x])) {
     instead("register", moduleExports, ([name, cb]: any, origFunc: any) => {
       try {
         return origFunc(name, cb);

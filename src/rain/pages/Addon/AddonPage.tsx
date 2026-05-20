@@ -14,6 +14,7 @@ import * as React from "react";
 import { Image, ScrollView, View } from "react-native";
 
 import { CardWrapper, CompactCardWrapper } from "./AddonCard";
+const _ListSeparator = () => <View style={{ height: 8 }} />;
 
 type SearchKeywords<T> = Array<string | ((obj: T & {}) => string)>;
 
@@ -293,7 +294,7 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
                     </Text>
                 </View>}
                 contentContainerStyle={{ padding: 8, paddingHorizontal: 12, paddingBottom: 90 }}
-                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                ItemSeparatorComponent={_ListSeparator}
                 ListFooterComponent={props.ListFooterComponent}
                 renderItem={({ item }: any) => <CardComponent item={item.obj} result={item} compact={compact} />}
             />
