@@ -2,7 +2,7 @@ import { after, before } from "@api/patcher";
 import { findInTree } from "@lib/utils";
 import { proxyLazy } from "@lib/utils/lazy";
 import { findByProps } from "@metro";
-import { wrapNativeModule } from "@api/native/modules";
+// import { wrapNativeModule } from "@api/native/modules";
 
 import { _colorRef } from "../updater";
 
@@ -10,7 +10,7 @@ const mmkvStorage = proxyLazy(() => {
     const newModule = findByProps("impl");
     if (typeof newModule?.impl === "object") {
         // Safe-wrap the C++ MMKV module and return it directly without mutating newModule
-        return wrapNativeModule(newModule.impl);
+        return newModule.impl;
     }
     return findByProps("storage");
 });
