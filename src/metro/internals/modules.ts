@@ -55,37 +55,6 @@ for (let i = 0; i < moduleKeys.length; i++) {
             };
 
             origFunc(...args);
-            
-            // ✅ CRITICAL INTERCEPTION LAYER: Wrap the exports in a non-destructive Proxy
-            if (moduleObject.exports && typeof moduleObject.exports === "object") {
-                if (moduleObject.exports.NativeModules || moduleObject.exports.nativeModuleProxy) {
-                    moduleObject.exports = new Proxy(moduleObject.exports, {
-                        get(target, prop, receiver) {
-                            if (prop === "NativeModules") {
-                                return wrapNativeModuleProxy(target.NativeModules);
-                            }
-                            if (prop === "nativeModuleProxy") {
-                                return wrapNativeModuleProxy(target.nativeModuleProxy);
-                            }
-                            if (prop === "default" && target.default && typeof target.default === "object") {
-                                return new Proxy(target.default, {
-                                    get(t, p, r) {
-                                        if (p === "NativeModules") {
-                                            return wrapNativeModuleProxy(t.NativeModules);
-                                        }
-                                        if (p === "nativeModuleProxy") {
-                                            return wrapNativeModuleProxy(t.nativeModuleProxy);
-                                        }
-                                        return Reflect.get(t, p, r);
-                                    }
-                                });
-                            }
-                            return Reflect.get(target, prop, receiver);
-                        }
-                    });
-                }
-            }
-
             if (!isBadExports(moduleObject.exports)) {
                 onModuleRequire(moduleObject.exports, id);
             } else {
@@ -103,93 +72,11 @@ function blacklistModule(id: number) {
     indexBlacklistFlag(id);
 }
 
-// Global wrap helpers
-function wrapIndividualNativeModule(rawModule: any) {
-    if (!rawModule || rawModule.__isRainProxied) return rawModule;
-    
-    const shadow: Record<string | symbol, any> = {};
-    return new Proxy(rawModule, {
-        get(target, prop, receiver) {
-            if (prop === "__isRainProxied") return true;
-            if (prop in shadow) return shadow[prop];
-            const value = Reflect.get(target, prop, receiver);
-            if (typeof value === "function") {
-                return value.bind(target);
-            }
-            return value;
-        },
-        set(target, prop, value) {
-            shadow[prop] = value;
-            return true;
-        },
-        defineProperty(target, prop, descriptor) {
-            Object.defineProperty(shadow, prop, descriptor);
-            return true;
-        },
-        deleteProperty(target, prop) {
-            delete shadow[prop];
-            return true;
-        },
-        has(target, prop) {
-            return prop in shadow || Reflect.has(target, prop);
-        },
-        ownKeys(target) {
-            return Array.from(new Set([...Reflect.ownKeys(target), ...Reflect.ownKeys(shadow)]));
-        },
-        getOwnPropertyDescriptor(target, prop) {
-            if (prop in shadow) {
-                return { configurable: true, enumerable: true, writable: true, value: shadow[prop] };
-            }
-            try {
-                if (typeof target[prop] === "function") {
-                    return { configurable: true, enumerable: true, writable: true, value: target[prop] };
-                }
-                const desc = Reflect.getOwnPropertyDescriptor(target, prop);
-                if (desc) {
-                    return { ...desc, configurable: true };
-                }
-            } catch {}
-            return undefined;
-        }
-    });
-}
-
-function wrapNativeModuleProxy(originalNMP: any) {
-    if (!originalNMP || originalNMP.__isRainProxied) return originalNMP;
-    
-    const nmpShadow: Record<string | symbol, any> = {};
-    return new Proxy(originalNMP, {
-        get(target, prop, receiver) {
-            if (prop === "__isRainProxied") return true;
-            if (prop in nmpShadow) return nmpShadow[prop];
-            const value = Reflect.get(target, prop, receiver);
-            if (value && typeof value === "object") {
-                return wrapIndividualNativeModule(value);
-            }
-            return value;
-        },
-        set(target, prop, value) {
-            nmpShadow[prop] = value;
-            return true;
-        },
-        defineProperty(target, prop, descriptor) {
-            Object.defineProperty(nmpShadow, prop, descriptor);
-            return true;
-        },
-        deleteProperty(target, prop) {
-            delete nmpShadow[prop];
-            return true;
-        },
-        has(target, prop) {
-            return prop in nmpShadow || Reflect.has(target, prop);
-        }
-    });
-}
-
 function isBadExports(exports: any) {
     if (exports === null || exports === undefined || exports === window) return true;
 
     const type = typeof exports;
+    // Primitive non-object exports (like asset numbers) are perfectly valid!
     if (type !== "object") return false;
 
     try {

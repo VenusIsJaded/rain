@@ -1,88 +1,48 @@
 import { RNModules } from "./types";
 
-export function wrapIndividualNativeModule(rawModule: any) {
-    if (!rawModule || rawModule.__isRainProxied) return rawModule;
+const nmp = window.nativeModuleProxy;
+
+function wrapNativeModule<T = any>(rawModule: any): T | undefined {
+    if (!rawModule) return undefined;
     
-    const shadow: Record<string | symbol, any> = {};
-    return new Proxy(rawModule, {
-        get(target, prop, receiver) {
-            if (prop === "__isRainProxied") return true;
-            if (prop in shadow) return shadow[prop];
-            const value = Reflect.get(target, prop, receiver);
+    const wrapper: any = {};
+    const keys = new Set<string | symbol>();
+    let current = rawModule;
+    
+    // Gather all properties/methods from the raw C++ JSI object prototype chain
+    while (current && current !== Object.prototype) {
+        Reflect.ownKeys(current).forEach(k => keys.add(k));
+        current = Object.getPrototypeOf(current);
+    }
+    
+    for (const key of keys) {
+        if (key === "constructor") continue;
+        
+        try {
+            const value = rawModule[key];
             if (typeof value === "function") {
-                return value.bind(target);
+                // Copy method as a plain, fully writable JS function
+                wrapper[key] = function (this: any, ...args: any[]) {
+                    return value.apply(rawModule, args);
+                };
+            } else {
+                // Forward properties and constants dynamically
+                Object.defineProperty(wrapper, key, {
+                    get: () => rawModule[key],
+                    set: (v) => {
+                        try {
+                            rawModule[key] = v;
+                        } catch {}
+                    },
+                    configurable: true,
+                    enumerable: true
+                });
             }
-            return value;
-        },
-        set(target, prop, value) {
-            shadow[prop] = value;
-            return true;
-        },
-        defineProperty(target, prop, descriptor) {
-            Object.defineProperty(shadow, prop, descriptor);
-            return true;
-        },
-        deleteProperty(target, prop) {
-            delete shadow[prop];
-            return true;
-        },
-        has(target, prop) {
-            return prop in shadow || Reflect.has(target, prop);
-        },
-        ownKeys(target) {
-            return Array.from(new Set([...Reflect.ownKeys(target), ...Reflect.ownKeys(shadow)]));
-        },
-        getOwnPropertyDescriptor(target, prop) {
-            if (prop in shadow) {
-                return { configurable: true, enumerable: true, writable: true, value: shadow[prop] };
-            }
-            try {
-                if (typeof target[prop] === "function") {
-                    return { configurable: true, enumerable: true, writable: true, value: target[prop] };
-                }
-                const desc = Reflect.getOwnPropertyDescriptor(target, prop);
-                if (desc) {
-                    return { ...desc, configurable: true };
-                }
-            } catch {}
-            return undefined;
-        }
-    });
-}
-
-export function wrapNativeModuleProxy(originalNMP: any) {
-    if (!originalNMP || originalNMP.__isRainProxied) return originalNMP;
+        } catch {}
+    }
     
-    const nmpShadow: Record<string | symbol, any> = {};
-    return new Proxy(originalNMP, {
-        get(target, prop, receiver) {
-            if (prop === "__isRainProxied") return true;
-            if (prop in nmpShadow) return nmpShadow[prop];
-            const value = Reflect.get(target, prop, receiver);
-            if (value && typeof value === "object") {
-                return wrapIndividualNativeModule(value);
-            }
-            return value;
-        },
-        set(target, prop, value) {
-            nmpShadow[prop] = value;
-            return true;
-        },
-        defineProperty(target, prop, descriptor) {
-            Object.defineProperty(nmpShadow, prop, descriptor);
-            return true;
-        },
-        deleteProperty(target, prop) {
-            delete nmpShadow[prop];
-            return true;
-        },
-        has(target, prop) {
-            return prop in nmpShadow || Reflect.has(target, prop);
-        }
-    });
+    return wrapper as T;
 }
-
-const nmp = wrapNativeModuleProxy(window.nativeModuleProxy);
 
 export function getNativeModule<T = any>(...names: string[]): T | undefined {
     for (const name of names) {
@@ -94,12 +54,13 @@ export function getNativeModule<T = any>(...names: string[]): T | undefined {
             } catch {}
         }
 
-        if (!rawModule && nmp[name]) {
+        if (!rawModule && nmp && nmp[name]) {
             rawModule = nmp[name];
         }
 
         if (rawModule) {
-            return wrapIndividualNativeModule(rawModule) as T;
+            // Return our clean, safe writable JS clone instead of the locked JSI HostObject
+            return wrapNativeModule<T>(rawModule);
         }
     }
 
