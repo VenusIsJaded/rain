@@ -29,13 +29,13 @@ export default definePlugin({
         useRulesStore.getState().update();
     },
     stop() {
-        patches.forEach(unpatch => {
+        for (const unpatch of patches) {
             try {
                 unpatch();
             } catch (e) {
                 logger.error(e);
             }
-        });
+        }
         patches = [];
     },
     settings() {
