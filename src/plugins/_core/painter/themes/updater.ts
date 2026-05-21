@@ -47,12 +47,12 @@ export function updateColor(colorManifest: ColorManifest | null, { update = true
         tokenRef.Theme[ref.key.toUpperCase()] = ref.key;
         FormDivider.DIVIDER_COLORS[ref.key] = FormDivider.DIVIDER_COLORS[ref.current!.reference];
 
-        Object.keys(tokenRef.Shadow).forEach(k => tokenRef.Shadow[k][ref.key] = tokenRef.Shadow[k][ref.current!.reference]);
-        Object.keys(tokenRef.SemanticColor).forEach(k => {
-            tokenRef.SemanticColor[k][ref.key] = {
-                ...tokenRef.SemanticColor[k][ref.current!.reference]
-            };
-        });
+        for (const k of Object.keys(tokenRef.Shadow)) {
+            tokenRef.Shadow[k][ref.key] = tokenRef.Shadow[k][ref.current!.reference];
+        }
+        for (const k of Object.keys(tokenRef.SemanticColor)) {
+            tokenRef.SemanticColor[k][ref.key] = { ...tokenRef.SemanticColor[k][ref.current!.reference] };
+        }
     }
     if (update) {
         AppearanceManager.setShouldSyncAppearanceSettings(false);
