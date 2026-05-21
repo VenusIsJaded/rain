@@ -410,20 +410,16 @@ export function initDebugger() {
             logger.error("Failed to connect to Debugger during startup:", e);
         }
     }
-    if (currentSettings.autoDevTools) {
+    if (currentSettings.autoDevTools && currentSettings.devToolsUrl) {
         try {
-            if (currentSettings.devToolsUrl) {
-                connectRdt(currentSettings.devToolsUrl, true);
-            }
+            connectRdt(currentSettings.devToolsUrl, true);
         } catch (e) {
             logger.error("Failed to connect to ReactDevTools during startup:", e);
         }
     }
-    if (currentSettings.hotReloadTheme) {
+    if (currentSettings.hotReloadTheme && currentSettings.hotReloadThemeUrl) {
         try {
-            if (currentSettings.hotReloadThemeUrl) {
-                hotReloadTheme();
-            }
+            hotReloadTheme();
         } catch (e) {
             logger.error("Failed to run hotReloadThemes:", e);
         }
