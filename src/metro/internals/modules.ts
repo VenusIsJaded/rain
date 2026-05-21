@@ -308,7 +308,8 @@ export function waitFor<T>(
   if (filter.key) {
     const cache = getMetroCache().findIndex[filter.key];
     if (cache) {
-      const cachedCount = Object.keys(cache).filter(k => k[0] !== "_").length;
+      let cachedCount = 0;
+      for (const k in cache) if (k[0] !== "_") cachedCount++;
 
       if (cachedCount >= count) {
         for (const id in cache) {
