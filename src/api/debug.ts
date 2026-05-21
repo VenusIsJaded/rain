@@ -29,9 +29,9 @@ export interface RNConstants extends PlatformConstants {
 }
 
 let socket: WebSocket | undefined;
-let originalConsoleLog: any;
-let originalConsoleError: any;
-let originalConsoleWarn: any;
+let originalConsoleLog: typeof console.log | undefined;
+let originalConsoleError: typeof console.error | undefined;
+let originalConsoleWarn: typeof console.warn | undefined;
 let originalLoggerLog: any;
 let originalLoggerError: any;
 let originalLoggerWarn: any;
@@ -314,7 +314,7 @@ export function patchLogHook() {
     });
 
     return () => {
-        socket && socket.close();
+        socket?.close();
         unpatch();
     };
 }
