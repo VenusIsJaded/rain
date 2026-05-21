@@ -58,17 +58,6 @@ export default definePlugin({
         FluxDispatcher.subscribe("RAIN_SETTING_UPDATED", autoSync);
     },
     settings: Settings,
-    stop() {
-        if (unsubscribeSettings) {
-            unsubscribeSettings();
-            unsubscribeSettings = undefined;
-        }
-        FluxDispatcher.unsubscribe("RAIN_SETTING_UPDATED", autoSync);
-        if (syncTimeout) {
-            clearTimeout(syncTimeout);
-            syncTimeout = undefined as any;
-        }
-    },
             unsubscribeSettings();
             unsubscribeSettings = undefined;
         }
