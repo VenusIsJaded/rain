@@ -32,20 +32,24 @@ const flushLogsToDisk = debounce(async () => {
     }
 }, 1500);
 
-async function safeParseJSON<T>(data: string | null, fallback: T): Promise<T> {
-    if (!data) return fallback;
+// Sync — JSON.parse is synchronous, no need for async wrapper
+function safeParse(data: string | null): LogData | MessageLogEntry[] | null {
+    if (!data) return null;
     try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) {
-            return parsed as T;
-        }
-        return fallback;
+        return JSON.parse(data);
     } catch {
-        return fallback;
+        return null;
     }
 }
 
-async function writeLogData(data: LogData): Promise<void> {
+function normalise(parsed: LogData | MessageLogEntry[] | null): LogData {
+    if (!parsed) return { version: 1, logs: [] };
+    if (Array.isArray(parsed)) return { version: 1, logs: parsed };
+    return parsed;
+}
+
+// Sync — only does in-memory assignment + debounce enqueue
+function writeLogData(data: LogData): void {
     cachedLogData = data;
     flushLogsToDisk();
 }
@@ -60,14 +64,7 @@ async function readLogData(): Promise<LogData> {
     }
 
     const content = await readFile(LOG_FILE);
-    const parsed = await safeParseJSON<LogData | MessageLogEntry[]>(content, { version: 1, logs: [] });
-
-    if (Array.isArray(parsed)) {
-        cachedLogData = { version: 1, logs: parsed };
-    } else {
-        cachedLogData = parsed;
-    }
-
+    cachedLogData = normalise(safeParse(content));
     return cachedLogData;
 }
 
@@ -79,7 +76,7 @@ export async function addLogEntry(entry: MessageLogEntry): Promise<void> {
     }
 
     data.logs.push(entry);
-    await writeLogData(data);
+    writeLogData(data);
 }
 
 export async function getLogEntries(
@@ -93,14 +90,14 @@ export async function getLogEntries(
     const data = await readLogData();
     let entries = data.logs;
 
-    if (filter?.channelId) {
-        entries = entries.filter(e => e.channelId === filter.channelId);
-    }
-    if (filter?.authorId) {
-        entries = entries.filter(e => e.author.id === filter.authorId);
-    }
-    if (filter?.type) {
-        entries = entries.filter(e => e.type === filter.type);
+    // Single-pass filter avoids up to 3 intermediate arrays
+    if (filter?.channelId || filter?.authorId || filter?.type) {
+        const { channelId, authorId, type } = filter!;
+        entries = entries.filter(e =>
+            (!channelId || e.channelId === channelId) &&
+            (!authorId  || e.author.id === authorId) &&
+            (!type      || e.type === type)
+        );
     }
 
     return entries.slice(-limit);
@@ -116,32 +113,24 @@ export async function clearLogs(): Promise<void> {
     await writeFile(LOG_FILE, JSON.stringify(cachedLogData));
 }
 
+function isValidEntry(log: any): log is MessageLogEntry {
+    return (
+        log != null &&
+        typeof log.messageId === "string" &&
+        typeof log.channelId === "string" &&
+        typeof log.timestamp === "string" &&
+        typeof log.type === "string"
+    );
+}
+
 export async function repairCorruptedLogs(): Promise<boolean> {
     try {
         const exists = await fileExists(LOG_FILE);
         if (!exists) return true;
 
         const content = await readFile(LOG_FILE);
-        const parsed = await safeParseJSON<LogData | MessageLogEntry[]>(content, { version: 1, logs: [] });
-
-        let logs: MessageLogEntry[];
-        if (Array.isArray(parsed)) {
-            logs = parsed;
-        } else {
-            logs = parsed.logs;
-        }
-
-        const validLogs = logs.filter((log: MessageLogEntry) => {
-            return (
-                log &&
-                typeof log.messageId === "string" &&
-                typeof log.channelId === "string" &&
-                typeof log.timestamp === "string" &&
-                typeof log.type === "string"
-            );
-        });
-
-        await writeLogData({ version: 1, logs: validLogs });
+        const validLogs = normalise(safeParse(content)).logs.filter(isValidEntry);
+        writeLogData({ version: 1, logs: validLogs });
         return true;
     } catch {
         return false;
