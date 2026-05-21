@@ -1,6 +1,6 @@
 import { definePlugin } from "@plugins";
 import { findByStoreNameLazy } from "@metro/wrappers";
-import { FluxDispatcher } from "@metro/common";
+import { FluxDispatcher, React, ReactNative } from "@metro/common";
 import { showToast } from "@api/ui/toasts";
 import { findAssetId } from "@api/assets";
 import { friendNotificationsSettings } from "./storage";
@@ -9,6 +9,7 @@ import Settings from "./settings";
 const PresenceStore = findByStoreNameLazy("PresenceStore");
 const RelationshipStore = findByStoreNameLazy("RelationshipStore");
 const UserStore = findByStoreNameLazy("UserStore");
+const { Image } = ReactNative;
 
 let previousStatuses = new Map<string, string>();
 let isFirstRun = true;
@@ -42,15 +43,18 @@ function onPresenceUpdate(event: any) {
                 const user = UserStore.getUser?.(userId);
                 if (user) {
                     const avatar = { uri: user.getAvatarURL?.(false, 128, true) };
-                    showToast(`${user.globalName || user.username} is now online`, avatar);
-                    setTimeout(() => showToast(`${user.globalName || user.username} is now online`, avatar), 2000);
+                    // Attempt to pass a rounded React element
+                    const avatarElement = React.createElement(Image, { source: avatar, style: { width: 24, height: 24, borderRadius: 12 } });
+                    showToast(`${user.globalName || user.username} is now online`, avatarElement as any);
+                    setTimeout(() => showToast(`${user.globalName || user.username} is now online`, avatarElement as any), 2000);
                 }
             } else if (!wasOffline && isOffline && friendNotificationsSettings.notifyOffline) {
                 const user = UserStore.getUser?.(userId);
                 if (user) {
                     const avatar = { uri: user.getAvatarURL?.(false, 128, true) };
-                    showToast(`${user.globalName || user.username} went offline`, avatar);
-                    setTimeout(() => showToast(`${user.globalName || user.username} went offline`, avatar), 2000);
+                    const avatarElement = React.createElement(Image, { source: avatar, style: { width: 24, height: 24, borderRadius: 12 } });
+                    showToast(`${user.globalName || user.username} went offline`, avatarElement as any);
+                    setTimeout(() => showToast(`${user.globalName || user.username} went offline`, avatarElement as any), 2000);
                 }
             }
         }

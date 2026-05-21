@@ -9,14 +9,13 @@ import { findAssetId } from "@api/assets";
 import { lazyDestructure } from "@lib/utils/lazy";
 import { showSheet, hideSheet } from "@api/ui/sheets";
 
-const openUrlModule = findByPropsLazy("openUrl");
+const jumpModule = findByPropsLazy("jumpToMessage");
 const MessageStore = findByStoreNameLazy("MessageStore");
 const tokenModule = findByPropsLazy("getToken");
 const { TextStyleSheet, Text } = lazyDestructure(() => findByPropsLazy("TextStyleSheet"));
 const { View, ScrollView } = ReactNative;
 
 const patches: (() => void)[] = [];
-const MESSAGE_LINK_REGEX = /^https?:\/\/(?:ptb\.|canary\.)?discord\.com\/channels\/(\d+|@me)\/(\d+)\/(\d+)$/;
 
 function PeekSheet({ message, onJump }: { message: any, onJump: () => void }) {
     const author = message.author;
@@ -27,7 +26,7 @@ function PeekSheet({ message, onJump }: { message: any, onJump: () => void }) {
             <ScrollView style={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
                     <Text style={[TextStyleSheet["text-md/bold"], { color: "white" }]}>
-                        {author.globalName || author.username}
+                        {author?.globalName || author?.username || "Unknown User"}
                     </Text>
                     <Text style={[TextStyleSheet["text-sm/normal"], { color: "gray", marginLeft: 8 }]}>
                         {new Date(message.timestamp).toLocaleString()}
@@ -76,28 +75,28 @@ async function fetchMessage(channelId: string, messageId: string) {
 
 export default definePlugin({
     name: "PeekMessageLinks",
-    description: "Intercepts message links to show a preview instead of jumping immediately.",
+    description: "Intercepts message jumps (links, replies, pins) to show a preview bottom sheet first.",
     author: [{ name: "Arena Bot", id: "0" }],
     id: "peekmessagelinks",
     version: "1.0.0",
     start() {
-        patches.push(instead("openUrl", openUrlModule, (args, orig) => {
-            const url = args[0];
-            if (typeof url === "string") {
-                const match = url.match(MESSAGE_LINK_REGEX);
-                if (match) {
-                    const [_, guildId, channelId, messageId] = match;
-                    
-                    fetchMessage(channelId, messageId).then(message => {
-                        if (!message) {
-                            showToast("Message could not be fetched", findAssetId("CircleXIcon-primary"));
-                            orig(...args);
-                            return;
-                        }
-                        showSheet("PeekMessageSheet", () => <PeekSheet message={message} onJump={() => orig(...args)} />);
-                    });
-                    return;
+        patches.push(instead("jumpToMessage", jumpModule, (args, orig) => {
+            const opts = args[0];
+            if (opts && opts.channelId && opts.messageId) {
+                if (opts.__peek_bypass) {
+                    delete opts.__peek_bypass;
+                    return orig(...args);
                 }
+                
+                fetchMessage(opts.channelId, opts.messageId).then(message => {
+                    if (!message) {
+                        showToast("Message could not be fetched", findAssetId("CircleXIcon-primary"));
+                        orig(...args);
+                        return;
+                    }
+                    showSheet("PeekMessageSheet", () => <PeekSheet message={message} onJump={() => orig({ ...opts, __peek_bypass: true })} />);
+                });
+                return;
             }
             return orig(...args);
         }));
