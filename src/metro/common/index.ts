@@ -43,7 +43,7 @@ export const url = nativeModuleProxy.NativeLinkingModule || nativeModuleProxy.DC
 export const Flux = findByPropsLazy("connectStores");
 // TODO: Making this a proxy/lazy fuck things up for some reason
 export const FluxDispatcher = findByProps("_interceptors") as Dispatcher;
-export const FluxUtils = findByProps("useStateFromStores");
+export const FluxUtils = findByPropsLazy("useStateFromStores");
 
 // React
 export const React = window.React = findByPropsLazy("createElement") as typeof import("react");
