@@ -94,8 +94,6 @@ function isBadExports(exports: any) {
 }
 
 function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
-  // indexExportsFlags skipped — extractExportsFlags always returns EXISTS which is filtered out
-
   moduleExports.initSentry &&= () => undefined;
   if (moduleExports.default?.track && moduleExports.default.trackMaker)
     moduleExports.default.track = () => Promise.resolve();
