@@ -11,17 +11,15 @@ import { grabEverything } from "./lib/syncStuff";
 import { useCloudSyncSettings } from "./storage";
 import { useAuthorizationStore } from "./stores/AuthorizationStore";
 
-let syncTimeout: number;
-let unsubscribeSettings;
+let syncTimeout: ReturnType<typeof setTimeout> | undefined;
+let unsubscribeSettings: (() => void) | undefined;
 
 const autoSync = () => {
     if (syncTimeout) {
         clearTimeout(syncTimeout);
     }
 
-    syncTimeout = setTimeout(() => {
-        performSync();
-    }, 5000);
+    syncTimeout = setTimeout(performSync, 5000);
 };
 
 const performSync = async () => {
@@ -35,7 +33,7 @@ const performSync = async () => {
     } catch (e) {
         // Suppress logger for Cloudflare 1102 timeout
         const msg = typeof e === "string" ? e : e instanceof Error ? e.message : "";
-        if (!(msg.includes("error code: 1102") || msg.includes("1102"))) {
+        if (!msg.includes("1102")) {
             logger.error("[CloudSync] Auto-sync failed:", e);
         }
     }
@@ -66,7 +64,7 @@ export default definePlugin({
         FluxDispatcher.unsubscribe("RAIN_SETTING_UPDATED", autoSync);
         if (syncTimeout) {
             clearTimeout(syncTimeout);
-            syncTimeout = undefined as any;
+            syncTimeout = undefined;
         }
     },
 });
