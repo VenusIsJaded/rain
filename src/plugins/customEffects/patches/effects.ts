@@ -49,7 +49,7 @@ export async function fetchUserEffectData() {
                     });
                 }
             }
-        });
+        }
     } catch (e) {
         console.error("[CustomEffects] Failed to fetch user effects", e);
         showToast("Failed to load user effects", findAssetId("CircleXIcon"));
