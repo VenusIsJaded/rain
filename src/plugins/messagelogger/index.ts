@@ -51,11 +51,12 @@ function shouldIgnoreMessage(message: any, storage: any): boolean {
     }
 }
 
+const _momentModule = findByProps("utc", "unix", "duration");
+
 function formatTimestamp(use12Hour: boolean): string {
     try {
-        const moment = findByProps("utc", "unix", "duration");
-        if (!moment) return "";
-        return moment().format(use12Hour ? "hh:mm:ss.SS a" : "HH:mm:ss.SS");
+        if (!_momentModule) return "";
+        return _momentModule().format(use12Hour ? "hh:mm:ss.SS a" : "HH:mm:ss.SS");
     } catch {
         return "";
     }

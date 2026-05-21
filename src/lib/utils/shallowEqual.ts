@@ -16,11 +16,8 @@ export function shallowEqual(objA: any, objB: any): boolean {
         const valA = objA[key];
         const valB = objB[key];
 
-        // Skip function-typed values — they're reference-stable in Zustand
-        // persist stores and would cause false-negative equality on unrelated updates
         if (typeof valA === "function" || typeof valB === "function") continue;
 
-        // Handle single-level nested objects (like settings maps) safely without recursion
         if (typeof valA === "object" && valA !== null && typeof valB === "object" && valB !== null) {
             const subKeysA = Object.keys(valA);
             const subKeysB = Object.keys(valB);

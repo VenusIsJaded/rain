@@ -50,8 +50,6 @@ export default function patchDefinitionAndResolver() {
                 configurable: true,
                 enumerable: true,
                 get: () => {
-                    const ret = _colorRef.current?.raw[key];
-                    if (ret) return ret;
                     return _colorRef.current?.raw[key] || origRawColor[key];
                 }
             });

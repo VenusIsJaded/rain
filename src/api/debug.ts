@@ -36,6 +36,7 @@ let originalLoggerLog: any;
 let originalLoggerError: any;
 let originalLoggerWarn: any;
 let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
+let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
 
 const VERSION = 1;
 
@@ -363,6 +364,10 @@ export function getDebugInfo() {
 }
 
 export function hotReloadTheme() {
+    if (hotReloadIntervalId !== undefined) {
+        clearInterval(hotReloadIntervalId);
+        hotReloadIntervalId = undefined;
+    }
     if (hotReloadIntervalId !== undefined) {
         clearInterval(hotReloadIntervalId);
         hotReloadIntervalId = undefined;

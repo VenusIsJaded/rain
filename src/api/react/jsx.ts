@@ -26,13 +26,11 @@ export function patchJsx() {
     const callback = ([Component]: unknown[], ret: any) => {
         if (!ret || callbacks.size === 0) return ret;
 
-        // Band-aid fix for iOS invalid element type crashes
         if (typeof ret.type === "undefined") {
             ret.type = "RCTView";
             return ret;
         }
 
-        // Resolve the name to look up in the callbacks map
         let name: string | undefined;
         if (typeof Component === "function") {
             name = Component.name;
