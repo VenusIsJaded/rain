@@ -72,16 +72,19 @@ export const useSettings = create<SettingsStore>()(
                     lottie: false,
                 }
             },
-            pinnedPlugins: [], // Initialize empty
+            pinnedPlugins: [],
             experimentsConfirmed: false,
             updateSettings: newSettings => set(state => ({ ...state, ...newSettings })),
             togglePinnedPlugin: id => set(state => {
-                const pinned = state.pinnedPlugins || [];
-                if (pinned.includes(id)) {
-                    return { pinnedPlugins: pinned.filter(p => p !== id) };
-                } else {
-                    return { pinnedPlugins: [...pinned, id] };
+                const pinned = state.pinnedPlugins ?? [];
+                const idx = pinned.indexOf(id);
+                if (idx !== -1) {
+                    // slice+splice avoids filter() allocating a full new array for removal
+                    const next = pinned.slice();
+                    next.splice(idx, 1);
+                    return { pinnedPlugins: next };
                 }
+                return { pinnedPlugins: [...pinned, id] };
             }),
         }),
         {
