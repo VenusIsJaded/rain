@@ -49,7 +49,7 @@ export default definePlugin({
                                 unpatchTV2HdrV2();
                                 if (!findInReactTree(res, c => c.key === "DMTabsV2Header-v2")) {
                                     res.props.children[0].props.children = [...res.props.children[0].props.children, 
-                                        <PresenceUpdatedContainer key="DMTabsV2Header-v2">
+                                        <PresenceUpdatedContainer userId={userId} key="DMTabsV2Header-v2">
                                             {debugLabels ? <Text>DTV2H-v2</Text> : <StatusIcons userId={userId} />}
                                         </PresenceUpdatedContainer>
                                     ];
@@ -96,7 +96,7 @@ export default definePlugin({
                             const userId = args[0]?.user?.id;
                             if (userId) {
                                 res.props.children = [...res.props.children, 
-                                    <PresenceUpdatedContainer key="UserProfileIcons">
+                                    <PresenceUpdatedContainer userId={userId} key="UserProfileIcons">
                                         <StatusIcons userId={userId} />
                                     </PresenceUpdatedContainer>
                                 ];
