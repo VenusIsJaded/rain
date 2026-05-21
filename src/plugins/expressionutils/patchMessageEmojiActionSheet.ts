@@ -42,7 +42,7 @@ function patchSheet(funcName: string, sheetModule: any, once: boolean) {
                     buttonsContainer.push(React.createElement(StealButtons, { emoji }));
                 }
             } else if (component?.props?.children?.push) {
-                component.props.children.push(React.createElement(StealButtons, { emoji }));
+                component.props.children = [...component.props.children, React.createElement(StealButtons, { emoji })];
             }
         });
         if (once) {

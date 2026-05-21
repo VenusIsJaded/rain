@@ -48,11 +48,11 @@ export default definePlugin({
                             const unpatchTV2HdrV2 = after("type", titleThing, (args, res) => {
                                 unpatchTV2HdrV2();
                                 if (!findInReactTree(res, c => c.key === "DMTabsV2Header-v2")) {
-                                    res.props.children[0].props.children.push(
+                                    res.props.children[0].props.children = [...res.props.children[0].props.children, 
                                         <PresenceUpdatedContainer key="DMTabsV2Header-v2">
                                             {debugLabels ? <Text>DTV2H-v2</Text> : <StatusIcons userId={userId} />}
                                         </PresenceUpdatedContainer>
-                                    );
+                                    ];
                                 }
                             });
                         } else {
@@ -95,11 +95,11 @@ export default definePlugin({
                         after("type", displayName, (args, res) => {
                             const userId = args[0]?.user?.id;
                             if (userId) {
-                                res.props.children.push(
+                                res.props.children = [...res.props.children, 
                                     <PresenceUpdatedContainer key="UserProfileIcons">
                                         <StatusIcons userId={userId} />
                                     </PresenceUpdatedContainer>
-                                );
+                                ];
                             }
                         });
                     });
@@ -194,11 +194,11 @@ export default definePlugin({
                 const userId = channel.recipients[0];
                 const textContainer = findInReactTree(res, m => m.props?.children?.[0]?.props?.variant === "redesign/channel-title/semibold");
                 if (textContainer) {
-                    textContainer.props.children.push(<View key="TabsV2RedesignDMListIcons" style={{
+                    textContainer.props.children = [...textContainer.props.children, <View key="TabsV2RedesignDMListIcons" style={{
                         flexDirection: "row"
                     }}>
                         {debugLabels ? <Text>TV2RDMLI</Text> : <StatusIcons userId={userId} />}
-                    </View>);
+                    </View>];
                 }
             }
         }));

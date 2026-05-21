@@ -44,7 +44,7 @@ const rowPatch = ([{ guildId, user }]: [{ guildId: string, user: any }], res: an
             if (!Array.isArray(nameContainer.props.children)) {
                 nameContainer.props.children = [nameContainer.props.children];
             }
-            nameContainer.props.children.push(
+            nameContainer.props.children = [...nameContainer.props.children, 
                 <TagModule.default
                     type={0}
                     text={tag.text}
@@ -52,7 +52,7 @@ const rowPatch = ([{ guildId, user }]: [{ guildId: string, user: any }], res: an
                     backgroundColor={tag.backgroundColor}
                     verified={tag.verified}
                 />
-            );
+            ];
         }
     }
 };

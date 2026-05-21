@@ -153,9 +153,9 @@ export default () => before("openLazy", LazyActionSheet, ([component, key, msg])
             );
 
             if (copyIndex !== -1) {
-                middleGroup.props.children.splice(copyIndex, 0, translateButton);
+                middleGroup.props.children = middleGroup.props.children ? [...middleGroup.props.children.slice(0, copyIndex), translateButton, ...middleGroup.props.children.slice(copyIndex)] : [translateButton];
             } else {
-                middleGroup.props.children.push(translateButton);
+                middleGroup.props.children = middleGroup.props.children ? [...middleGroup.props.children, translateButton] : [translateButton];
             }
         });
     });

@@ -99,7 +99,7 @@ export default () => [
                         />
                     );
 
-                    middleGroup.props.children.push(viewRawButton);
+                    middleGroup.props.children = [...middleGroup.props.children, viewRawButton];
                 } else {
                     logger.log("[ViewRaw] Error: Could not find ActionSheet");
                 }

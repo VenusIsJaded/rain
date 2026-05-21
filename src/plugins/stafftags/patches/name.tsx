@@ -40,7 +40,7 @@ export default () => {
                     } else {
                         const row = findInReactTree(ret, (c: any) => c?.props?.style?.flexDirection === "row");
                         if (row?.props?.children) {
-                            row.props.children.push(
+                            row.props.children = [...row.props.children, 
                                 <TagModule.default
                                     style={{ marginLeft: 0 }}
                                     type={0}
@@ -49,7 +49,7 @@ export default () => {
                                     backgroundColor={tag.backgroundColor}
                                     verified={tag.verified}
                                 />
-                            );
+                            ];
                         }
                     }
                 }

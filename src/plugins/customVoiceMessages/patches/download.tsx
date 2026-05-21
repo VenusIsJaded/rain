@@ -95,7 +95,7 @@ export default function patchDownload() {
                         />
                     );
 
-                    middleGroup.props.children.push(downloadButton, copyButton);
+                    middleGroup.props.children = [...middleGroup.props.children, downloadButton, copyButton];
                 }
             });
         });
