@@ -14,8 +14,9 @@ let intercepts: Intercept[] = [];
  */
 export function injectFluxInterceptor() {
     const cb = (payload: any) => {
-        for (const intercept of intercepts) {
-            const res = intercept(payload);
+        const _len = intercepts.length;
+        for (let _i = 0; _i < _len; _i++) {
+            const res = intercepts[_i](payload);
 
             // nullish -> nothing, falsy -> block, object -> modify
             if (res == null) {
@@ -44,6 +45,7 @@ export function intercept(cb: Intercept) {
     intercepts.push(cb);
 
     return () => {
-        intercepts = intercepts.filter(i => i !== cb);
+        const idx = intercepts.indexOf(cb);
+        if (idx !== -1) intercepts.splice(idx, 1);
     };
 }
