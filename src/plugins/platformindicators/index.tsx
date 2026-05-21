@@ -184,7 +184,7 @@ export default definePlugin({
             }
         };
 
-        findByTypeNameAll("UserRow").forEach(UserRow => unpatches.push(after("type", UserRow, rowPatch)));
+        for (const UserRow of findByTypeNameAll("UserRow")) unpatches.push(after("type", UserRow, rowPatch));
 
         // Messages item channel content
         const MessagesItemChannelContent = findByTypeName("MessagesItemChannelContent");
