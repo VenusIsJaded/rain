@@ -1,4 +1,3 @@
-import { useSettings } from "@api/settings";
 import { Strings } from "@i18n";
 import { NavigationNative } from "@metro/common";
 import { FontDefinition, useFonts } from "@plugins/_core/painter/fonts";
@@ -9,7 +8,6 @@ import FontCard from "./FontCard";
 import FontEditor from "./FontEditor";
 
 export default function Fonts() {
-    useSettings();
     const fonts = useFonts(state => state.fonts);
     const navigation = NavigationNative.useNavigation();
 

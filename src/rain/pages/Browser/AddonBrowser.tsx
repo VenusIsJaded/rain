@@ -7,6 +7,7 @@ import { lazyDestructure } from "@lib/utils/lazy";
 import safeFetch from "@lib/utils/safeFetch";
 import { findByProps } from "@metro";
 import { clipboard,NavigationNative, React } from "@metro/common";
+import { useDeferredValue } from "react";
 import { ActionSheet, Button, Card, FlashList, IconButton, Stack, TableRow, TableRowGroup,Text } from "@metro/common/components";
 import { View } from "react-native";
 
@@ -137,6 +138,7 @@ export default function AddonBrowser({ type, url, useStore, installFn, removeFn,
     const [loading, setLoading] = React.useState(!cache.data);
     const [error, setError] = React.useState<string | null>(null);
     const [searchQuery, setSearchQuery] = React.useState("");
+    const deferredSearchQuery = useDeferredValue(searchQuery);
     const [sort, setSort] = React.useState<Sort>(Sort.NameAZ);
 
     const installedItems = useStore((state: any) =>
@@ -167,13 +169,13 @@ export default function AddonBrowser({ type, url, useStore, installFn, removeFn,
 
     const filteredAndSorted = React.useMemo(() => {
         const items = list.filter(i =>
-            i.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            i.description.toLowerCase().includes(searchQuery.toLowerCase())
+            i.name.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
+            i.description.toLowerCase().includes(deferredSearchQuery.toLowerCase())
         );
         if (sort === Sort.NameAZ) items.sort((a, b) => a.name.localeCompare(b.name));
         if (sort === Sort.NameZA) items.sort((a, b) => b.name.localeCompare(a.name));
         return items;
-    }, [list, searchQuery, sort]);
+    }, [list, deferredSearchQuery, sort]);
 
     if (error) {
         return (
@@ -219,6 +221,7 @@ export default function AddonBrowser({ type, url, useStore, installFn, removeFn,
                 estimatedItemSize={150}
                 contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 5 }}
                 extraData={installedItems}
+                keyExtractor={(item: any) => item.installUrl || item.name}
                 renderItem={({ item }: any) => (
                     <View style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
                         <AddonCard

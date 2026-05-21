@@ -1,5 +1,5 @@
 // Taken from https://github.com/nexpid/RevengePlugins/blob/main/src/stuff/components/ActionSheet.tsx
-import { findByProps } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { ReactNative as RN } from "@metro/common";
 import { omit } from "es-toolkit";
 import type { ViewProps } from "react-native";
@@ -10,7 +10,7 @@ const _ActionSheet =
     findByProps("ActionSheet")?.ActionSheet ??
     find(x => x.render?.name === "ActionSheet"); // thank you to @pylixonly for fixing this
 
-const { ActionSheetCloseButton, BottomSheetTitleHeader } = findByProps(
+const actionSheetComponents = findByPropsLazy(
     "ActionSheetCloseButton",
 );
 
@@ -30,10 +30,10 @@ type ActionSheetProps = React.PropsWithChildren<
 export const ActionSheet = ((props: ActionSheetProps) => {
     return (
         <_ActionSheet>
-            <BottomSheetTitleHeader
+            <actionSheetComponents.BottomSheetTitleHeader
                 title={props.title}
                 trailing={
-                    <ActionSheetCloseButton
+                    <actionSheetComponents.ActionSheetCloseButton
                         onPress={
                             props.onClose ??
                             (() => {

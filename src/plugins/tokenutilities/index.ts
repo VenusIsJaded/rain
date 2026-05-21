@@ -7,16 +7,16 @@ import {
 } from "@api/commands/types";
 import { showConfirmationAlert } from "@api/ui/alerts";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { clipboard } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
 import { tokenUtilitiesSettings, useTokenUtilitiesSettings } from "./storage";
 
-const { showSimpleActionSheet } = findByProps("showSimpleActionSheet");
-const { hideActionSheet } = findByProps("openLazy", "hideActionSheet");
-const { getToken } = findByProps("getToken");
+const actionSheetModule = findByPropsLazy("showSimpleActionSheet");
+const hideActionSheetModule = findByPropsLazy("openLazy", "hideActionSheet");
+const tokenModule = findByPropsLazy("getToken");
 
 var unregisters: any;
 
@@ -61,11 +61,11 @@ export default definePlugin({
 });
 
 const showTokenSheet = (token: string) => {
-  showSimpleActionSheet({
+  actionSheetModule.showSimpleActionSheet({
     key: "TokenDisplay",
     header: {
       title: "Your Token",
-      onClose: () => hideActionSheet(),
+      onClose: () => hideActionSheetModule.hideActionSheet(),
     },
     options: [
       {
@@ -91,7 +91,7 @@ const getTokenCommand = (): RainApplicationCommand => ({
   shouldHide: () => false,
   execute: async (args, ctx) => {
     try {
-      const token = getToken();
+      const token = tokenModule.getToken();
       if (token) {
         showTokenSheet(token);
       } else {

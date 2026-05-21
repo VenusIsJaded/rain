@@ -17,7 +17,8 @@ interface PluginPageProps
 
 function PluginPage(props: PluginPageProps) {
     const items = props.useItems();
-    const { pinnedPlugins, developerSettings } = useSettings();
+    const pinnedPlugins = useSettings(s => s.pinnedPlugins);
+    const developerSettings = useSettings(s => s.developerSettings);
 
     const isPinned = (id: string) => pinnedPlugins?.includes(id);
     const isCore = (id: string) => id.startsWith("core");
@@ -87,7 +88,6 @@ function PluginPage(props: PluginPageProps) {
 }
 
 export default function Plugins() {
-    useSettings();
 
     // Re-render trigger so plugin list updates after lazy plugins load
     const [loadTick, setLoadTick] = useState(0);

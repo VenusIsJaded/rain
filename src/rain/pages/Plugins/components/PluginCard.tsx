@@ -34,7 +34,8 @@ function getHighlightColor(): import("react-native").ColorValue {
 
 function Title() {
     const { plugin, result } = useCardContext();
-    const { pinnedPlugins, togglePinnedPlugin } = useSettings(s => s);
+    const pinnedPlugins = useSettings(s => s.pinnedPlugins);
+    const togglePinnedPlugin = useSettings(s => s.togglePinnedPlugin);
     const isPinned = pinnedPlugins?.includes(plugin.id);
 
     // could be empty if the plugin name is irrelevant!
@@ -106,7 +107,7 @@ function Description() {
 const Actions = () => {
     const { plugin } = useCardContext();
     const navigation = NavigationNative.useNavigation();
-    const { pluginCard } = useSettings(s => s);
+    const pluginCard = useSettings(s => s.pluginCard);
 
     return (
         <View style={{ flexDirection: "row", gap: 6 }}>
@@ -149,7 +150,7 @@ export default function PluginCard({
     const [toggling, setToggling] = useState(false);
     const cardContextValue = useMemo(() => ({ plugin, result }), [plugin, result]);
     const core = isPluginCore(plugin.id);
-    const { pinnedPlugins } = useSettings(s => s);
+    const pinnedPlugins = useSettings(s => s.pinnedPlugins);
     const isPinned = pinnedPlugins?.includes(plugin.id);
 
     const pluginEnabled = usePluginSettings(s => s.settings[plugin.id]?.enabled ?? core);
@@ -188,7 +189,7 @@ export default function PluginCard({
     };
 
     const navigation = NavigationNative.useNavigation();
-    const { pluginCard } = useSettings(s => s);
+    const pluginCard = useSettings(s => s.pluginCard);
     const openOnPress = pluginCard?.openOnPress;
 
     if (compact) {
