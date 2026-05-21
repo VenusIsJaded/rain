@@ -4,15 +4,20 @@ import { findByName, findByProps, findByStoreName } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
 
-import { addLogEntry, clearLogs, repairCorruptedLogs } from "./database";
+import { addLogEntry, repairCorruptedLogs } from "./database";
 import Settings from "./settings";
 import { useMessageLoggerSettings } from "./storage";
 
 let patches: Array<() => void> = [];
 const selfDeletedMessages = new Set<string>();
+
+// Set gives O(1) has/delete vs the old Array's O(n) includes + indexOf.
+const deleteableIds = new Set<string>();
+
+// Hoisted module references — resolved once at start(), shared by all patches.
 let MessageStore: any;
 let UserStore: any;
-const deleteable: string[] = [];
+let FluxDispatcher: any;
 
 function logToDatabase(message: any, type: "DELETE" | "UPDATE") {
     const logEntry = {
@@ -40,17 +45,15 @@ function isBot(author: any): boolean {
 function shouldIgnoreMessage(message: any, storage: any): boolean {
     try {
         if (!message?.author?.id) return false;
-
         if (storage.filters?.ignoreBots && isBot(message.author)) return true;
-
         if (message?.__rainenhancements) return true;
-
         return false;
     } catch {
         return false;
     }
 }
 
+// Hoisted moment reference — avoids re-scanning modules on every formatTimestamp call.
 const _momentModule = findByProps("utc", "unix", "duration");
 
 function formatTimestamp(use12Hour: boolean): string {
@@ -62,11 +65,24 @@ function formatTimestamp(use12Hour: boolean): string {
     }
 }
 
+// Cached ignore-list Sets — rebuilt only when the ignoreLists reference changes,
+// avoiding string split + indexOf on every dispatched message event.
+let _cachedUserIgnore: Set<string> | null = null;
+let _cachedChannelIgnore: Set<string> | null = null;
+let _lastIgnoreListsRef: any = null;
+
+function getIgnoreSets(storage: any) {
+    if (storage.ignoreLists !== _lastIgnoreListsRef) {
+        _cachedUserIgnore = new Set(storage.ignoreLists.user.split(" ").filter(Boolean));
+        _cachedChannelIgnore = new Set(storage.ignoreLists.channel.split(" ").filter(Boolean));
+        _lastIgnoreListsRef = storage.ignoreLists;
+    }
+    return { userIgnore: _cachedUserIgnore!, channelIgnore: _cachedChannelIgnore! };
+}
+
 function patchMessageDeleteHandler() {
     try {
-        const FluxDispatcher = findByProps("dispatch", "_subscriptions");
-        const moment = findByProps("utc", "unix", "duration");
-        if (!FluxDispatcher || !moment) return () => {};
+        if (!FluxDispatcher) return () => {};
 
         return before("dispatch", FluxDispatcher, (args: any[]) => {
             try {
@@ -77,27 +93,24 @@ function patchMessageDeleteHandler() {
                 const storage = useMessageLoggerSettings.getState();
                 if (!storage.deleted?.enabled) return args;
 
-                if (!UserStore) UserStore = findByStoreName("UserStore");
-                if (!MessageStore) MessageStore = findByStoreName("MessageStore");
-
                 if (!UserStore || !MessageStore) return args;
 
-                const currentUserId = UserStore.getCurrentUser?.()?.id;
                 const { id, channelId } = event;
                 const message = MessageStore.getMessage?.(channelId, id);
-
                 if (!message) return args;
-                if (message?.author?.id && storage.ignoreLists.user.split(" ").indexOf(message.author.id.toString()) !== -1) return args;
-                if (message?.channel_id && storage.ignoreLists.channel.split(" ").indexOf(message.channel_id.toString()) !== -1) return args;
+
+                const { userIgnore, channelIgnore } = getIgnoreSets(storage);
+                if (message?.author?.id && userIgnore.has(message.author.id.toString())) return args;
+                if (message?.channel_id && channelIgnore.has(message.channel_id.toString())) return args;
 
                 if (shouldIgnoreMessage(message, storage)) return args;
 
                 const wasSelfDeleted = selfDeletedMessages.has(id);
                 if (wasSelfDeleted) selfDeletedMessages.delete(id);
 
-                if (deleteable.includes(id)) {
-                    const idx = deleteable.indexOf(id);
-                    deleteable.splice(idx, 1);
+                // O(1) Set lookup + delete instead of O(n) includes + indexOf + splice
+                if (deleteableIds.has(id)) {
+                    deleteableIds.delete(id);
                     return args;
                 }
 
@@ -105,11 +118,10 @@ function patchMessageDeleteHandler() {
                     logToDatabase(message, "DELETE");
                 }
 
-                deleteable.push(id);
+                deleteableIds.add(id);
 
                 let automodMessage = "This message was deleted";
-
-                if(storage.custom.customDeleteTextEnabled) automodMessage = storage.custom.customDeletedText;
+                if (storage.custom.customDeleteTextEnabled) automodMessage = storage.custom.customDeletedText;
                 if (storage.deleted?.showTimestamps) {
                     automodMessage += ` (${formatTimestamp(storage.deleted.use12Hour)})`;
                 }
@@ -153,11 +165,9 @@ function patchMessageDeleteHandler() {
 
 function patchMessageEditHandler() {
     try {
-        const FluxDispatcher = findByProps("dispatch", "_subscriptions");
-        const MessageStore = findByStoreName("MessageStore");
-        const emojiRegex = /https:\/\/cdn\.discordapp\.com\/emojis\/\d+\.\w+/g;
-
         if (!FluxDispatcher || !MessageStore) return () => {};
+
+        const emojiRegex = /https:\/\/cdn\.discordapp\.com\/emojis\/\d+\.\w+/g;
 
         return before("dispatch", FluxDispatcher, (args: any[]) => {
             try {
@@ -167,17 +177,20 @@ function patchMessageEditHandler() {
 
                 let EDIT_HISTORY_SEPARATOR = "`[ EDITED ]`";
                 const storage = useMessageLoggerSettings.getState();
-                if(storage.custom.customEditTextEnabled) EDIT_HISTORY_SEPARATOR = storage.custom.customEditText;
+                if (storage.custom.customEditTextEnabled) EDIT_HISTORY_SEPARATOR = storage.custom.customEditText;
 
                 if (!storage.edited?.enabled) return args;
 
                 const message = event.message;
                 if (!message?.content || !message?.id) return args;
 
-                if (storage.filters?.ignoreSelfEdits && message?.author?.id === findByStoreName("UserStore")?.getCurrentUser?.()?.id) return args;
+                // Reuse hoisted UserStore instead of re-calling findByStoreName inside hot path
+                if (storage.filters?.ignoreSelfEdits && message?.author?.id === UserStore?.getCurrentUser?.()?.id) return args;
 
-                if (message?.author?.id && storage.ignoreLists.user.split(" ").indexOf(message.author.id.toString()) !== -1) return args;
-                if (message?.channel_id && storage.ignoreLists.channel.split(" ").indexOf(message.channel_id.toString()) !== -1) return args;
+                const { userIgnore, channelIgnore } = getIgnoreSets(storage);
+                if (message?.author?.id && userIgnore.has(message.author.id.toString())) return args;
+                if (message?.channel_id && channelIgnore.has(message.channel_id.toString())) return args;
+
                 const prevMessage = MessageStore.getMessage?.(message.channel_id || message.channelId, message.id);
                 if (!prevMessage || !prevMessage.content || prevMessage.content === message.content) return args;
 
@@ -209,6 +222,12 @@ function patchRowManager() {
 
         const EDIT_HISTORY_SEPARATOR = "`[ EDITED ]`";
 
+        // Hoist all module lookups out of the hot generate() path
+        const React = require("react");
+        const ActionSheet = findByName("ActionSheet");
+        const FormRow = findByName("FormRow");
+        const getAssetIDByName = findByProps("getAssetIDByName")?.getAssetIDByName;
+
         return before("generate", RowManager.prototype, args => {
             try {
                 const data = args[0];
@@ -217,7 +236,11 @@ function patchRowManager() {
                 const msg = data.message;
                 const storage = useMessageLoggerSettings.getState();
 
-                const isDeleted = msg.was_deleted || msg.deleted || (typeof msg.flags === "number" && (msg.flags & 8192)) || msg.type === 6 || deleteable.includes(msg.id);
+                // O(1) Set lookup instead of O(n) array includes
+                const isDeleted = msg.was_deleted || msg.deleted
+                    || (typeof msg.flags === "number" && (msg.flags & 8192))
+                    || msg.type === 6
+                    || deleteableIds.has(msg.id);
 
                 if (isDeleted && storage.deleted?.enabled) {
                     if (shouldIgnoreMessage(msg, storage)) return args;
@@ -232,16 +255,13 @@ function patchRowManager() {
                 if (storage.edited?.enabled && typeof msg.content === "string" && msg.content.includes(EDIT_HISTORY_SEPARATOR)) {
                     const separator = new RegExp(EDIT_HISTORY_SEPARATOR, "gmi");
                     if (separator.test(msg.content) && data.buttons) {
-                        const React = require("react");
-                        const ActionSheet = findByName("ActionSheet");
-                        const FormRow = findByName("FormRow");
-                        const getAssetIDByName = findByProps("getAssetIDByName")?.getAssetIDByName;
-                        const FluxDispatcher = findByProps("dispatch", "_subscriptions");
-
                         data.buttons.push(
                             React.createElement(FormRow, {
                                 label: "Remove Edit History",
-                                leading: React.createElement("img", { style: { opacity: 1 }, src: getAssetIDByName ? getAssetIDByName("ic_edit_24px") : undefined }),
+                                leading: React.createElement("img", {
+                                    style: { opacity: 1 },
+                                    src: getAssetIDByName ? getAssetIDByName("ic_edit_24px") : undefined
+                                }),
                                 onPress: () => {
                                     try {
                                         const Edited = EDIT_HISTORY_SEPARATOR + "\n\n";
@@ -267,7 +287,10 @@ function patchRowManager() {
                                             ActionSheet.hideActionSheet();
                                         }
 
-                                        showToast("[MessageLogger] Edit history removed", getAssetIDByName ? getAssetIDByName("ic_edit_24px") : undefined);
+                                        showToast(
+                                            "[MessageLogger] Edit history removed",
+                                            getAssetIDByName ? getAssetIDByName("ic_edit_24px") : undefined
+                                        );
                                     } catch (e) {
                                         console.error("[MessageLogger] Remove edit history error:", e);
                                     }
@@ -315,6 +338,11 @@ export default definePlugin({
     version: "2.0.0",
     settings: Settings,
     start() {
+        // Resolve shared module references once — all patch functions reuse them
+        FluxDispatcher = findByProps("dispatch", "_subscriptions");
+        UserStore = findByStoreName("UserStore");
+        MessageStore = findByStoreName("MessageStore");
+
         repairCorruptedLogs();
         patches.push(patchDeleteAction());
         patches.push(patchMessageDeleteHandler());
@@ -323,14 +351,18 @@ export default definePlugin({
     },
     stop() {
         for (const unpatch of patches) {
-            try {
-                unpatch();
-            } catch (e) {
+            try { unpatch(); } catch (e) {
                 console.error("[MessageLogger] Error unpatching:", e);
             }
         }
         patches = [];
         selfDeletedMessages.clear();
-        deleteable.length = 0;
+        deleteableIds.clear();
+        _cachedUserIgnore = null;
+        _cachedChannelIgnore = null;
+        _lastIgnoreListsRef = null;
+        FluxDispatcher = undefined;
+        UserStore = undefined;
+        MessageStore = undefined;
     },
 });
