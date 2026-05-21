@@ -75,10 +75,6 @@ interface RunMessage {
     };
 }
 
-function serializeMessage(msg: any): string {
-    return JSON.stringify(msg);
-}
-
 function sendLog(level: LogLevel, ...args: any[]) {
     if (socket?.readyState === WebSocket.OPEN) {
         const message: LogMessage = {
@@ -88,7 +84,7 @@ function sendLog(level: LogLevel, ...args: any[]) {
                 message: args
             }
         };
-        socket.send(serializeMessage(message));
+        socket.send(JSON.stringify(message));
     }
 }
 
@@ -185,7 +181,7 @@ export function connectToDebugger(url: string) {
                     version: VERSION
                 }
             };
-            socket?.send(serializeMessage(hello));
+            socket?.send(JSON.stringify(hello));
 
             patchConsoleAndLogger();
         });
