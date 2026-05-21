@@ -15,28 +15,27 @@ const mmkvStorage = proxyLazy(() => {
     return findByProps("storage");
 });
 
+// Hoisted — avoids re-creating the Set on every patchStorage() call
+const PATCHED_KEYS = new Set(["ThemeStore", "SelectivelySyncedUserSettingsStore"]);
+const RAIN_THEME_PREFIX = "rain-theme-";
+
 export default function patchStorage() {
-    const patchedKeys = new Set(["ThemeStore", "SelectivelySyncedUserSettingsStore"]);
 
     const patches = [
         after("get", mmkvStorage, ([key], ret) => {
-            if (!_colorRef.current || !patchedKeys.has(key)) return;
+            if (!_colorRef.current || !PATCHED_KEYS.has(key)) return;
 
             const state = findInTree(ret._state, s => typeof s.theme === "string");
             if (state) state.theme = _colorRef.key;
         }),
         before("set", mmkvStorage, ([key, value]) => {
-            if (!patchedKeys.has(key) || !value) return;
+            if (!PATCHED_KEYS.has(key) || !value) return;
 
             try {
-                if (value._state && value._state.theme) {
-                    const lastTheme = _colorRef.lastSetDiscordTheme || "darker";
-                    if (value._state.theme.startsWith("rain-theme-")) {
-                        value._state.theme = lastTheme;
-                    }
+                if (value._state?.theme?.startsWith(RAIN_THEME_PREFIX)) {
+                    value._state.theme = _colorRef.lastSetDiscordTheme || "darker";
                 }
-            } catch (err) {
-            }
+            } catch {}
 
             return [key, value];
         })
