@@ -74,6 +74,16 @@ export function filterAssets(param: string | ((a: Asset) => boolean)) {
 /**
  * Returns the first asset ID in the registry with the given name
  */
-export function findAssetId(name: string) {
-    return findAsset(name)?.id;
+export function findAssetId(name: string): number | undefined {
+    // Fast path: check cache directly without going through findAsset wrapper
+    const cached = _nameToAssetCache[name];
+    if (cached) return cached.id;
+
+    // Slow path: iterate and cache
+    for (const asset of iterateAssets()) {
+        if (asset.name === name) {
+            _nameToAssetCache[name] = asset;
+            return asset.id;
+        }
+    }
 }

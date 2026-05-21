@@ -1,6 +1,6 @@
 import { FilterCheckDef, FilterDefinition, ModuleExports } from "./types";
 
-export function createFilterDefinition<A extends unknown[]>(
+export function createFilterDefinition<A extends any[]>(
     fn: FilterCheckDef<A>,
     uniqMaker: (args: A) => string
 ): FilterDefinition<A> {
@@ -8,10 +8,7 @@ export function createFilterDefinition<A extends unknown[]>(
         return Object.assign(func, {
             filter: fn,
             raw,
-            uniq: [
-                raw && "raw::",
-                uniqMaker(args)
-            ].filter(Boolean).join("")
+            uniq: raw ? `raw::${uniqMaker(args)}` : uniqMaker(args)
         });
     }
 
@@ -36,5 +33,3 @@ export function createSimpleFilter(
         () => `dynamic::${uniq}`
     )();
 }
-
-
