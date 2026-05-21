@@ -7,6 +7,7 @@ const dataURL = "https://userpfp.github.io/UserPFP/source/data.json";
 
 let data: { avatars?: Record<string, string> } | undefined;
 let dataInterval: ReturnType<typeof setInterval> | undefined;
+export function clearUserPFPInterval() { if (dataInterval) clearInterval(dataInterval); dataInterval = undefined; }
 
 export async function fetchData() {
     try {

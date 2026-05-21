@@ -20,7 +20,9 @@ export default definePlugin({
     predicates: [
         () => isChatBubblesSupported() === true,
     ],
+    _unsubscribes: [] as (() => void)[],
     async eagerStart() {
+        this._unsubscribes = [];
         BubbleModule?.hookBubbles();
         await waitForHydration(useChatBubblesSettings);
 
@@ -54,12 +56,15 @@ export default definePlugin({
             "THEME_UPDATE",
         ]) {
             FluxDispatcher.subscribe(event, updateBubbleAppearance);
+            this._unsubscribes.push(() => FluxDispatcher.unsubscribe(event, updateBubbleAppearance));
         }
 
-        useChatBubblesSettings.subscribe(updateBubbleAppearance);
+        this._unsubscribes.push(useChatBubblesSettings.subscribe(updateBubbleAppearance));
     },
     stop() {
         BubbleModule?.unhookBubbles();
+        this._unsubscribes?.forEach(u => u());
+        this._unsubscribes = [];
     },
     settings: settings
 });

@@ -22,11 +22,11 @@ const { FlashList } = lazyDestructure(() => findByProps("FlashList"));
 
 export default function ReviewSection({ userId }: ReviewSectionProps) {
     const [reviews, setReviews] = React.useState<Review[]>([]);
-    const fetchReviews = () => {
-        getReviews(userId).then(i => setReviews(i));
-    };
-
-    React.useEffect(fetchReviews, []);
+    React.useEffect(() => {
+        let mounted = true;
+        getReviews(userId).then(i => { if (mounted) setReviews(i) });
+        return () => { mounted = false; };
+    }, [userId]);
 
     const hasExistingReview =
         reviews.filter(i => i.sender.discordID === getCurrentUser()?.id)

@@ -10,10 +10,12 @@ export default function Presets() {
     const [presets, setPresets] = React.useState<PresetInterface[]>([]);
 
     React.useEffect(() => {
-        getPresets().then(presets => setPresets(presets));
+        let mounted = true;
+        getPresets().then(presets => { if (mounted) setPresets(presets) });
+        return () => { mounted = false; };
     }, []);
 
-    return <FlashList estimatedItemSize={200} keyExtractor={item => item.id || item.name || Math.random().toString()}
+    return <FlashList estimatedItemSize={200} keyExtractor={(item, index) => item.id || item.name || index.toString()}
         data={presets}
         renderItem={({ item }) => <Preset preset={item} />}
         ListFooterComponent={() => <View style={{ height: 18 }} />}

@@ -36,6 +36,7 @@ export default definePlugin({
             unpatch?.();
         }
         unpatches = [];
+        clearUserPFPInterval();
     },
     settings: Settings,
 });

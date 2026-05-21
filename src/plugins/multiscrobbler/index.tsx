@@ -6,6 +6,8 @@ import { Developers } from "@rain/Developers";
 
 import { initialize, stop } from "./manager";
 import { UserStore } from "./modules";
+
+let connectionOpenUnsub: (() => void) | null = null;
 import { serviceFactory } from "./services/ServiceFactory";
 import { currentSettings, pluginState, useMultiScrobblerSettings } from "./storage";
 import Settings from "./ui/pages/Settings";
@@ -85,7 +87,7 @@ async function validateAndInitialize() {
         };
 
         FluxDispatcher.subscribe("CONNECTION_OPEN", waitForUser);
-    }
+        connectionOpenUnsub = () => FluxDispatcher.unsubscribe("CONNECTION_OPEN", waitForUser);    }
 }
 
 export default definePlugin({
@@ -107,6 +109,8 @@ export default definePlugin({
         pluginState.pluginStopped = true;
 
         stop();
+        connectionOpenUnsub?.();
+        connectionOpenUnsub = null;
     },
 
     settings: Settings,
