@@ -63,10 +63,19 @@ const saveCache = debounce(() => {
     writeFile(RAIN_METRO_CACHE_PATH, JSON.stringify(_metroCache));
 }, 1000);
 
-// extractExportsFlags and indexExportsFlags removed — extractExportsFlags always
-// returned ModuleFlags.EXISTS which was immediately filtered out by the caller,
-// making both functions effective no-ops. Removing them saves bundle parse and
-// JIT compile time.
+function extractExportsFlags(moduleExports: any) {
+    if (!moduleExports) return undefined;
+    const bit = ModuleFlags.EXISTS;
+    return bit;
+}
+
+/** @internal */
+export function indexExportsFlags(moduleId: number, moduleExports: any) {
+    const flags = extractExportsFlags(moduleExports);
+    if (flags && flags !== ModuleFlags.EXISTS) {
+        _metroCache.flagsIndex[moduleId] = flags;
+    }
+}
 
 /** @internal */
 export function indexBlacklistFlag(id: number) {

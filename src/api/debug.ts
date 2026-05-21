@@ -29,9 +29,9 @@ export interface RNConstants extends PlatformConstants {
 }
 
 let socket: WebSocket | undefined;
-let originalConsoleLog: typeof console.log | undefined;
-let originalConsoleError: typeof console.error | undefined;
-let originalConsoleWarn: typeof console.warn | undefined;
+let originalConsoleLog: any;
+let originalConsoleError: any;
+let originalConsoleWarn: any;
 let originalLoggerLog: any;
 let originalLoggerError: any;
 let originalLoggerWarn: any;
@@ -39,70 +39,126 @@ let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
 
 const VERSION = 1;
 
-// Use plain string union types instead of enum — enums generate runtime objects
-// that add bundle weight; string literals are erased entirely by the compiler.
-type MessageType = "hello" | "hi" | "log" | "run";
-type LogLevel = "debug" | "default" | "warn" | "error";
+enum MessageType {
+    Hello = "hello",
+    Hi = "hi",
+    Log = "log",
+    Run = "run",
+}
+
+enum LogLevel {
+    Debug = "debug",
+    Default = "default",
+    Warn = "warn",
+    Error = "error",
+}
 
 interface LogMessage {
-    type: "log";
-    data: { level: LogLevel; message: any[] };
+    type: MessageType.Log;
+    data: {
+        level: LogLevel;
+        message: any[];
+    };
 }
 
 interface HelloMessage {
-    type: "hello";
-    data: { version: number };
+    type: MessageType.Hello;
+    data: {
+        version: number;
+    };
+}
+
+interface RunMessage {
+    type: MessageType.Run;
+    data: {
+        code: string;
+    };
+}
+
+function serializeMessage(msg: any): string {
+    return JSON.stringify(msg);
 }
 
 function sendLog(level: LogLevel, ...args: any[]) {
     if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-            type: "log",
-            data: { level, message: args }
-        } as LogMessage));
+        const message: LogMessage = {
+            type: MessageType.Log,
+            data: {
+                level,
+                message: args
+            }
+        };
+        socket.send(serializeMessage(message));
     }
 }
 
 function patchConsoleAndLogger() {
     originalConsoleLog = console.log;
-    console.log = (...args: any[]) => {
-        originalConsoleLog!.apply(console, args);
-        sendLog("default", ...args);
+    console.log = function(...args: any[]) {
+        originalConsoleLog.apply(console, args);
+        sendLog(LogLevel.Default, ...args);
     };
 
     originalConsoleError = console.error;
-    console.error = (...args: any[]) => {
-        originalConsoleError!.apply(console, args);
-        sendLog("error", ...args);
+    console.error = function(...args: any[]) {
+        originalConsoleError.apply(console, args);
+        sendLog(LogLevel.Error, ...args);
     };
 
     originalConsoleWarn = console.warn;
-    console.warn = (...args: any[]) => {
-        originalConsoleWarn!.apply(console, args);
-        sendLog("warn", ...args);
+    console.warn = function(...args: any[]) {
+        originalConsoleWarn.apply(console, args);
+        sendLog(LogLevel.Warn, ...args);
     };
 
     if (logger) {
         originalLoggerLog = logger.log;
-        logger.log = (...args: any[]) => { originalLoggerLog.apply(logger, args); sendLog("default", ...args); };
+        logger.log = function(...args: any[]) {
+            originalLoggerLog.apply(logger, args);
+            sendLog(LogLevel.Default, ...args);
+        };
 
         originalLoggerError = logger.error;
-        logger.error = (...args: any[]) => { originalLoggerError.apply(logger, args); sendLog("error", ...args); };
+        logger.error = function(...args: any[]) {
+            originalLoggerError.apply(logger, args);
+            sendLog(LogLevel.Error, ...args);
+        };
 
         originalLoggerWarn = logger.warn;
-        logger.warn = (...args: any[]) => { originalLoggerWarn.apply(logger, args); sendLog("warn", ...args); };
+        logger.warn = function(...args: any[]) {
+            originalLoggerWarn.apply(logger, args);
+            sendLog(LogLevel.Warn, ...args);
+        };
     }
 }
 
 function unpatchConsoleAndLogger() {
-    if (originalConsoleLog) { console.log = originalConsoleLog; originalConsoleLog = undefined; }
-    if (originalConsoleError) { console.error = originalConsoleError; originalConsoleError = undefined; }
-    if (originalConsoleWarn) { console.warn = originalConsoleWarn; originalConsoleWarn = undefined; }
+    if (originalConsoleLog) {
+        console.log = originalConsoleLog;
+        originalConsoleLog = undefined;
+    }
+    if (originalConsoleError) {
+        console.error = originalConsoleError;
+        originalConsoleError = undefined;
+    }
+    if (originalConsoleWarn) {
+        console.warn = originalConsoleWarn;
+        originalConsoleWarn = undefined;
+    }
 
     if (logger) {
-        if (originalLoggerLog) { logger.log = originalLoggerLog; originalLoggerLog = undefined; }
-        if (originalLoggerError) { logger.error = originalLoggerError; originalLoggerError = undefined; }
-        if (originalLoggerWarn) { logger.warn = originalLoggerWarn; originalLoggerWarn = undefined; }
+        if (originalLoggerLog) {
+            logger.log = originalLoggerLog;
+            originalLoggerLog = undefined;
+        }
+        if (originalLoggerError) {
+            logger.error = originalLoggerError;
+            originalLoggerError = undefined;
+        }
+        if (originalLoggerWarn) {
+            logger.warn = originalLoggerWarn;
+            originalLoggerWarn = undefined;
+        }
     }
 }
 
@@ -122,27 +178,31 @@ export function connectToDebugger(url: string) {
 
         socket.addEventListener("open", () => {
             showToast("Connected to debugger.", findAssetId("Check"));
-            socket?.send(JSON.stringify({
-                type: "hello",
-                data: { version: VERSION }
-            } as HelloMessage));
+
+            const hello: HelloMessage = {
+                type: MessageType.Hello,
+                data: {
+                    version: VERSION
+                }
+            };
+            socket?.send(serializeMessage(hello));
+
             patchConsoleAndLogger();
         });
 
         socket.addEventListener("message", (message: any) => {
             try {
                 const data = JSON.parse(message.data);
-                if (data.type === "run" && data.data?.code) {
+
+                if (data.type === MessageType.Run && data.data?.code) {
                     try {
-                        // eslint-disable-next-line no-eval
                         (0, eval)(data.data.code);
                     } catch (e) {
                         console.error("Error executing remote code:", e);
                     }
                 }
-            } catch {
+            } catch (e) {
                 try {
-                    // eslint-disable-next-line no-eval
                     (0, eval)(message.data);
                 } catch (err) {
                     console.error(err);
@@ -198,8 +258,7 @@ function cleanupRdt() {
 export function connectRdt(url: string, quiet?: boolean) {
     if (!isReactDevToolsPreloaded() || rdtClient) return;
 
-    // Strip port from url with a single slice instead of split+slice+join
-    const base = url.slice(0, url.lastIndexOf(":"));
+    const base = url.split(":").slice(0, -1).join(":");
     const ws = (rdtClient = new WebSocket(`ws://${base}:${rdtPort}`));
 
     ws.addEventListener("open", () => {
@@ -208,7 +267,9 @@ export function connectRdt(url: string, quiet?: boolean) {
         bump();
     });
 
-    ws.addEventListener("close", () => { cleanupRdt(); });
+    ws.addEventListener("close", () => {
+        cleanupRdt();
+    });
 
     ws.addEventListener("error", (e: any) => {
         cleanupRdt();
@@ -241,29 +302,25 @@ export function useIsRdtConnected() {
     return connected;
 }
 
-/** @internal */
+/**
+ * @internal
+ */
 export function patchLogHook() {
     const unpatch = after("nativeLoggingHook", globalThis, args => {
         if (socket?.readyState === WebSocket.OPEN) {
-            const level: LogLevel = args[1] === "error" ? "error"
-                : args[1] === "warn" ? "warn"
-                : "default";
-            sendLog(level, args[0]);
+            sendLog(args[1] === "error" ? LogLevel.Error : args[1] === "warn" ? LogLevel.Warn : LogLevel.Default, args[0]);
         }
         logger.log(args[0]);
     });
 
     return () => {
-        socket?.close();
+        socket && socket.close();
         unpatch();
     };
 }
 
 /** @internal */
 export const versionHash = version;
-
-// Cache NativeClientInfoModule constants — avoids duplicate getConstants() calls
-const _clientConstants = NativeClientInfoModule.getConstants();
 
 export function getDebugInfo() {
     const hermesProps = window.HermesInternal.getRuntimeProperties();
@@ -280,15 +337,14 @@ export function getDebugInfo() {
                 version: getLoaderVersion()
             }
         },
+
         discord: {
-            version: _clientConstants.Version,
-            build: _clientConstants.Build,
+            version: NativeClientInfoModule.getConstants().Version,
+            build: NativeClientInfoModule.getConstants().Build,
         },
         react: {
             version: React.version,
-            nativeVersion: hermesVer.startsWith(padding)
-                ? hermesVer.substring(padding.length)
-                : `${rnVer.major}.${rnVer.minor}.${rnVer.patch}`,
+            nativeVersion: hermesVer.startsWith(padding) ? hermesVer.substring(padding.length) : `${rnVer.major}.${rnVer.minor}.${rnVer.patch}`,
         },
         hermes: {
             version: hermesVer,
@@ -306,29 +362,29 @@ export function getDebugInfo() {
     };
 }
 
-// Hoisted module-level hash function — avoids closure re-creation on every hotReloadTheme() call
-function hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
-    }
-    return hash;
-}
-
 export function hotReloadTheme() {
     if (hotReloadIntervalId !== undefined) {
         clearInterval(hotReloadIntervalId);
         hotReloadIntervalId = undefined;
     }
+    let lastHash: string | null = null;
 
-    let lastHash = 0;
+    const hashString = (str: string): string => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+        }
+        return hash.toString(16);
+    };
 
     hotReloadIntervalId = setInterval(async () => {
         const currentSettings = settings();
         if (!currentSettings.hotReloadThemeUrl) return;
 
         try {
-            const response = await fetch(currentSettings.hotReloadThemeUrl, { cache: "no-store" });
+            const response = await fetch(currentSettings.hotReloadThemeUrl, {
+                cache: "no-store",
+            });
             if (!response.ok) return;
 
             const text = await response.text();
@@ -342,20 +398,35 @@ export function hotReloadTheme() {
     }, 2000);
 }
 
-/** @internal */
+/**
+ * @internal
+ */
 export function initDebugger() {
     const currentSettings = settings();
 
     if (currentSettings.autoDebugger) {
-        try { connectToDebugger(currentSettings.debuggerUrl); }
-        catch (e) { logger.error("Failed to connect to Debugger during startup:", e); }
+        try {
+            connectToDebugger(currentSettings.debuggerUrl);
+        } catch (e) {
+            logger.error("Failed to connect to Debugger during startup:", e);
+        }
     }
-    if (currentSettings.autoDevTools && currentSettings.devToolsUrl) {
-        try { connectRdt(currentSettings.devToolsUrl, true); }
-        catch (e) { logger.error("Failed to connect to ReactDevTools during startup:", e); }
+    if (currentSettings.autoDevTools) {
+        try {
+            if (currentSettings.devToolsUrl) {
+                connectRdt(currentSettings.devToolsUrl, true);
+            }
+        } catch (e) {
+            logger.error("Failed to connect to ReactDevTools during startup:", e);
+        }
     }
-    if (currentSettings.hotReloadTheme && currentSettings.hotReloadThemeUrl) {
-        try { hotReloadTheme(); }
-        catch (e) { logger.error("Failed to run hotReloadThemes:", e); }
+    if (currentSettings.hotReloadTheme) {
+        try {
+            if (currentSettings.hotReloadThemeUrl) {
+                hotReloadTheme();
+            }
+        } catch (e) {
+            logger.error("Failed to run hotReloadThemes:", e);
+        }
     }
 }

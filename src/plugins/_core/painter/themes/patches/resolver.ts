@@ -25,18 +25,12 @@ const SEMANTIC_FALLBACK_MAP: Record<string, string> = {
     "BG_SURFACE_RAISED": "BACKGROUND_MOBILE_PRIMARY"
 };
 
-// Cache the Symbol used to look up prop names in extractInfo — computed once
-// instead of calling Object.getOwnPropertySymbols on every resolveSemanticColor
-// invocation. Stored as a module-level variable for persistence across calls.
-let _extractInfoSym: symbol | undefined;
-
 export default function patchDefinitionAndResolver() {
-    const callback = ([theme]: any[]) =>
-        theme === _colorRef.key ? [_colorRef.current!.reference] : void 0;
+    const callback = ([theme]: any[]) => theme === _colorRef.key ? [_colorRef.current!.reference] : void 0;
 
     if (themeTypes) {
-        origDarker = themeTypes.DARKER as string;
-        origLight = themeTypes.LIGHT as string;
+        origDarker = themeTypes?.DARKER as string;
+        origLight = themeTypes?.LIGHT as string;
 
         Object.defineProperty(themeTypes, "DARKER", {
             configurable: true,
@@ -51,18 +45,20 @@ export default function patchDefinitionAndResolver() {
     }
 
     if (tokenReference?.RawColor) {
-        for (const key of Object.keys(tokenReference.RawColor)) {
+        Object.keys(tokenReference.RawColor).forEach(key => {
             Object.defineProperty(tokenReference.RawColor, key, {
                 configurable: true,
                 enumerable: true,
-                get: () => _colorRef.current?.raw[key] || origRawColor[key],
+                get: () => {
+                    return _colorRef.current?.raw[key] || origRawColor[key];
+                }
             });
-        }
+        });
     }
 
     const targetResolver = tokenReference?.default?.meta ?? tokenReference?.default?.internal;
 
-    const unpatches: Array<() => void> = [
+    const unpatches: any[] = [
         before("updateTheme", NativeThemeModule, callback),
         targetResolver && instead("resolveSemanticColor", targetResolver, (args: any[], orig: any) => {
             if (!_colorRef.current) return orig(...args);
@@ -70,7 +66,7 @@ export default function patchDefinitionAndResolver() {
 
             args[0] = _colorRef.current.reference;
 
-            const [name, colorDef] = extractInfo(_colorRef.current.reference, args[1]);
+            const [name, colorDef] = extractInfo(_colorRef.current!.reference, args[1]);
 
             let semanticDef = _colorRef.current.semantic[name];
             if (!semanticDef && _colorRef.current.spec === 2 && name in SEMANTIC_FALLBACK_MAP) {
@@ -85,9 +81,11 @@ export default function patchDefinitionAndResolver() {
 
             const rawValue = _colorRef.current.raw[colorDef.raw];
             if (rawValue) {
+                // Set opacity if needed
                 return colorDef.opacity === 1 ? rawValue : chroma(rawValue).alpha(colorDef.opacity).hex();
             }
 
+            // Fallback to default
             return orig(...args);
         }),
         () => {
@@ -107,16 +105,15 @@ export default function patchDefinitionAndResolver() {
                 });
             }
         }
-    ].filter(Boolean) as Array<() => void>;
+    ].filter(Boolean);
 
     return () => unpatches.forEach(p => p());
 }
 
 function extractInfo(themeName: string, colorObj: any): [name: string, colorDef: any] {
-    // Cache the symbol across calls — Object.getOwnPropertySymbols is expensive
-    // and the symbol is always the same for every colorObj in this context.
-    _extractInfoSym ??= Object.getOwnPropertySymbols(colorObj)[0];
-    const propName = colorObj[_extractInfoSym];
+    // @ts-ignore - assigning to extractInfo._sym
+    const propName = colorObj[extractInfo._sym ??= Object.getOwnPropertySymbols(colorObj)[0]];
     const colorDef = tokenReference.SemanticColor[propName];
+
     return [propName, colorDef[themeName]];
 }

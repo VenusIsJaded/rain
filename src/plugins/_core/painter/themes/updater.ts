@@ -28,15 +28,12 @@ export const _colorRef: InternalColorRef = {
     lastSetDiscordTheme: "darker"
 };
 
-export function updateColor(
-    colorManifest: ColorManifest | null,
-    { update = true }: { update?: boolean },
-    { noCustomIcons }: { noCustomIcons?: boolean }
-) {
+export function updateColor(colorManifest: ColorManifest | null, { update = true }, { noCustomIcons }: { noCustomIcons?: boolean }) {
+
     const internalDef = colorManifest ? parseColorManifest(colorManifest) : null;
     const ref = Object.assign(_colorRef, {
         current: internalDef,
-        key: `rain-theme-${++_inc}` as `rain-theme-${string}`,
+        key: `rain-theme-${++_inc}`,
         lastSetDiscordTheme: !ThemeStore.theme.startsWith("rain-theme-")
             ? ThemeStore.theme
             : _colorRef.lastSetDiscordTheme
@@ -50,17 +47,13 @@ export function updateColor(
         tokenRef.Theme[ref.key.toUpperCase()] = ref.key;
         FormDivider.DIVIDER_COLORS[ref.key] = FormDivider.DIVIDER_COLORS[ref.current!.reference];
 
-        // Use for-of over Object.keys to avoid intermediate array where possible
-        for (const k of Object.keys(tokenRef.Shadow)) {
-            tokenRef.Shadow[k][ref.key] = tokenRef.Shadow[k][ref.current!.reference];
-        }
-        for (const k of Object.keys(tokenRef.SemanticColor)) {
+        Object.keys(tokenRef.Shadow).forEach(k => tokenRef.Shadow[k][ref.key] = tokenRef.Shadow[k][ref.current!.reference]);
+        Object.keys(tokenRef.SemanticColor).forEach(k => {
             tokenRef.SemanticColor[k][ref.key] = {
                 ...tokenRef.SemanticColor[k][ref.current!.reference]
             };
-        }
+        });
     }
-
     if (update) {
         AppearanceManager.setShouldSyncAppearanceSettings(false);
         AppearanceManager.updateTheme(internalDef != null ? ref.key : ref.lastSetDiscordTheme);
