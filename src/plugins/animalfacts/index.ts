@@ -24,7 +24,7 @@ export default definePlugin({
         unregisters.push(registerCommand(dogFactCommand()));
     },
     stop() {
-        unregisters.forEach(unregister => unregister());
+        for (const unregister of unregisters) unregister();
     }
 });
 
