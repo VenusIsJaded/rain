@@ -97,7 +97,7 @@ if (typeof window.__r === "undefined") {
     const startDiscord = async () => {
       await initializeRain();
 
-      unpatches.forEach(fn => fn());
+      for (const fn of unpatches) fn();
       unpatches.clear();
 
       originalRequire(0);

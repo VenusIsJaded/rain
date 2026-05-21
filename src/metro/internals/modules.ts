@@ -19,7 +19,6 @@ let patchedNativeComponentRegistry = false;
 let _importingModuleId: number = -1;
 
 const BAD_EXPORTS_CHECK_STRING = "";
-const _ncrKeys = ["customBubblingEventTypes", "customDirectEventTypes", "register", "get"];
 
 // Pre-map keys to numbers once to eliminate string-to-number parsing in hot loops
 export const moduleKeys = Object.keys(metroModules).map(Number);
@@ -102,7 +101,8 @@ function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
     require("@api/assets/patches").patchAssets(moduleExports);
   }
 
-  if (!patchedNativeComponentRegistry && _ncrKeys.every(x => moduleExports[x])) {
+  // Check rarest key first to short-circuit faster for the 99.9% of modules that don't match
+  if (!patchedNativeComponentRegistry && moduleExports.customBubblingEventTypes && moduleExports.customDirectEventTypes && moduleExports.register && moduleExports.get) {
     instead("register", moduleExports, ([name, cb]: any, origFunc: any) => {
       try {
         return origFunc(name, cb);
@@ -154,7 +154,7 @@ function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
 
   const subs = moduleSubscriptions.get(id);
   if (subs) {
-    subs.forEach(s => s());
+    for (const s of subs) s();
     moduleSubscriptions.delete(id);
   }
 }
@@ -278,7 +278,7 @@ export function waitFor<T>(
     if (!isActive) return;
     isActive = false;
     if (timeoutId) clearTimeout(timeoutId);
-    unsubscribers.forEach(unsub => unsub());
+    for (const unsub of unsubscribers) unsub();
     unsubscribers.length = 0;
   };
 

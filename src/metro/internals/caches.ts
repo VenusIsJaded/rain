@@ -15,11 +15,11 @@ let _metroCache = null as unknown as ReturnType<typeof buildInitCache>;
 
 export const getMetroCache = () => _metroCache;
 
-function buildInitCache() {
+function buildInitCache(modulesCount?: number) {
     const cache = {
         _v: CACHE_VERSION,
         _buildNumber: NativeClientInfoModule.getConstants().Build,
-        _modulesCount: Object.keys(window.modules).length,
+        _modulesCount: modulesCount ?? Object.keys(window.modules).length,
         flagsIndex: {} as Record<string, number>,
         findIndex: {} as Record<string, ModulesMap | undefined>,
         polyfillIndex: {} as Record<string, ModulesMap | undefined>
@@ -39,6 +39,7 @@ function buildInitCache() {
 export async function initMetroCache() {
     if (!await fileExists(RAIN_METRO_CACHE_PATH)) return void buildInitCache();
     const rawCache = await readFile(RAIN_METRO_CACHE_PATH);
+    const _currentModuleCount = Object.keys(window.modules).length;
     try {
         _metroCache = JSON.parse(rawCache);
         if (_metroCache._v !== CACHE_VERSION) {
@@ -49,13 +50,12 @@ export async function initMetroCache() {
             _metroCache = null!;
             throw "cache invalidated; version mismatch";
         }
-        const _currentModuleCount = Object.keys(window.modules).length;
         if (_metroCache._modulesCount !== _currentModuleCount) {
             _metroCache = null!;
             throw "cache invalidated; modules count mismatch";
         }
     } catch {
-        buildInitCache();
+        buildInitCache(_currentModuleCount);
     }
 }
 
