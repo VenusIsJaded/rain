@@ -27,6 +27,7 @@ export default definePlugin({
     },
     stop() {
         for (const unpatch of patches) unpatch();
+        patches.length = 0;
         delete (MultiAccountStore as any).canUseMultiAccountNotifications;
     }
 });

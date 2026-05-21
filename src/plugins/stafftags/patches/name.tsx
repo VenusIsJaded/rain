@@ -58,4 +58,5 @@ export default () => {
     }
 
     return () => { for (const unpatch of patches) unpatch(); };
+        patches.length = 0;
 };

@@ -54,6 +54,7 @@ export default function patchChatBackground() {
             })
         ];
         return () => { for (const x of patches) x(); };
+        patches.length = 0;
     } catch (e) {
         logger.error("Failed to patch chat background.", e);
         return () => { };

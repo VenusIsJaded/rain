@@ -196,7 +196,6 @@ export default function Updater() {
     const debugInfo = getDebugInfo();
     const usePrereleases = useLoaderConfig(s => s.usePrereleases);
     const updateLoaderConfig = useLoaderConfig(s => s.updateLoaderConfig);
-    const usePrereleases = usePrereleases;
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>

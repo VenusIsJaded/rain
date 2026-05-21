@@ -85,6 +85,14 @@ export default definePlugin({
         FluxDispatcher.subscribe("MESSAGE_REACTION_ADD", onReaction);
     },
     stop() {
+        if (playingTimeout !== null) {
+            clearTimeout(playingTimeout);
+            playingTimeout = null;
+        }
+        if (playing) {
+            DCDSoundManager.stop(SOUND_ID);
+            playing = false;
+        }
         FluxDispatcher.unsubscribe("MESSAGE_CREATE", onMessage);
         FluxDispatcher.unsubscribe("MESSAGE_REACTION_ADD", onReaction);
     },

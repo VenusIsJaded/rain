@@ -112,5 +112,6 @@ export function patchActionSheets() {
 
     return () => {
         for (const unpatch of patches) unpatch();
+        patches.length = 0;
     };
 }

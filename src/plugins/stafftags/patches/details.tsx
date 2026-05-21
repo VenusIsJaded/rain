@@ -63,4 +63,5 @@ export default () => {
     for (const UserRow of findByTypeNameAll("UserRow")) patches.push(after("type", UserRow, (args: any[], res: any) => rowPatch(args as any, res)));
 
     return () => { for (const unpatch of patches) unpatch(); };
+        patches.length = 0;
 };

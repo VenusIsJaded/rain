@@ -80,6 +80,7 @@ export function createUserPFPPatcher(onEnabled: () => boolean) {
             for (const x of patches) {
                 x();
             }
+        patches.length = 0;
             if (dataInterval) {
                 clearInterval(dataInterval);
                 dataInterval = undefined;

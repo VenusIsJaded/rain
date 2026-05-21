@@ -41,4 +41,5 @@ export default function patchStorage() {
     ];
 
     return () => { for (const p of patches) p(); };
+        patches.length = 0;
 }

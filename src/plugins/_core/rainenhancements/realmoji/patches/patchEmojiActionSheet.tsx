@@ -45,5 +45,6 @@ export default function patchEmojiActionSheet() {
     return () => {
         unpatchLazy();
         for (const p of patches) p?.();
+        patches.length = 0;
     };
 }
