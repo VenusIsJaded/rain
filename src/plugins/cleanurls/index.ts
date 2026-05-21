@@ -19,7 +19,7 @@ export default definePlugin({
     id: "cleanurls",
     version: "1.0.0",
     async start() {
-        Promise.all([
+        await Promise.all([
             waitForHydration(useCleanUrlsSettings),
             waitForHydration(useRulesStore)
         ]);

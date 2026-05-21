@@ -53,6 +53,8 @@ function shouldIgnoreMessage(message: any, storage: any): boolean {
 
 const _momentModule = findByProps("utc", "unix", "duration");
 
+const _momentModule = findByProps("utc", "unix", "duration");
+
 function formatTimestamp(use12Hour: boolean): string {
     try {
         if (!_momentModule) return "";
@@ -174,7 +176,7 @@ function patchMessageEditHandler() {
                 const message = event.message;
                 if (!message?.content || !message?.id) return args;
 
-                if (storage.filters?.ignoreSelfEdits && message?.author?.id === findByStoreName("UserStore").getCurrentUser().id) return args;
+                if (storage.filters?.ignoreSelfEdits && message?.author?.id === findByStoreName("UserStore")?.getCurrentUser?.()?.id) return args;
 
                 if (message?.author?.id && storage.ignoreLists.user.split(" ").indexOf(message.author.id.toString()) !== -1) return args;
                 if (message?.channel_id && storage.ignoreLists.channel.split(" ").indexOf(message.channel_id.toString()) !== -1) return args;
