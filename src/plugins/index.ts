@@ -1,4 +1,4 @@
-import { createFileStorage } from "@api/storage";
+import { createFileStorage, waitForHydration } from "@api/storage";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
 import { create } from "zustand";
@@ -171,12 +171,14 @@ async function startBatched(ids: string[], method: "start" | "eagerStart"): Prom
 
 export async function initPlugins(): Promise<void> {
     await ensureSetup();
+    await waitForHydration(usePluginSettings);
     const ids = allPluginIds.filter(isPluginEnabled);
     await startBatched(ids, "start");
 }
 
 export async function initEagerPlugins(): Promise<void> {
     await ensureSetup();
+    await waitForHydration(usePluginSettings);
     const ids = allPluginIds.filter(isPluginEnabled);
     await startBatched(ids, "eagerStart");
 }
