@@ -39,13 +39,13 @@ export function patchJsx() {
             name = Component;
         }
 
-        if (name && callbacks.has(name)) {
-            const cbs = callbacks.get(name)!;
-            for (const cb of cbs) {
+        if (name) {
+            const cbs = callbacks.get(name);
+            if (cbs) for (const cb of cbs) {
                 const _ret = cb(Component, ret);
                 if (_ret !== undefined) ret = _ret;
             }
-            return ret;
+            if (cbs) return ret;
         }
     };
 
