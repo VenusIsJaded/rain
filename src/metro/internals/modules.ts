@@ -81,13 +81,11 @@ function isBadExports(exports: any) {
     try {
         if (exports[BAD_EXPORTS_CHECK_STRING] === null) return true;
 
-        // Zero-alloc empty-object check: for-in short-circuit instead of
-        // Reflect.ownKeys(exports).length === 0, eliminating a key-array
-        // allocation on every module load (~4,800+ saved during boot).
+        // Use Reflect.ownKeys (not for-in) — for-in only sees enumerable properties,
+        // but modules can have non-enumerable own exports. Reflect.ownKeys sees all
+        // own keys regardless of enumerability, matching the original behaviour.
         if (exports.__proto__ === Object.prototype) {
-            let hasKey = false;
-            for (const _ in exports) { hasKey = true; break; }
-            if (!hasKey) return true;
+            if (Reflect.ownKeys(exports).length === 0) return true;
         }
 
         if (exports.default?.[Symbol.toStringTag] === "IntlMessagesProxy") return true;
@@ -119,10 +117,17 @@ function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
         patchedNativeComponentRegistry = true;
     }
 
-    // DeveloperExperimentStore Proxy removed: the get trap was
-    //   `Reflect.get(target, property, receiver)`
-    // which is identical to the default [[Get]] behaviour — the Proxy added
-    // overhead on every store property access for zero functional effect.
+    // Restored: DeveloperExperimentStore Proxy wrapper.
+    // Although the get trap is equivalent to Reflect.get, the Proxy itself affects
+    // how React's reconciler and DevTools inspect the object's prototype chain.
+    // Removing it caused false "Cannot read property 'prototype'" crashes.
+    if (moduleExports?.default?.constructor?.displayName === "DeveloperExperimentStore") {
+        moduleExports.default = new Proxy(moduleExports.default, {
+            get(target, property, receiver) {
+                return Reflect.get(target, property, receiver);
+            }
+        });
+    }
 
     if (!patchedImportTracker && moduleExports.fileFinishedImporting) {
         before("fileFinishedImporting", moduleExports, ([filePath]: [string]) => {
@@ -308,7 +313,6 @@ export function waitFor<T>(
     if (filter.key) {
         const cache = getMetroCache().findIndex[filter.key];
         if (cache) {
-            // for-in counter avoids Object.keys().filter() array allocation
             let cachedCount = 0;
             for (const k in cache) if (k[0] !== "_") cachedCount++;
 
