@@ -69,8 +69,6 @@ export default definePlugin({
             syncTimeout = undefined as any;
         }
     },
-    stop() {
-        if (unsubscribeSettings) {
             unsubscribeSettings();
             unsubscribeSettings = undefined;
         }

@@ -52,7 +52,6 @@ function shouldIgnoreMessage(message: any, storage: any): boolean {
 }
 
 const _momentModule = findByProps("utc", "unix", "duration");
-
 const _momentModule = findByProps("utc", "unix", "duration");
 
 function formatTimestamp(use12Hour: boolean): string {
