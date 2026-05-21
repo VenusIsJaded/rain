@@ -9,7 +9,7 @@ import { clipboard, NavigationNative } from "@metro/common";
 import { ActionSheet, AlertActionButton, AlertModal, Button, FlashList, FloatingActionButton, HelpMessage, IconButton, Stack, TableRadioGroup, TableRadioRow, TableRowGroup, TableSwitchRow, Text, TextInput, useSafeAreaInsets } from "@metro/common/components";
 import { isNotNil } from "es-toolkit";
 import fuzzysort from "fuzzysort";
-import { ComponentType, ReactNode, useCallback, useEffect, useMemo } from "react";
+import { ComponentType, ReactNode, useCallback, useEffect, useMemo, useDeferredValue } from "react";
 import * as React from "react";
 import { Image, ScrollView, View } from "react-native";
 
@@ -121,9 +121,11 @@ function InputAlert(props: { label: string, fetchFn: (url: string) => Promise<vo
 
 
 export default function AddonPage<T extends object>({ CardComponent, ...props }: AddonPageProps<T>) {
-    const settings = useSettings();
+    const compactModeSetting = useSettings(s => s.compactMode);
+    const safeMode = useSettings(s => s.safeMode);
     const [search, setSearch] = React.useState("");
-    const [compact, setCompact] = React.useState(settings.compactMode ?? false);
+    const deferredSearch = useDeferredValue(search);
+    const [compact, setCompact] = React.useState(compactModeSetting ?? false);
     const [sortFn, setSortFn] = React.useState<((a: T, b: T) => number) | null>(() => props.defaultSortKey && props.sortOptions ? props.sortOptions[props.defaultSortKey] : null);
     const [selectedSortKey, setSelectedSortKey] = React.useState(props.defaultSortKey || "");
     const [activeFilterKeys, setActiveFilterKeys] = React.useState<string[]>(props.defaultFilterKey ? [props.defaultFilterKey] : []);
@@ -150,8 +152,8 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
     }, [navigation]);
 
     useEffect(() => {
-        setCompact(settings.compactMode ?? false);
-    }, [settings.compactMode]);
+        setCompact(compactModeSetting ?? false);
+    }, [compactModeSetting]);
 
     useEffect(() => {
         const sortKey = props.defaultSortKey;
@@ -171,10 +173,10 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
             items = items.filter(filterFn);
         }
 
-        if (!search && sortFn) items.sort(sortFn);
+        if (!deferredSearch && sortFn) items.sort(sortFn);
 
-        return fuzzysort.go(search, items, { keys: props.searchKeywords, all: true });
-    }, [props.items, sortFn, filterFn, search]);
+        return fuzzysort.go(deferredSearch, items, { keys: props.searchKeywords, all: true });
+    }, [props.items, sortFn, filterFn, deferredSearch]);
 
     const onInstallPress = useCallback(() => {
         if (!props.installAction) return () => { };
@@ -215,16 +217,20 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
             )}
             {props.filterOptions && (
                 <TableRowGroup title="Filter By">
-                    <TableSwitchRow
-                        label="Hide Core Plugins"
-                        value={filterKeys.length > 0}
-                        onValueChange={value => {
-                            const key = Object.keys(props.filterOptions!)[0];
-                            const newFilterKeys = value ? [key] : [];
-                            setActiveFilterKeys(newFilterKeys);
-                            showSheet("SortAndFilterActionSheet", SortAndFilterActionSheet, { sortKey, filterKeys: newFilterKeys });
-                        }}
-                    />
+                    {Object.keys(props.filterOptions).map(key => (
+                        <TableSwitchRow
+                            key={key}
+                            label={key}
+                            value={filterKeys.includes(key)}
+                            onValueChange={value => {
+                                const newFilterKeys = value 
+                                    ? [...filterKeys, key] 
+                                    : filterKeys.filter(k => k !== key);
+                                setActiveFilterKeys(newFilterKeys);
+                                showSheet("SortAndFilterActionSheet", SortAndFilterActionSheet, { sortKey, filterKeys: newFilterKeys });
+                            }}
+                        />
+                    ))}
                 </TableRowGroup>
             )}
 
@@ -233,7 +239,7 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
 
     const headerElement = (
         <View style={{ paddingBottom: 8 }}>
-            {settings.safeMode && <View style={{ marginBottom: 10 }}>
+            {safeMode && <View style={{ marginBottom: 10 }}>
                 <HelpMessage messageType={0}>
                     {props.safeModeHint?.message}
                 </HelpMessage>
@@ -256,7 +262,7 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
         </View>
     );
 
-    if (results.length === 0 && !search) {
+    if (results.length === 0 && !deferredSearch) {
         return <View style={{ gap: 32, flexGrow: 1.5, justifyContent: "center", alignItems: "center" }}>
             <View style={{ gap: 8, alignItems: "center" }}>
                 <Image source={findAssetId("empty_quick_switcher")!} />
@@ -284,7 +290,7 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
         <ErrorBoundary>
             <FlashList
                 data={results}
-                extraData={search}
+                extraData={deferredSearch}
                 estimatedItemSize={compact ? 72 : 120}
                 ListHeaderComponent={headerElement}
                 ListEmptyComponent={() => <View style={{ gap: 12, padding: 12, alignItems: "center" }}>
@@ -297,6 +303,7 @@ export default function AddonPage<T extends object>({ CardComponent, ...props }:
                 ItemSeparatorComponent={_ListSeparator}
                 ListFooterComponent={props.ListFooterComponent}
                 renderItem={({ item }: any) => <CardComponent item={item.obj} result={item} compact={compact} />}
+                keyExtractor={(item: any) => item.obj.id || item.obj.name}
             />
             {props.installBrowserAction && <FloatingActionButton
                 positionBottom={bottomInset + 8}

@@ -96,7 +96,9 @@ async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): P
 
     try {
         await instance[method]?.();
-        usePluginSettings.getState().updatePluginSetting(id, true);
+        if (!usePluginSettings.getState().settings[id]?.enabled) {
+            usePluginSettings.getState().updatePluginSetting(id, true);
+        }
     } catch (error) {
         const errorMsg = `[${id}] Failed to ${method}: ${error}`;
         console.error(errorMsg, error);

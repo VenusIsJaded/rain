@@ -36,7 +36,12 @@ export default function getPatches() {
         }),
     ];
 
-    if (uploadModule?.uploadLocalFiles !== undefined) {
+    let hasUploadModule = false;
+    try {
+        hasUploadModule = uploadModule?.uploadLocalFiles !== undefined;
+    } catch (e) {}
+
+    if (hasUploadModule) {
         patches.push(
             before("uploadLocalFiles", uploadModule, args => {
                 if (getCurrentUser?.()?.premiumType !== 2)
