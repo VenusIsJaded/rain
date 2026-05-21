@@ -50,8 +50,9 @@ export async function grabEverything(): Promise<UserData & { coreSettings?: any 
         },
     } as UserData;
 
+    const ignoredSet = new Set(cloudSyncSettings.ignoredPlugins);
     for (const [id, item] of pluginInstances.entries()) {
-        if (cloudSyncSettings.ignoredPlugins.includes(id)) continue;
+        if (ignoredSet.has(id)) continue;
         try {
             const storagePath = `plugins/${id}.json`;
             const storage = await readFile(storagePath).catch(() => null);
