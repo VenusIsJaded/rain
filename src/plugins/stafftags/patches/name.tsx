@@ -57,5 +57,5 @@ export default () => {
         }));
     }
 
-    return () => patches.forEach((unpatch: any) => unpatch());
+    return () => { for (const unpatch of patches) unpatch(); };
 };

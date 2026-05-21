@@ -105,7 +105,7 @@ export default function patchDefinitionAndResolver() {
         }
     ].filter(Boolean);
 
-    return () => unpatches.forEach(p => p());
+    return () => { for (const p of unpatches) p(); };
 }
 
 function extractInfo(themeName: string, colorObj: any): [name: string, colorDef: any] {
