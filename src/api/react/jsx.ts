@@ -7,8 +7,9 @@ const callbacks = new Map<string, Callback[]>();
 const jsxRuntime = findByPropsLazy("jsx", "jsxs");
 
 export function onJsxCreate(Component: string, callback: Callback) {
-    if (!callbacks.has(Component)) callbacks.set(Component, []);
-    callbacks.get(Component)!.push(callback);
+    let cbs = callbacks.get(Component);
+    if (!cbs) callbacks.set(Component, (cbs = []));
+    cbs.push(callback);
 }
 
 export function deleteJsxCreate(Component: string, callback: Callback) {
