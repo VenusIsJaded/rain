@@ -1,7 +1,8 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { showConfirmationAlert } from "@api/ui/alerts";
 import { showToast } from "@api/ui/toasts";
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 import { clipboard,ReactNative } from "@metro/common";
 
 import { Decoration } from "../api";
@@ -9,8 +10,8 @@ import { useCurrentUserDecorationsStore } from "../stores/CurrentUserDecorations
 import discordifyDecoration from "./discordifyDecoration";
 
 const ImageResolver = findByPropsLazy("getAvatarDecorationURL", "default");
-const { showSimpleActionSheet } = findByPropsLazy("showSimpleActionSheet");
-const { hideActionSheet } = findByPropsLazy("openLazy", "hideActionSheet");
+const { showSimpleActionSheet } = lazyDestructure(() => findByProps("showSimpleActionSheet"));
+const { hideActionSheet } = lazyDestructure(() => findByProps("openLazy", "hideActionSheet"));
 const UserStore = findByStoreNameLazy("UserStore");
 
 const { Image } = ReactNative;

@@ -1,14 +1,15 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { before, instead } from "@api/patcher";
 import { logger } from "@lib/utils/logger";
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 
 import { fakenitroSettings } from "../storage";
 import { buildStickerURL, modifyIfNeeded } from "../utils";
 
 const messageModule = findByPropsLazy("sendMessage", "receiveMessage");
 const uploadModule = findByPropsLazy("uploadLocalFiles");
-const { getCurrentUser } = findByStoreNameLazy("UserStore");
-const { getStickerById } = findByStoreNameLazy("StickersStore");
+const { getCurrentUser } = lazyDestructure(() => findByStoreName("UserStore"));
+const { getStickerById } = lazyDestructure(() => findByStoreName("StickersStore"));
 const ChannelStore = findByStoreNameLazy("ChannelStore");
 
 export default function getPatches() {

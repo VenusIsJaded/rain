@@ -1,7 +1,8 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { TableRow, TableRowGroup } from "@metro/common/components";
 
@@ -14,11 +15,11 @@ import Presets from "../pages/Presets";
 import AvatarDecorationPreviews from "./AvatarDecorationPreviews";
 
 const { View, ActivityIndicator, Pressable } = ReactNative;
-const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
+const { TextStyleSheet, Text } = lazyDestructure(() => findByProps("TextStyleSheet"));
 
 const UserStore = findByStoreNameLazy("UserStore");
 const Parser = findByPropsLazy("parse", "parseToAST");
-const { showUserProfile } = findByPropsLazy("showUserProfile");
+const { showUserProfile } = lazyDestructure(() => findByProps("showUserProfile"));
 const UserUtils = findByPropsLazy("getUser", "fetchCurrentUser");
 
 const useStyles = createStyles(_ => ({

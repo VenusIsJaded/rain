@@ -1,12 +1,13 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { showToast } from "@api/ui/toasts";
-import { findByNameLazy, findByPropsLazy } from "@metro";
+import { findByName, findByNameLazy, findByProps, findByPropsLazy } from "@metro";
 
 import { loadAllEffectData } from "../patches/effects";
 import { useAuthorizationStore } from "../stores/AuthorizationStore";
 import { API_BASE, CLIENT_ID } from "./api";
 
-const { pushModal, popModal } = findByPropsLazy("pushModal");
+const { pushModal, popModal } = lazyDestructure(() => findByProps("pushModal"));
 const OAuth2AuthorizeModal = findByNameLazy("OAuth2AuthorizeModal");
 
 export const showAuthModal = () =>

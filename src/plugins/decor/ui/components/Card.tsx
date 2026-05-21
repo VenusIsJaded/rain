@@ -1,12 +1,13 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 
 
 const { View, TouchableOpacity } = ReactNative;
 
-const { triggerHapticFeedback, HapticFeedbackTypes } = findByPropsLazy("triggerHapticFeedback");
+const { triggerHapticFeedback, HapticFeedbackTypes } = lazyDestructure(() => findByProps("triggerHapticFeedback"));
 
 const useStyles = createStyles(_ => ({
     container: {

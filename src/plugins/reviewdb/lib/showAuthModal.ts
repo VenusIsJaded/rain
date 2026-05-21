@@ -1,13 +1,14 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { findByNameLazy, findByPropsLazy } from "@metro";
+import { findByName, findByNameLazy, findByProps, findByPropsLazy } from "@metro";
 
 import { useReviewDBSettings } from "../storage";
 import { API_URL,CLIENT_ID } from "./constants";
 import { jsonFetch } from "./utils";
 
-const { pushModal, popModal } = findByPropsLazy("pushModal");
+const { pushModal, popModal } = lazyDestructure(() => findByProps("pushModal"));
 const OAuth2AuthorizeModal = findByNameLazy("OAuth2AuthorizeModal");
 
 // Thank you to Fiery for figuring out the base for this

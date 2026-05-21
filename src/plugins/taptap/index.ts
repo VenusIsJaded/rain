@@ -311,7 +311,7 @@ function hookMessagesHandlersGetter() {
         return;
     }
 
-    Object.defineProperty(MessagesHandlers.prototype, used, {
+    Object.defineProperty(mhModule.MessagesHandlers.prototype, used, {
         configurable: true,
         get: function () {
             try {

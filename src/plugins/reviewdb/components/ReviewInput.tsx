@@ -1,8 +1,9 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { rawColors, semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { constants, ReactNative as RN } from "@metro/common";
 
 import { addReview } from "../lib/api";
@@ -49,7 +50,7 @@ const useStyles = createStyles({
     },
 });
 
-const { useThemeContext } = findByPropsLazy("useThemeContext");
+const { useThemeContext } = lazyDestructure(() => findByProps("useThemeContext"));
 
 export default function ReviewInput({
     userId,

@@ -1,11 +1,12 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import SettingsTextInput from "@api/ui/components/SettingsTextInput";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { Stack, TableRadioGroup, TableRadioRow, TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import { ScrollView } from "react-native";
 
 import { useUploaderSettings } from "./storage";
 
-const { Card } = findByPropsLazy("Card");
+const { Card } = lazyDestructure(() => findByProps("Card"));
 
 const LITTERBOX_DURATIONS = [
     { label: "1 hour", value: "1" },

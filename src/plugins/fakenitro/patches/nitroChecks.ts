@@ -1,9 +1,10 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { after, instead } from "@api/patcher";
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 
 const nitroInfo = findByPropsLazy("canUseEmojisEverywhere");
 const emojiUtils = findByPropsLazy("getEmojiUnavailableReason");
-const { getCurrentUser } = findByStoreNameLazy("UserStore");
+const { getCurrentUser } = lazyDestructure(() => findByStoreName("UserStore"));
 
 
 function patchReaction(args: any[], result: any, response: any) {

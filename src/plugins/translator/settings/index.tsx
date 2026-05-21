@@ -1,5 +1,6 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { Stack, TableCheckboxRow, TableRow,TableRowGroup } from "@metro/common/components";
 
@@ -7,8 +8,8 @@ import { useTranslatorSettings } from "../storage";
 import TargetLang from "./TargetLang";
 
 const { ScrollView, Text } = ReactNative;
-const { showSimpleActionSheet } = findByPropsLazy("showSimpleActionSheet");
-const { hideActionSheet } = findByPropsLazy("openLazy", "hideActionSheet");
+const { showSimpleActionSheet } = lazyDestructure(() => findByProps("showSimpleActionSheet"));
+const { hideActionSheet } = lazyDestructure(() => findByProps("openLazy", "hideActionSheet"));
 
 export default function Settings() {
     const navigation = NavigationNative.useNavigation();

@@ -1,4 +1,5 @@
-import { findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy } from "@metro";
 import { React } from "@metro/common";
 import { useEffect } from "react";
 import { ScrollView, Text } from "react-native";
@@ -9,7 +10,7 @@ import {
     useDebugInfo,
 } from "../../utils/debug";
 
-const { FormText } = findByPropsLazy("FormText");
+const { FormText } = lazyDestructure(() => findByProps("FormText"));
 
 export default React.memo(function Debug() {
     useEffect(() => {

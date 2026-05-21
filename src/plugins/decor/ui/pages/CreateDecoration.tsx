@@ -1,8 +1,9 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { React, ReactNative } from "@metro/common";
 import {
     Button,
@@ -21,9 +22,9 @@ import { useCurrentUserDecorationsStore } from "../../lib/stores/CurrentUserDeco
 import readFileAsBase64 from "../../lib/utils/readFileAsBase64";
 import AvatarDecorationPreviews from "../components/AvatarDecorationPreviews";
 
-const { launchImageLibrary } = findByPropsLazy("launchImageLibrary") as typeof import("react-native-image-picker");
-const { useSafeAreaInsets } = findByPropsLazy("useSafeAreaInsets");
-const { useNavigation } = findByPropsLazy("useNavigation");
+const { launchImageLibrary } = lazyDestructure(() => findByProps("launchImageLibrary")) as typeof import("react-native-image-picker");
+const { useSafeAreaInsets } = lazyDestructure(() => findByProps("useSafeAreaInsets"));
+const { useNavigation } = lazyDestructure(() => findByProps("useNavigation"));
 const Parser = findByPropsLazy("parseTopic");
 
 const useStyles = createStyles(_ => ({

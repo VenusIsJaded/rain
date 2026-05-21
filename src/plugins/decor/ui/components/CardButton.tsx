@@ -1,11 +1,12 @@
-import { findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy } from "@metro";
 import { Forms } from "@metro/common/components";
 
 import Card from "./Card";
 import Icon from "./Icon";
 
 const { FormIcon } = Forms;
-const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
+const { TextStyleSheet, Text } = lazyDestructure(() => findByProps("TextStyleSheet"));
 
 export default function CardButton({ source, label, onPress, disabled, lookDisabled = false, selected = false }) {
     return (

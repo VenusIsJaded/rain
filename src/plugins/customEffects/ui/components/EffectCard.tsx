@@ -1,8 +1,9 @@
-import { findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy } from "@metro";
 import React from "react";
 import { Image, Pressable, View } from "react-native";
 
-const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
+const { TextStyleSheet, Text } = lazyDestructure(() => findByProps("TextStyleSheet"));
 
 // @ts-ignore
 function EffectCardComponent({ effect, onSelect, selected }) {

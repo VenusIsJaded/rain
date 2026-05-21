@@ -1,10 +1,11 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { after, before } from "@api/patcher";
-import { findByNameLazy, findByStoreNameLazy } from "@metro";
+import { findByName, findByNameLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 
 import { rainenhancementsSettings } from "../../storage";
 import { Embed, Message } from "../def";
 
-const { getCustomEmojiById } = findByStoreNameLazy("EmojiStore");
+const { getCustomEmojiById } = lazyDestructure(() => findByStoreName("EmojiStore"));
 const RowManager = findByNameLazy("RowManager");
 const emojiRegex = /https:\/\/cdn.discordapp.com\/emojis\/(\d+)\.\w+/;
 

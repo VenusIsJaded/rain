@@ -1,7 +1,8 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { semanticColors } from "@api/ui/components/color";
 import { metro } from "@lib";
 import { cyrb64Hash } from "@lib/utils/cyrb64";
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 
 import { admins } from "..";
 import { APIResponse, Review } from "../def";
@@ -15,13 +16,13 @@ export const find = (filter: (m: any) => boolean) => {
     );
 };
 
-const { getCurrentUser } = findByStoreNameLazy("UserStore");
+const { getCurrentUser } = lazyDestructure(() => findByStoreName("UserStore"));
 const resolveSemanticColor: (theme: string, semanticColor: object) => string =
     find(m => m.default?.internal?.resolveSemanticColor)?.default.internal
         .resolveSemanticColor ??
     find(m => m.meta?.resolveSemanticColor)?.meta.resolveSemanticColor ??
     (() => {});
-const { useThemeContext } = findByPropsLazy("useThemeContext");
+const { useThemeContext } = lazyDestructure(() => findByProps("useThemeContext"));
 
 export const canDeleteReview = (review: Review) =>
     review.sender.discordID === getCurrentUser()?.id ||

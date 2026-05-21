@@ -1,5 +1,6 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { useSettings } from "@api/settings";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { ScrollView } from "react-native";
 
 const {
@@ -8,7 +9,7 @@ const {
     TableRadioRow,
     TableRowGroup,
     TableSwitchRow,
-} = findByPropsLazy("TableRow");
+} = lazyDestructure(() => findByProps("TableRow"));
 
 const SETTINGS_POSITIONS = [
     { key: "TOP", label: "At the top of the settings page" },

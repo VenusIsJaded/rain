@@ -1,14 +1,15 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import SettingsTextInput from "@api/ui/components/SettingsTextInput";
 import { Stack, TableRow, TableRowGroup, Text } from "@metro/common/components";
-import { findByPropsLazy } from "@metro/wrappers";
+import { findByProps, findByPropsLazy } from "@metro/wrappers";
 import React, { useMemo,useState } from "react";
 import { ScrollView, View } from "react-native";
 
 import { clearLogs,useActionSheetFinderSettings } from "./storage";
 
-const { Card: CardComponent } = findByPropsLazy("Card");
+const { Card: CardComponent } = lazyDestructure(() => findByProps("Card"));
 
 const LOG_COLORS = [
     semanticColors.CARD_SECONDARY_BG,

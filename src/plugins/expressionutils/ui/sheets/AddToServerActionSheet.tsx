@@ -1,5 +1,6 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { hideSheet, showSheet } from "@api/ui/sheets";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { constants, ReactNative as RN } from "@metro/common";
 import { ActionSheet, Text, TextInput } from "@metro/common/components";
 import { useState } from "react";
@@ -8,8 +9,8 @@ import { ScrollView, View } from "react-native";
 import { GuildStore, PermissionsStore } from "../../modules";
 import AddToServerRow from "../components/AddToServerRow";
 
-const { ActionSheetCloseButton } = findByPropsLazy("ActionSheetCloseButton");
-const { TableRowGroup } = findByPropsLazy("TableRow");
+const { ActionSheetCloseButton } = lazyDestructure(() => findByProps("ActionSheetCloseButton"));
+const { TableRowGroup } = lazyDestructure(() => findByProps("TableRow"));
 
 function AddToServerContent({ emoji }: { emoji: { id: string; name: string; animated?: boolean; src?: string; alt?: string } }) {
     const permConstants = constants.Permissions;

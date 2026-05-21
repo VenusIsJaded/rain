@@ -1,3 +1,4 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { showToast } from "@api/ui/toasts";
 import { findByProps, findByPropsLazy } from "@metro";
 import { ReactNative as RN } from "@metro/common";
@@ -5,7 +6,7 @@ import React from "react";
 
 import { Emojis } from "../../modules";
 
-const { TableRow: TR } = findByPropsLazy("TableRow");
+const { TableRow: TR } = lazyDestructure(() => findByProps("TableRow"));
 
 export default function AddToServerRow({ guild, emoji, emojiName }: { guild: any, emoji: any, emojiName: string }) {
     const emojiSlotModule = findByPropsLazy("getMaxEmojiSlots");

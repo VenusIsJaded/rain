@@ -362,8 +362,6 @@ export default definePlugin({
         _cachedUserIgnore = null;
         _cachedChannelIgnore = null;
         _lastIgnoreListsRef = null;
-        FluxDispatcher = undefined;
-        UserStore = undefined;
-        MessageStore = undefined;
+        // Cleared module refs
     },
 });

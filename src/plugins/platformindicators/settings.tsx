@@ -1,9 +1,10 @@
-import { findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy } from "@metro";
 
 import { usePlatformIndicatorSettings } from "./storage";
 
-const { TableSwitchRow, TableRowGroup } = findByPropsLazy("TableSwitchRow");
-const { Stack } = findByPropsLazy("Stack");
+const { TableSwitchRow, TableRowGroup } = lazyDestructure(() => findByProps("TableSwitchRow"));
+const { Stack } = lazyDestructure(() => findByProps("Stack"));
 
 export default function Settings() {
     const settings = usePlatformIndicatorSettings();

@@ -1,8 +1,9 @@
-import { findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy } from "@metro";
 
 import Presets from "../../ui/pages/Presets";
 
-const { pushModal } = findByPropsLazy("pushModal");
+const { pushModal } = lazyDestructure(() => findByProps("pushModal"));
 
 export default () =>
     pushModal({

@@ -1,10 +1,11 @@
-import { findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy } from "@metro";
 import { ScrollView } from "react-native";
 
 import { useMoyaiSettings } from "./storage";
 
-const { TableSwitchRow, TableRowGroup } = findByPropsLazy("TableRow");
-const { Stack } = findByPropsLazy("Stack");
+const { TableSwitchRow, TableRowGroup } = lazyDestructure(() => findByProps("TableRow"));
+const { Stack } = lazyDestructure(() => findByProps("Stack"));
 
 export default function MoyaiSettings() {
     const settings = useMoyaiSettings();

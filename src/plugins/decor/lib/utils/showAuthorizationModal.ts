@@ -1,10 +1,11 @@
-import { findByNameLazy, findByPropsLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByName, findByNameLazy, findByProps, findByPropsLazy } from "@metro";
 import { Strings } from "@rain/i18n";
 
 import { AUTHORIZE_URL,CLIENT_ID } from "../constants";
 import { useAuthorizationStore } from "../stores/AuthorizationStore";
 
-const { pushModal, popModal } = findByPropsLazy("pushModal");
+const { pushModal, popModal } = lazyDestructure(() => findByProps("pushModal"));
 const OAuth2AuthorizeModal = findByNameLazy("OAuth2AuthorizeModal");
 
 export default () =>

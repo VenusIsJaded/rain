@@ -1,9 +1,10 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { after } from "@api/patcher";
-import { findByPropsLazy } from "@metro/wrappers";
+import { findByProps, findByPropsLazy } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
-const { View } = findByPropsLazy("View", "Text");
+const { View } = lazyDestructure(() => findByProps("View", "Text"));
 const patches: (() => void)[] = [];
 
 export default definePlugin({

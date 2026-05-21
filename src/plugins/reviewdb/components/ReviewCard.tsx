@@ -1,9 +1,10 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { ErrorBoundary } from "@api/ui/components";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 
 import { ActionSheet } from "./ActionSheet";
 import ReviewActionSheet from "./ReviewActionSheet";
-const { TableRow, TableRowGroup } = findByPropsLazy("TableRow");
+const { TableRow, TableRowGroup } = lazyDestructure(() => findByProps("TableRow"));
 
 interface ReviewCardProps {
     userId: string;

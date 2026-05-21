@@ -1,10 +1,11 @@
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { lazyDestructure } from "@lib/utils/lazy";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 
 const SelectedChannelStore = findByStoreNameLazy("SelectedChannelStore");
 const ChannelStore = findByStoreNameLazy("ChannelStore");
 const messageUtil = findByPropsLazy("jumpToMessage");
 
-const { openUrl } = findByPropsLazy("openUrl");
+const { openUrl } = lazyDestructure(() => findByProps("openUrl"));
 
 export function jumpToTopOfCurrentChannel() {
     const currentChannelId = SelectedChannelStore.getChannelId();

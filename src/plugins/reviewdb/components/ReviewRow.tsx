@@ -1,6 +1,7 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { ReactNative as RN } from "@metro/common";
 import { Forms } from "@metro/common/components";
 import { ViewProps } from "react-native";
@@ -27,7 +28,7 @@ const useStyles = createStyles({
 });
 
 const { FormRow, FormSubLabel } = Forms;
-const { TableRowGroup } = findByPropsLazy("TableRow");
+const { TableRowGroup } = lazyDestructure(() => findByProps("TableRow"));
 
 export default ({ review, style }: ReviewRowProps) => {
     const styles = useStyles();

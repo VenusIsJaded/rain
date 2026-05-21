@@ -1,15 +1,16 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { showConfirmationAlert } from "@api/ui/alerts";
 import { showToast } from "@api/ui/toasts";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { clipboard } from "@metro/common";
 
 import { Review } from "../def";
 import { useReviewDBSettings } from "../storage";
 import { deleteReview, reportReview } from "./api";
 import { canDeleteReview } from "./utils";
-const { hideActionSheet } = findByPropsLazy("openLazy", "hideActionSheet");
-const { showSimpleActionSheet } = findByPropsLazy("showSimpleActionSheet");
+const { hideActionSheet } = lazyDestructure(() => findByProps("openLazy", "hideActionSheet"));
+const { showSimpleActionSheet } = lazyDestructure(() => findByProps("showSimpleActionSheet"));
 
 export default (review: Review) =>
     showSimpleActionSheet({

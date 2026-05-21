@@ -1,7 +1,8 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByNameLazy, findByProps, findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByName, findByNameLazy, findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { Forms } from "@metro/common/components";
 
@@ -11,8 +12,8 @@ import DecorationCard from "./DecorationCard";
 
 const { FormTitle } = Forms;
 const { View, FlatList, Image } = ReactNative;
-const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
-const { default: SummarizedIconRow, OverflowCircle } = findByNameLazy("SummarizedIconRow", false);
+const { TextStyleSheet, Text } = lazyDestructure(() => findByProps("TextStyleSheet"));
+const { default: SummarizedIconRow, OverflowCircle } = lazyDestructure(() => findByName("SummarizedIconRow", false));
 const avatarMod = findByPropsLazy("AvatarSizes");
 const Avatar = (props) => { const Comp = avatarMod.type; return <Comp {...props} />; };
 

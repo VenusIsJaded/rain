@@ -1,15 +1,16 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { after, instead } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
-import { findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 import { clipboard, ReactNative } from "@metro/common";
 import { Button } from "@metro/common/components";
 import React from "react";
 
-const { hideActionSheet } = findByPropsLazy("hideActionSheet");
+const { hideActionSheet } = lazyDestructure(() => findByProps("hideActionSheet"));
 const UserSettingsProtoStore = findByStoreNameLazy("UserSettingsProtoStore");
 const GuildStore = findByStoreNameLazy("GuildStore");
 const StickerUtils = findByPropsLazy("favoriteSticker", "unfavoriteSticker");
-const { downloadMediaAsset } = findByPropsLazy("downloadMediaAsset");
+const { downloadMediaAsset } = lazyDestructure(() => findByProps("downloadMediaAsset"));
 const LazyActionSheet = findByPropsLazy("hideActionSheet");
 
 export function patchStickerActionSheet() {

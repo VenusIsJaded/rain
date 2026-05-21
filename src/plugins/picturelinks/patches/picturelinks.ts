@@ -1,14 +1,15 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { after } from "@api/patcher";
-import { findByNameLazy, findByPropsLazy, findByStoreNameLazy } from "@metro";
+import { findByName, findByNameLazy, findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 
-const { Pressable } = findByPropsLazy("Button", "Text", "View");
+const { Pressable } = lazyDestructure(() => findByProps("Button", "Text", "View"));
 const ProfileBanner = findByNameLazy("ProfileBanner", false);
 const HeaderAvatar = findByNameLazy("HeaderAvatar", false);
-const { openMediaModal } = findByPropsLazy("openMediaModal");
-const { hideActionSheet } = findByPropsLazy("hideActionSheet");
-const { getChannelId } = findByStoreNameLazy("SelectedChannelStore");
-const { getGuildId } = findByStoreNameLazy("SelectedGuildStore");
+const { openMediaModal } = lazyDestructure(() => findByProps("openMediaModal"));
+const { hideActionSheet } = lazyDestructure(() => findByProps("hideActionSheet"));
+const { getChannelId } = lazyDestructure(() => findByStoreName("SelectedChannelStore"));
+const { getGuildId } = lazyDestructure(() => findByStoreName("SelectedGuildStore"));
 
 function getImageSize(uri: string): Promise<{ width: number, height: number; }> {
     return new Promise((resolve, reject) => {

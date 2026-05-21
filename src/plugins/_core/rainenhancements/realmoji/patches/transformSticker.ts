@@ -1,11 +1,12 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { before } from "@api/patcher";
-import { findByNameLazy, findByStoreNameLazy } from "@metro";
+import { findByName, findByNameLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 
 import { rainenhancementsSettings } from "../../storage";
 
 // heavily based off the godsent work of: https://github.com/Vendicated/Vencord/blob/575421f4d06fe6cda9c1cb3227060a20cd1c700f/src/plugins/fakeNitro/index.tsx
 
-const { getStickerById } = findByStoreNameLazy("StickersStore");
+const { getStickerById } = lazyDestructure(() => findByStoreName("StickersStore"));
 const RowManager = findByNameLazy("RowManager");
 
 const staticStickerRegex = /https:\/\/(?:media|cdn)\.discordapp\.(?:net|com)\/stickers\/(\d+)\.(?!gif)\w+/;

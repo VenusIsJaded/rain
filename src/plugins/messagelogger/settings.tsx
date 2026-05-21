@@ -1,12 +1,13 @@
+import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import SettingsTextInput from "@api/ui/components/SettingsTextInput";
-import { findByPropsLazy } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { Stack, TableRow,TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import React from "react";
 import { ScrollView } from "react-native";
 
 import { useMessageLoggerSettings } from "./storage";
-const { Card } = findByPropsLazy("Card");
+const { Card } = lazyDestructure(() => findByProps("Card"));
 
 export default function MessageLoggerSettings() {
     const settings = useMessageLoggerSettings();
