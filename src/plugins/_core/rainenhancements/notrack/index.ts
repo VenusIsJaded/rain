@@ -42,7 +42,7 @@ const sentryClient = sentryHub?.getClient();
 
 // Sentry related objects with type safety
 const Sentry = {
-    initializer: findByProps("initSentry"),
+    initializer: findByPropsLazy("initSentry"),
     main: sentryHub,
     client: sentryClient,
 };
@@ -58,7 +58,7 @@ const noop = (prop: string, parent: Record<string, any>): PatchCleanupFn => {
 
 // this is always false on stock, but we force set this anyway incase that changes :P
 export function patchModDetection() {
-    const clientModUtils = findByProps("usesClientMods");
+    const clientModUtils = findByPropsLazy("usesClientMods");
 
     const unpatch = instead("usesClientMods", clientModUtils, (_args, _orig) => {
         return false;

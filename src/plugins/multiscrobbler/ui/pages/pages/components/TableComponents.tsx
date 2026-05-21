@@ -12,7 +12,7 @@ export const {
     TableRadioGroup,
     Stack,
     TableRow,
-} = findByProps(
+} = findByPropsLazy(
     "Card",
     "TableSwitchRow",
     "TableCheckboxRow",

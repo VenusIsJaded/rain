@@ -1,6 +1,6 @@
 // Taken from https://github.com/nexpid/RevengePlugins
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import {
     ImageSourcePropType,
     PressableProps,
@@ -25,7 +25,7 @@ const NotFound = (prop: string, isFunction?: boolean) => () => {
     return null;
 };
 
-const findProp = (...props: string[]) => findByProps(...props)?.[props[0]];
+const findProp = (...props: string[]) => findByPropsLazy(...props)?.[props[0]];
 const findPropPolyfill = (isFunction: boolean, ...props: string[]) =>
     findProp(...props) ?? NotFound(props[0], isFunction);
 

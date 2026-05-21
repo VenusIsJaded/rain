@@ -123,7 +123,7 @@ const tokenLoginCommand = (): RainApplicationCommand => ({
     const token = args[0].value;
     try {
       if (token) {
-        await findByProps(
+        await findByPropsLazy(
           "login",
           "logout",
           "switchAccountToken",

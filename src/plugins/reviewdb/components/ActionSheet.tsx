@@ -7,7 +7,7 @@ import type { ViewProps } from "react-native";
 import { find } from "../lib/utils";
 
 const _ActionSheet =
-    findByProps("ActionSheet")?.ActionSheet ??
+    findByPropsLazy("ActionSheet")?.ActionSheet ??
     find(x => x.render?.name === "ActionSheet"); // thank you to @pylixonly for fixing this
 
 const actionSheetComponents = findByPropsLazy(

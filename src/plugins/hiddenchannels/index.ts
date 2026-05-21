@@ -75,7 +75,7 @@ export default definePlugin({
         }
 
         // Patch navigation to show popup for hidden channels
-        const transitionToGuild = findByProps("transitionToGuild");
+        const transitionToGuild = findByPropsLazy("transitionToGuild");
         if (transitionToGuild && getChannel) {
             for (const key of Object.keys(transitionToGuild)) {
                 // Yes, all of them need to be patched. No, I don't know why. The key that's actually responsible is 'forward'

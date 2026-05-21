@@ -62,7 +62,7 @@ export default function patchDownload() {
                                 },
                             }}
                             onPress={async () => {
-                                await findByProps("downloadMediaAsset").downloadMediaAsset(message.attachments[0].url, 0);
+                                await findByPropsLazy("downloadMediaAsset").downloadMediaAsset(message.attachments[0].url, 0);
                                 LazyActionSheet?.hideActionSheet();
                             }}
                             key="download-vm"
