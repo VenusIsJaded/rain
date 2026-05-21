@@ -1,4 +1,4 @@
-import { createFileStorage, waitForHydration } from "@api/storage";
+import { createFileStorage } from "@api/storage";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
 import { create } from "zustand";
@@ -7,10 +7,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import * as t from "./types";
 
 export const pluginInstances = new Map<string, t.rainPlugin>();
-export let pluginMetadataRegistry: Record<string, any> = {};
-const lazyPluginIds = new Set<string>();
-let _rainPluginsRegistry: Record<string, any> | null = null;
-const _pluginResolvingPromises = new Map<string, Promise<t.rainPlugin | null>>();
+export let pluginMetadata: Record<string, any> = {};
+export let allPluginIds: string[] = [];
+
+let _optionalPluginGetters: Record<string, (() => t.rainPlugin | null)> | null = null;
 let _setupPromise: Promise<void> | null = null;
 
 const BATCH_SIZE = 15;
@@ -51,43 +51,43 @@ export const pluginSettings = new Proxy({} as t.PluginSettingsStorage, {
     },
 });
 
-async function resolvePlugin(id: string): Promise<t.rainPlugin | null> {
+export function getPluginMetadata(id: string): any | undefined {
+    return pluginMetadata[id];
+}
+
+function loadPlugin(id: string): t.rainPlugin | null {
     const existing = pluginInstances.get(id);
-    if (existing !== undefined && existing !== null) return existing;
-    if (!lazyPluginIds.has(id) || !_rainPluginsRegistry) return existing ?? null;
+    if (existing !== undefined) return existing;
+    if (!_optionalPluginGetters) return null;
 
-    const inFlight = _pluginResolvingPromises.get(id);
-    if (inFlight) return inFlight;
+    const getter = _optionalPluginGetters[id];
+    if (!getter) return null;
 
-    const promise = (async (): Promise<t.rainPlugin | null> => {
-        try {
-            const maybePromise = _rainPluginsRegistry![id];
-            if (!maybePromise || typeof maybePromise.then !== "function") return null;
-
-            const resolved = await maybePromise;
-            if (resolved) {
-                resolved.id = id;
-                pluginInstances.set(id, resolved);
-                return resolved;
-            } else {
-                pluginInstances.delete(id);
-                return null;
-            }
-        } catch (err) {
-            console.error(`[plugins] Failed to resolve plugin "${id}":`, err);
-            pluginInstances.delete(id);
-            return null;
-        } finally {
-            _pluginResolvingPromises.delete(id);
+    try {
+        const instance = getter();
+        if (instance) {
+            instance.id = id;
+            pluginInstances.set(id, instance);
         }
-    })();
+        return instance;
+    } catch (err) {
+        console.error(`[plugins] Failed to load plugin "${id}":`, err);
+        return null;
+    }
+}
 
-    _pluginResolvingPromises.set(id, promise);
-    return promise;
+export function ensureAllPluginsLoaded(): void {
+    if (!_optionalPluginGetters) return;
+    for (const id of Object.keys(_optionalPluginGetters)) {
+        if (!pluginInstances.has(id)) loadPlugin(id);
+    }
 }
 
 async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): Promise<void> {
-    const instance = await resolvePlugin(id);
+    let instance = pluginInstances.get(id);
+    if (!instance) {
+        instance = loadPlugin(id);
+    }
     if (!instance) {
         logger.warn(`[plugins] Skipped loading null/empty plugin matching ID: "${id}"`);
         return;
@@ -107,14 +107,7 @@ export const startPlugin = (id: string) => runPluginLifecycle(id, "start");
 export const startEagerPlugin = (id: string) => runPluginLifecycle(id, "eagerStart");
 
 export async function stopPlugin(id: string): Promise<void> {
-    const raw = pluginInstances.get(id);
-    if (raw === undefined && lazyPluginIds.has(id)) {
-        // Lazy plugin never loaded — just update state
-        usePluginSettings.getState().updatePluginSetting(id, false);
-        return;
-    }
-
-    const instance = raw;
+    const instance = pluginInstances.get(id);
     if (!instance) {
         usePluginSettings.getState().updatePluginSetting(id, false);
         return;
@@ -140,20 +133,24 @@ async function ensureSetup(): Promise<void> {
 
     _setupPromise = (async () => {
         const module = await import("#rain-plugins");
-        const { default: rainPlugins, pluginMetadata } = module as any;
-        pluginMetadataRegistry = pluginMetadata ?? {};
-        _rainPluginsRegistry = rainPlugins;
+        const {
+            default: rainPlugins,
+            pluginMetadata: meta,
+            pluginIds: ids,
+            corePlugins,
+            optionalPlugins,
+        } = module as any;
 
-        for (const id of Object.keys(rainPlugins)) {
-            const descriptor = Object.getOwnPropertyDescriptor(rainPlugins, id);
-            if (descriptor?.get) {
-                // Lazy getter (import() Promise) — don't evaluate yet
-                lazyPluginIds.add(id);
-            } else {
-                const instance = descriptor?.value as t.rainPlugin;
+        pluginMetadata = meta ?? {};
+        allPluginIds = ids ?? Object.keys(rainPlugins);
+        _optionalPluginGetters = optionalPlugins ?? {};
+
+        // Load core plugins eagerly — they're always needed
+        if (corePlugins) {
+            for (const [id, instance] of Object.entries(corePlugins)) {
                 if (!instance) continue;
-                instance.id = id;
-                pluginInstances.set(id, instance);
+                (instance as t.rainPlugin).id = id;
+                pluginInstances.set(id, instance as t.rainPlugin);
             }
         }
     })();
@@ -171,13 +168,13 @@ async function startBatched(ids: string[], method: "start" | "eagerStart"): Prom
 
 export async function initPlugins(): Promise<void> {
     await ensureSetup();
-    const ids = Array.from(pluginInstances.keys()).filter(isPluginEnabled);
+    const ids = allPluginIds.filter(isPluginEnabled);
     await startBatched(ids, "start");
 }
 
 export async function initEagerPlugins(): Promise<void> {
     await ensureSetup();
-    const ids = Array.from(pluginInstances.keys()).filter(isPluginEnabled);
+    const ids = allPluginIds.filter(isPluginEnabled);
     await startBatched(ids, "eagerStart");
 }
 
@@ -188,7 +185,11 @@ export function definePlugin(instance: t.rainPlugin): t.rainPlugin {
 }
 
 export function getPluginSettingsComponent(id: string): (() => any) | null {
-    const raw = pluginInstances.get(id);
-    if (raw === undefined && lazyPluginIds.has(id)) return null;
-    return raw?.settings ?? null;
+    const instance = pluginInstances.get(id);
+    if (!instance) {
+        // Load on demand if not already loaded
+        const loaded = loadPlugin(id);
+        return loaded?.settings ?? null;
+    }
+    return instance.settings ?? null;
 }

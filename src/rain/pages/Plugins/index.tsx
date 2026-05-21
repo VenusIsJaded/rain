@@ -1,9 +1,9 @@
 import { useSettings } from "@api/settings";
 import { Strings } from "@i18n";
-import { pluginInstances, pluginMetadataRegistry } from "@plugins";
+import { allPluginIds, ensureAllPluginsLoaded, pluginInstances } from "@plugins";
 import { developer } from "@plugins/types";
 import AddonPage from "@rain/pages/Addon/AddonPage";
-import { ComponentProps, useMemo } from "react";
+import { ComponentProps, useEffect, useMemo } from "react";
 
 import PluginCard from "./components/PluginCard";
 import { UnifiedPluginModel } from "./models";
@@ -89,16 +89,14 @@ function PluginPage(props: PluginPageProps) {
 export default function Plugins() {
     useSettings();
 
-    const items = (() => {
-        const allIds = new Set([...pluginInstances.keys(), ...Object.keys(pluginMetadataRegistry)]);
-        const merged = new Map(pluginInstances);
-        for (const id of allIds) {
-            if (merged.has(id)) continue;
-            const meta = pluginMetadataRegistry[id];
-            if (meta) merged.set(id, { ...meta, __rain_lazy: true, id } as any);
-        }
-        return Array.from(merged.values()).map(unifyRainPlugin);
-    })();
+    // Load all plugin objects so the list can show every plugin (even disabled ones)
+    useEffect(() => {
+        ensureAllPluginsLoaded();
+    }, []);
+
+    const items = useMemo(() => {
+        return Array.from(pluginInstances.values()).map(unifyRainPlugin);
+    }, [allPluginIds.length, pluginInstances.size]);
 
     return (
         <PluginPage useItems={() => items} />

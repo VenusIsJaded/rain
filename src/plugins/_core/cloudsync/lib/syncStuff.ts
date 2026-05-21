@@ -2,9 +2,9 @@ import { findAssetId } from "@api/assets";
 import { readFile, writeFile } from "@api/native/fs";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { isPluginEnabled,pluginInstances, startPlugin, stopPlugin } from "@plugins";
-import { saveFont,useFonts } from "@plugins/_core/painter/fonts";
-import { installTheme, selectTheme,useThemes } from "@plugins/_core/painter/themes";
+import { allPluginIds, isPluginEnabled, startPlugin, stopPlugin } from "@plugins";
+import { saveFont, useFonts } from "@plugins/_core/painter/fonts";
+import { installTheme, selectTheme, useThemes } from "@plugins/_core/painter/themes";
 
 import type { UserData } from "../types";
 
@@ -51,7 +51,7 @@ export async function grabEverything(): Promise<UserData & { coreSettings?: any 
     } as UserData;
 
     const ignoredSet = new Set(cloudSyncSettings.ignoredPlugins);
-    for (const [id, item] of pluginInstances.entries()) {
+    for (const id of allPluginIds) {
         if (ignoredSet.has(id)) continue;
         try {
             const storagePath = `plugins/${id}.json`;
