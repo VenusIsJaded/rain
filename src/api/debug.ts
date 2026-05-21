@@ -39,6 +39,9 @@ let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
 
 const VERSION = 1;
 
+// Cached once at module init — avoids two native bridge calls in getDebugInfo
+const _clientConstants = NativeClientInfoModule.getConstants();
+
 enum MessageType {
     Hello = "hello",
     Hi = "hi",
@@ -335,8 +338,8 @@ export function getDebugInfo() {
         },
 
         discord: {
-            version: NativeClientInfoModule.getConstants().Version,
-            build: NativeClientInfoModule.getConstants().Build,
+            version: _clientConstants.Version,
+            build: _clientConstants.Build,
         },
         react: {
             version: React.version,
