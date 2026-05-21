@@ -361,20 +361,19 @@ export function getDebugInfo() {
     };
 }
 
+// Hoisted — avoids re-creating this closure on every hotReloadTheme() call
+function _hashString(str: string): number {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+    return h;
+}
+
 export function hotReloadTheme() {
     if (hotReloadIntervalId !== undefined) {
         clearInterval(hotReloadIntervalId);
         hotReloadIntervalId = undefined;
     }
-    let lastHash: string | null = null;
-
-    const hashString = (str: string): string => {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
-        }
-        return hash.toString(16);
-    };
+    let lastHash = 0;
 
     hotReloadIntervalId = setInterval(async () => {
         const currentSettings = settings();
@@ -387,7 +386,7 @@ export function hotReloadTheme() {
             if (!response.ok) return;
 
             const text = await response.text();
-            const hash = hashString(text);
+            const hash = _hashString(text);
 
             if (hash === lastHash) return;
             lastHash = hash;
