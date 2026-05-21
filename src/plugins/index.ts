@@ -11,8 +11,6 @@ export const pluginInstances = new Map<string, t.rainPlugin>();
 let _setupPromise: Promise<void> | null = null;
 
 const BATCH_SIZE = 15;
-const BATCH_DELAY_MS = 0;
-
 interface PluginSettingsStore {
   settings: t.PluginSettingsStorage;
   _hasHydrated: boolean;
@@ -49,10 +47,6 @@ export const pluginSettings = new Proxy({} as t.PluginSettingsStorage, {
     return true;
   },
 });
-
-function assert(condition: any, id: string, attempt: string): asserts condition {
-  if (!condition) throw new Error(`[${id}] Attempted to ${attempt}`);
-}
 
 async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): Promise<void> {
   const instance = pluginInstances.get(id);
@@ -119,13 +113,9 @@ async function ensureSetup(): Promise<void> {
 async function startBatched(ids: string[], method: "start" | "eagerStart"): Promise<void> {
 
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-    const batch = ids.slice(i, i + BATCH_SIZE);
     await Promise.allSettled(
-      batch.map(id => runPluginLifecycle(id, method))
+      ids.slice(i, i + BATCH_SIZE).map(id => runPluginLifecycle(id, method))
     );
-    if (BATCH_DELAY_MS > 0 && i + BATCH_SIZE < ids.length) {
-      await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
-    }
   }
 }
 
