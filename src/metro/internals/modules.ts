@@ -82,7 +82,7 @@ function isBadExports(exports: any) {
     if (exports[BAD_EXPORTS_CHECK_STRING] === null) return true;
 
     if (exports.__proto__ === Object.prototype) {
-      for (const _ in exports) { return false; } return true;
+      if (Reflect.ownKeys(exports).length === 0) return true;
     }
 
     if (exports.default?.[Symbol.toStringTag] === "IntlMessagesProxy") return true;
@@ -116,6 +116,12 @@ function onModuleRequire(moduleExports: any, id: Metro.ModuleID) {
     patchedNativeComponentRegistry = true;
   }
 
+  if (moduleExports?.default?.constructor?.displayName === "DeveloperExperimentStore") {
+    moduleExports.default = new Proxy(moduleExports.default, {
+      get(target, property, receiver) {
+        return Reflect.get(target, property, receiver);
+      }
+    });
   }
 
   if (!patchedImportTracker && moduleExports.fileFinishedImporting) {
