@@ -4,7 +4,7 @@ import { Strings } from "@rain/i18n";
 
 let _toastId = 0;
 
-export const showToast = (content: string, asset?: number) => toasts.open({
+export const showToast = (content: string, asset?: number | Record<string, any>) => toasts.open({
     key: `rain-toast-${++_toastId}`,
     content: content,
     source: asset,

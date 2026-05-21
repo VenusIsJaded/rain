@@ -27,7 +27,7 @@ function onPresenceUpdate(event: any) {
         if (!userId) continue;
 
         // Check if friend
-        if (!RelationshipStore.isFriend(userId)) continue;
+        if (!RelationshipStore.isFriend?.(userId)) continue;
 
         const newStatus = update.status;
         const oldStatus = previousStatuses.get(userId) || "offline";
@@ -39,14 +39,18 @@ function onPresenceUpdate(event: any) {
             const isOffline = newStatus === "offline" || newStatus === "invisible";
             
             if (wasOffline && !isOffline && friendNotificationsSettings.notifyOnline) {
-                const user = UserStore.getUser(userId);
+                const user = UserStore.getUser?.(userId);
                 if (user) {
-                    showToast(`${user.globalName || user.username} is now online`, findAssetId("CheckIcon"));
+                    const avatar = { uri: user.getAvatarURL?.(false, 128, true) };
+                    showToast(`${user.globalName || user.username} is now online`, avatar);
+                    setTimeout(() => showToast(`${user.globalName || user.username} is now online`, avatar), 2000);
                 }
             } else if (!wasOffline && isOffline && friendNotificationsSettings.notifyOffline) {
-                const user = UserStore.getUser(userId);
+                const user = UserStore.getUser?.(userId);
                 if (user) {
-                    showToast(`${user.globalName || user.username} went offline`, findAssetId("EyeSlashIcon"));
+                    const avatar = { uri: user.getAvatarURL?.(false, 128, true) };
+                    showToast(`${user.globalName || user.username} went offline`, avatar);
+                    setTimeout(() => showToast(`${user.globalName || user.username} went offline`, avatar), 2000);
                 }
             }
         }
