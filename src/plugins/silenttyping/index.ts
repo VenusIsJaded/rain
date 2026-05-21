@@ -1,9 +1,9 @@
 import { instead } from "@api/patcher";
-import { findByProps } from "@metro/wrappers";
+import { findByPropsLazy } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
-const Typing = findByProps("startTyping", "stopTyping");
+const Typing = findByPropsLazy("startTyping", "stopTyping");
 const patches: (() => void)[] = [];
 
 export default definePlugin({

@@ -1,7 +1,7 @@
 import { after } from "@api/patcher";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
-const iconConstants = findByProps("getOfficialAlternateIcons", "getLimitedAlternateIcons");
+const iconConstants = findByPropsLazy("getOfficialAlternateIcons", "getLimitedAlternateIcons");
 
 // when using this, it killed names so this fixes it lol
 function ensureIconName(icon: any) {

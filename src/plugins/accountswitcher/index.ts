@@ -1,10 +1,10 @@
 import { after } from "@api/patcher";
-import { findByProps, findByStoreName } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Developers } from "@rain/Developers";
 
-const AccountDispatcher = findByProps("getCanUseMultiAccountMobile");
-const MultiAccountStore = findByStoreName("MultiAccountStore");
+const AccountDispatcher = findByPropsLazy("getCanUseMultiAccountMobile");
+const MultiAccountStore = findByStoreNameLazy("MultiAccountStore");
 const patches: (() => boolean)[] = [];
 
 export default definePlugin({

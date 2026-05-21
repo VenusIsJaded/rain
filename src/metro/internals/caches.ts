@@ -88,20 +88,25 @@ export function indexAssetModuleFlag(id: number) {
 }
 
 /** @internal */
-export function getCacherForUniq(uniq: string, allFind: boolean) {
-    const indexObject = _metroCache.findIndex[uniq] ??= {};
+const _cacherResult = {
+    _indexObject: null as any,
+    _allFind: false,
+    cacheId(moduleId: number, exports: any) {
+        _cacherResult._indexObject[moduleId] ??= 1;
+        saveCache();
+    },
+    finish(notFound: boolean) {
+        if (_cacherResult._allFind) _cacherResult._indexObject[`_${ModulesMapInternal.FULL_LOOKUP}`] = 1;
+        if (notFound) _cacherResult._indexObject[`_${ModulesMapInternal.NOT_FOUND}`] = 1;
+        saveCache();
+    }
+};
 
-    return {
-        cacheId(moduleId: number, exports: any) {
-            indexObject[moduleId] ??= 1;
-            saveCache();
-        },
-        finish(notFound: boolean) {
-            if (allFind) indexObject[`_${ModulesMapInternal.FULL_LOOKUP}`] = 1;
-            if (notFound) indexObject[`_${ModulesMapInternal.NOT_FOUND}`] = 1;
-            saveCache();
-        }
-    };
+/** @internal */
+export function getCacherForUniq(uniq: string, allFind: boolean) {
+    _cacherResult._indexObject = _metroCache.findIndex[uniq] ??= {};
+    _cacherResult._allFind = allFind;
+    return _cacherResult;
 }
 
 /** @internal */

@@ -8,24 +8,24 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 import patcher from "@api/patcher";
 import { logger } from "@lib/utils/logger";
-import { findByProps, findByStoreName } from "@metro/wrappers";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
 
-const dialog = findByProps("show", "confirm", "close");
-const relationshipManager = findByProps("addRelationship");
-const callManager = findByProps("handleStartCall");
-const actionSheetManager = findByProps("hideActionSheet");
-const UserStore = findByStoreName("UserStore");
+const dialog = findByPropsLazy("show", "confirm", "close");
+const relationshipManager = findByPropsLazy("addRelationship");
+const callManager = findByPropsLazy("handleStartCall");
+const actionSheetManager = findByPropsLazy("hideActionSheet");
+const UserStore = findByStoreNameLazy("UserStore");
 
 const patches: (() => void)[] = [];
 
