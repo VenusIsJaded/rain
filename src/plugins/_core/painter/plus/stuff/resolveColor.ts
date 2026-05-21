@@ -7,6 +7,9 @@ type PlusColorResolvable =
 
 const ThemeStore = findByStoreName("ThemeStore");
 
+// Hoisted Set avoids allocating ["dark","midnight"] on every matchTheme call
+const DARK_THEMES = new Set(["dark", "midnight"]);
+
 export function matchTheme(colors: {
 	darker?: string;
 	light?: string;
@@ -15,7 +18,7 @@ export function matchTheme(colors: {
     const { theme } = ThemeStore;
 
     if (theme in colors) return colors[theme];
-    if (["dark", "midnight"].includes(theme)) return colors.darker;
+    if (DARK_THEMES.has(theme)) return colors.darker;
     return colors.light;
 }
 
