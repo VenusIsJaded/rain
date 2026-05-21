@@ -45,15 +45,13 @@ export default function patchDefinitionAndResolver() {
     }
 
     if (tokenReference?.RawColor) {
-        Object.keys(tokenReference.RawColor).forEach(key => {
+        for (const key of Object.keys(tokenReference.RawColor)) {
             Object.defineProperty(tokenReference.RawColor, key, {
                 configurable: true,
                 enumerable: true,
-                get: () => {
-                    return _colorRef.current?.raw[key] || origRawColor[key];
-                }
+                get: () => _colorRef.current?.raw[key] || origRawColor[key],
             });
-        });
+        }
     }
 
     const targetResolver = tokenReference?.default?.meta ?? tokenReference?.default?.internal;
@@ -111,6 +109,8 @@ export default function patchDefinitionAndResolver() {
 }
 
 function extractInfo(themeName: string, colorObj: any): [name: string, colorDef: any] {
+    // Symbol is cached on the function object after the first call — Object.getOwnPropertySymbols
+    // is only called once for the lifetime of this module.
     // @ts-ignore - assigning to extractInfo._sym
     const propName = colorObj[extractInfo._sym ??= Object.getOwnPropertySymbols(colorObj)[0]];
     const colorDef = tokenReference.SemanticColor[propName];
