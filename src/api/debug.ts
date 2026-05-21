@@ -257,7 +257,8 @@ function cleanupRdt() {
 export function connectRdt(url: string, quiet?: boolean) {
     if (!isReactDevToolsPreloaded() || rdtClient) return;
 
-    const base = url.split(":").slice(0, -1).join(":");
+    // lastIndexOf avoids split+slice+join allocating two temp arrays
+    const base = url.slice(0, url.lastIndexOf(":"));
     const ws = (rdtClient = new WebSocket(`ws://${base}:${rdtPort}`));
 
     ws.addEventListener("open", () => {
