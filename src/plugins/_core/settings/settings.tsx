@@ -22,7 +22,10 @@ const INFO_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-    const { settingsPosition, pluginCard, compactMode, updateSettings } = useSettings();
+    const settingsPosition = useSettings(s => s.settingsPosition);
+    const pluginCard = useSettings(s => s.pluginCard);
+    const compactMode = useSettings(s => s.compactMode);
+    const updateSettings = useSettings(s => s.updateSettings);
 
     return (
         <ScrollView style={{ flex: 1 }}>

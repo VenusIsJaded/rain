@@ -51,7 +51,7 @@ export default function unifyRainPlugin(
             }
         },
         usePluginState() {
-            usePluginSettings(state => state.settings);
+            usePluginSettings(state => state.settings[manifest.id]);
         },
         resolveSheetComponent() {
             return Promise.resolve({

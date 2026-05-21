@@ -51,36 +51,7 @@ export default definePlugin({
             );
         }
     },
-    async start() {
-        if (ChatInputActions?.type) {
-            unpatches.push(
-                before("render", ChatInputActions.type, ([props, ref]) => {
-                    const state = useBetterChatButtonsSettings.getState();
-                    if (props.isAppLauncherEnabled) props.isAppLauncherEnabled = !state.hide.app;
-                    props.canStartThreads = state.show.thread || !state.hide.thread;
-                    props.shouldShowGiftButton = !state.hide.gift;
-                    actionsRef = ref;
-                })
-            );
 
-            unpatches.push(
-                after("render", ChatInputActions.type, () => {
-                    setImmediate(() =>
-                        setImmediate(() => {
-                            if (actionsRef?.current) {
-                                const { onDismissActions } = actionsRef.current;
-                                unpatches.push(() => (actionsRef.current.onDismissActions = onDismissActions));
-                                actionsRef.current.onDismissActions = () => {
-                                    const state = useBetterChatButtonsSettings.getState();
-                                    if (state.dismiss.actions) return onDismissActions();
-                                };
-                            }
-                        })
-                    );
-                })
-            );
-        }
-    },
     stop() {
         // todo: actually fix this instead of a try catch
         try{

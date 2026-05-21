@@ -7,7 +7,7 @@ import { View } from "react-native";
 import { useTapTapSettings } from "./storage";
 
 export default function TapTapSettings() {
-    const { developerSettings } = useSettings();
+    const developerSettings = useSettings(s => s.developerSettings);
     const taptapSettings = useTapTapSettings();
 
     const [delayStr, setDelayStr] = React.useState(taptapSettings.delay ?? "300");

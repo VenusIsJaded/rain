@@ -15,11 +15,15 @@ export default definePlugin({
     async start() {
         await loadAllEffectData();
 
-        patchGetUserProfile();
-        patchGetAllProfileEffects();
-        patchGetProfileEffect();
+        this.unpatches = [
+            patchGetUserProfile(),
+            patchGetAllProfileEffects(),
+            patchGetProfileEffect()
+        ];
     },
 
-    stop() {},
+    stop() {
+        this.unpatches?.forEach(u => u());
+    },
     settings: Settings
 });

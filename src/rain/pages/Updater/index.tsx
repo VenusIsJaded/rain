@@ -194,8 +194,9 @@ export default function Updater() {
     _setIsChecking = setIsCheckingForUpdates;
 
     const debugInfo = getDebugInfo();
-    const loaderConfig = useLoaderConfig();
-    const usePrereleases = loaderConfig.usePrereleases;
+    const usePrereleases = useLoaderConfig(s => s.usePrereleases);
+    const updateLoaderConfig = useLoaderConfig(s => s.updateLoaderConfig);
+    const usePrereleases = usePrereleases;
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
@@ -221,7 +222,7 @@ export default function Updater() {
                         icon={<TableRow.Icon source={findAssetId("ic_warning_24px")} />}
                         value={usePrereleases}
                         onValueChange={(value: boolean) => {
-                            loaderConfig.updateLoaderConfig({ usePrereleases: value });
+                            updateLoaderConfig({ usePrereleases: value });
                             void UpdateModule.nativeSetUsePrereleases(value).catch(() => {});
                         }}
                     />

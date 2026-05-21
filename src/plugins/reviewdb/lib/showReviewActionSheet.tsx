@@ -33,7 +33,7 @@ export default (review: Review) =>
                     );
                 },
             },
-            ...(useReviewDBSettings().authToken && review.type !== 3
+            ...(useReviewDBSettings.getState().authToken && review.type !== 3
                 ? [
                     ...(canDeleteReview(review)
                         ? [

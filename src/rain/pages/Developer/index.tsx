@@ -27,8 +27,18 @@ const useStyles = createStyles({
 });
 
 export default function Developer() {
-    const settings = useSettings();
-    const loaderConfig = useLoaderConfig();
+    const debuggerUrl = useSettings(s => s.debuggerUrl);
+    const autoDebugger = useSettings(s => s.autoDebugger);
+    const devToolsUrl = useSettings(s => s.devToolsUrl);
+    const autoDevTools = useSettings(s => s.autoDevTools);
+    const hotReloadThemeUrl = useSettings(s => s.hotReloadThemeUrl);
+    const hotReloadThemeSetting = useSettings(s => s.hotReloadTheme);
+    const disableUpdateWarnings = useSettings(s => s.disableUpdateWarnings);
+    const updateSettings = useSettings(s => s.updateSettings);
+    const customLoadUrl = useLoaderConfig(s => s.customLoadUrl);
+    const updateLoaderConfig = useLoaderConfig(s => s.updateLoaderConfig);
+    const loadReactDevTools = useLoaderConfig(s => s.loadReactDevTools);
+    const usePrereleases = useLoaderConfig(s => s.usePrereleases);
 
     const [rdtFileExists, fs] = useFileExists("preloads/reactDevtools.js");
     const [isDebuggerConnected, setIsDebuggerConnected] = useState(isConnectedToDebugger());
@@ -49,7 +59,7 @@ export default function Developer() {
             disconnectFromDebugger();
             setIsDebuggerConnected(false);
         } else {
-            connectToDebugger(settings.debuggerUrl);
+            connectToDebugger(debuggerUrl);
             setTimeout(() => setIsDebuggerConnected(isConnectedToDebugger()), 100);
         }
     };
@@ -67,16 +77,16 @@ export default function Developer() {
                             placeholder="127.0.0.1:9090"
                             size="md"
                             leadingIcon={() => <LegacyFormText style={styles.leadingText}>ws://</LegacyFormText>}
-                            defaultValue={settings.debuggerUrl}
-                            onChange={(v: string) => settings.updateSettings({ debuggerUrl: v })}
+                            defaultValue={debuggerUrl}
+                            onChange={(v: string) => updateSettings({ debuggerUrl: v })}
                         />
                         <Stack style={{ marginTop: 4, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: "hidden" }}>
                             <TableSwitchRow
                                 label={Strings.AUTO_DEBUGGER}
                                 subLabel={isDebuggerConnected ? Strings.CONNECTED : undefined}
                                 icon={<TableRow.Icon source={findAssetId("copy")} />}
-                                value={settings.autoDebugger}
-                                onValueChange={(v: boolean) => settings.updateSettings({ autoDebugger: v })}
+                                value={autoDebugger}
+                                onValueChange={(v: boolean) => updateSettings({ autoDebugger: v })}
                             />
                         </Stack>
                         <TableRow
@@ -92,22 +102,22 @@ export default function Developer() {
                                 placeholder="127.0.0.1:8097"
                                 size="md"
                                 leadingIcon={() => <LegacyFormText style={styles.leadingText}>ws://</LegacyFormText>}
-                                defaultValue={settings.devToolsUrl}
-                                onChange={(v: string) => settings.updateSettings({ devToolsUrl: v })}
+                                defaultValue={devToolsUrl}
+                                onChange={(v: string) => updateSettings({ devToolsUrl: v })}
                             />
                             <Stack style={{ marginTop: 4, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: "hidden" }}>
                                 <TableSwitchRow
                                     label={Strings.AUTO_DEVTOOLS}
                                     icon={<TableRow.Icon source={findAssetId("StaffBadgeIcon")} />}
-                                    value={settings.autoDevTools}
-                                    onValueChange={(v: boolean) => settings.updateSettings({ autoDevTools: v })}
+                                    value={autoDevTools}
+                                    onValueChange={(v: boolean) => updateSettings({ autoDevTools: v })}
                                 />
                             </Stack>
                             <TableRow
                                 label={Strings.CONNECT_TO_REACT_DEVTOOLS}
                                 icon={<TableRow.Icon source={findAssetId("ic_badge_staff")} />}
                                 onPress={async () => {
-                                    if (!settings.devToolsUrl?.trim()) {
+                                    if (!devToolsUrl?.trim()) {
                                         showToast(Strings.INVALID_DEVTOOLS_URL, findAssetId("Small"));
                                         return;
                                     }
@@ -118,7 +128,7 @@ export default function Developer() {
                                             return;
                                         }
                                         await devTools.connectToDevTools({
-                                            host: settings.devToolsUrl.split(":")?.[0],
+                                            host: devToolsUrl.split(":")?.[0],
                                             resolveRNStyle: StyleSheet.flatten,
                                         });
                                     } catch (error) {
@@ -135,21 +145,21 @@ export default function Developer() {
                                 label={Strings.LOAD_FROM_CUSTOM_URL}
                                 subLabel={Strings.LOAD_FROM_CUSTOM_URL_DEC}
                                 icon={<TableRow.Icon source={findAssetId("copy")} />}
-                                value={loaderConfig.customLoadUrl.enabled}
+                                value={customLoadUrl.enabled}
                                 onValueChange={(v: boolean) =>
-                                    loaderConfig.updateLoaderConfig({
-                                        customLoadUrl: { ...loaderConfig.customLoadUrl, enabled: v }
+                                    updateLoaderConfig({
+                                        customLoadUrl: { ...customLoadUrl, enabled: v }
                                     })
                                 }
                             />
-                            {loaderConfig.customLoadUrl.enabled && (
+                            {customLoadUrl.enabled && (
                                 <TableRow label={
                                     <TextInput
-                                        defaultValue={loaderConfig.customLoadUrl.url}
+                                        defaultValue={customLoadUrl.url}
                                         size="md"
                                         onChange={(v: string) =>
-                                            loaderConfig.updateLoaderConfig({
-                                                customLoadUrl: { ...loaderConfig.customLoadUrl, url: v }
+                                            updateLoaderConfig({
+                                                customLoadUrl: { ...customLoadUrl, url: v }
                                             })
                                         }
                                         placeholder="http://localhost:4040/rain.js"
@@ -162,11 +172,11 @@ export default function Developer() {
 
                     <TableRowGroup title={Strings.HOT_RELOAD_THEME}>
                         <TextInput
-                            defaultValue={settings.hotReloadThemeUrl}
+                            defaultValue={hotReloadThemeUrl}
                             size="md"
                             placeholder="http://localhost:4040/theme.json"
                             onChange={(v: string) =>
-                                settings.updateSettings({ hotReloadThemeUrl: v })
+                                updateSettings({ hotReloadThemeUrl: v })
                             }
                         />
                         <Stack style={{ marginTop: 4, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: "hidden" }}>
@@ -174,9 +184,9 @@ export default function Developer() {
                                 label={Strings.HOT_RELOAD_THEME}
                                 subLabel={Strings.HOT_RELOAD_THEME_DESC}
                                 icon={<TableRow.Icon source={findAssetId("PaintPaletteIcon")} />}
-                                value={settings.hotReloadTheme}
+                                value={hotReloadThemeSetting}
                                 onValueChange={(v: boolean) =>
-                                    settings.updateSettings({ hotReloadTheme: v })
+                                    updateSettings({ hotReloadTheme: v })
                                 }
                             />
                         </Stack>
@@ -193,9 +203,9 @@ export default function Developer() {
                         <TableSwitchRow
                             label={Strings.DISABLE_UPDATE_WARNING}
                             icon={<TableRow.Icon source={findAssetId("UploadIcon")!} />}
-                            value={settings.disableUpdateWarnings}
+                            value={disableUpdateWarnings}
                             onValueChange={(v: boolean) =>
-                                settings.updateSettings({ disableUpdateWarnings: v })
+                                updateSettings({ disableUpdateWarnings: v })
                             }
                         />
                         <TableRow

@@ -37,7 +37,9 @@ export default function General() {
 
     let easterEggTaps = 0;
 
-    const { developerSettings, safeMode, updateSettings } = useSettings();
+    const developerSettings = useSettings(s => s.developerSettings);
+    const safeMode = useSettings(s => s.safeMode);
+    const updateSettings = useSettings(s => s.updateSettings);
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>

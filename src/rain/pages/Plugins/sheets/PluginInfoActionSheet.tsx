@@ -70,7 +70,8 @@ export default function PluginInfoActionSheet({
     navigation,
 }: PluginInfoActionSheetProps) {
     plugin.usePluginState?.();
-    const { pinnedPlugins, togglePinnedPlugin } = useSettings();
+    const pinnedPlugins = useSettings(s => s.pinnedPlugins);
+    const togglePinnedPlugin = useSettings(s => s.togglePinnedPlugin);
     const isPinned = pinnedPlugins?.includes(plugin.id);
 
     return (

@@ -30,7 +30,8 @@ export default function ErrorBoundaryScreen(props: {
     const styles = useStyles();
     const debugInfo = getDebugInfo();
 
-    const { safeMode, updateSettings } = useSettings();
+    const safeMode = useSettings(s => s.safeMode);
+    const updateSettings = useSettings(s => s.updateSettings);
 
     return <ErrorBoundary>
         <SafeAreaProvider>
