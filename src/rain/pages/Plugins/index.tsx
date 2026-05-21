@@ -1,6 +1,6 @@
 import { useSettings } from "@api/settings";
 import { Strings } from "@i18n";
-import { pluginInstances } from "@plugins";
+import { pluginInstances, pluginMetadataRegistry } from "@plugins";
 import { developer } from "@plugins/types";
 import AddonPage from "@rain/pages/Addon/AddonPage";
 import { ComponentProps, useMemo } from "react";
@@ -11,12 +11,12 @@ import unifyRainPlugin from "./models/rain";
 
 interface PluginPageProps
   extends Partial<ComponentProps<typeof AddonPage<UnifiedPluginModel>>> {
-  useItems: () => unknown[];
+  useItems: () => UnifiedPluginModel[];
 }
 
 
 function PluginPage(props: PluginPageProps) {
-    const items = props.useItems() as UnifiedPluginModel[];
+    const items = props.useItems();
     const { pinnedPlugins, developerSettings } = useSettings();
 
     const isPinned = (id: string) => pinnedPlugins?.includes(id);
@@ -89,13 +89,18 @@ function PluginPage(props: PluginPageProps) {
 export default function Plugins() {
     useSettings();
 
-    const items = useMemo(() => {
-        return Array.from(pluginInstances.values()).map(unifyRainPlugin);
-    }, []);
+    const items = (() => {
+        const allIds = new Set([...pluginInstances.keys(), ...Object.keys(pluginMetadataRegistry)]);
+        const merged = new Map(pluginInstances);
+        for (const id of allIds) {
+            if (merged.has(id)) continue;
+            const meta = pluginMetadataRegistry[id];
+            if (meta) merged.set(id, { ...meta, __rain_lazy: true, id } as any);
+        }
+        return Array.from(merged.values()).map(unifyRainPlugin);
+    })();
 
     return (
-        <PluginPage
-            useItems={() => items}
-        />
+        <PluginPage useItems={() => items} />
     );
 }

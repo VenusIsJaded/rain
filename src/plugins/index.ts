@@ -7,6 +7,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import * as t from "./types";
 
 export const pluginInstances = new Map<string, t.rainPlugin>();
+export let pluginMetadataRegistry: Record<string, any> = {};
+const lazyPluginIds = new Set<string>();
+let _rainPluginsRegistry: Record<string, any> | null = null;
+const _pluginResolvingPromises = new Map<string, Promise<t.rainPlugin | null>>();
 let _setupPromise: Promise<void> | null = null;
 
 const BATCH_SIZE = 15;
@@ -47,8 +51,43 @@ export const pluginSettings = new Proxy({} as t.PluginSettingsStorage, {
     },
 });
 
+async function resolvePlugin(id: string): Promise<t.rainPlugin | null> {
+    const existing = pluginInstances.get(id);
+    if (existing !== undefined && existing !== null) return existing;
+    if (!lazyPluginIds.has(id) || !_rainPluginsRegistry) return existing ?? null;
+
+    const inFlight = _pluginResolvingPromises.get(id);
+    if (inFlight) return inFlight;
+
+    const promise = (async (): Promise<t.rainPlugin | null> => {
+        try {
+            const maybePromise = _rainPluginsRegistry![id];
+            if (!maybePromise || typeof maybePromise.then !== "function") return null;
+
+            const resolved = await maybePromise;
+            if (resolved) {
+                resolved.id = id;
+                pluginInstances.set(id, resolved);
+                return resolved;
+            } else {
+                pluginInstances.delete(id);
+                return null;
+            }
+        } catch (err) {
+            console.error(`[plugins] Failed to resolve plugin "${id}":`, err);
+            pluginInstances.delete(id);
+            return null;
+        } finally {
+            _pluginResolvingPromises.delete(id);
+        }
+    })();
+
+    _pluginResolvingPromises.set(id, promise);
+    return promise;
+}
+
 async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): Promise<void> {
-    const instance = pluginInstances.get(id);
+    const instance = await resolvePlugin(id);
     if (!instance) {
         logger.warn(`[plugins] Skipped loading null/empty plugin matching ID: "${id}"`);
         return;
@@ -68,7 +107,14 @@ export const startPlugin = (id: string) => runPluginLifecycle(id, "start");
 export const startEagerPlugin = (id: string) => runPluginLifecycle(id, "eagerStart");
 
 export async function stopPlugin(id: string): Promise<void> {
-    const instance = pluginInstances.get(id);
+    const raw = pluginInstances.get(id);
+    if (raw === undefined && lazyPluginIds.has(id)) {
+        // Lazy plugin never loaded — just update state
+        usePluginSettings.getState().updatePluginSetting(id, false);
+        return;
+    }
+
+    const instance = raw;
     if (!instance) {
         usePluginSettings.getState().updatePluginSetting(id, false);
         return;
@@ -93,16 +139,22 @@ async function ensureSetup(): Promise<void> {
     if (_setupPromise) return _setupPromise;
 
     _setupPromise = (async () => {
-        const [{ default: rainPlugins }] = await Promise.all([
-            import("#rain-plugins"),
-            waitForHydration(usePluginSettings),
-        ]);
+        const module = await import("#rain-plugins");
+        const { default: rainPlugins, pluginMetadata } = module as any;
+        pluginMetadataRegistry = pluginMetadata ?? {};
+        _rainPluginsRegistry = rainPlugins;
 
-        for (const [id, plugin] of Object.entries(rainPlugins)) {
-            const instance = plugin as t.rainPlugin;
-            if (!instance) continue;
-            instance.id = id;
-            pluginInstances.set(id, instance);
+        for (const id of Object.keys(rainPlugins)) {
+            const descriptor = Object.getOwnPropertyDescriptor(rainPlugins, id);
+            if (descriptor?.get) {
+                // Lazy getter (import() Promise) — don't evaluate yet
+                lazyPluginIds.add(id);
+            } else {
+                const instance = descriptor?.value as t.rainPlugin;
+                if (!instance) continue;
+                instance.id = id;
+                pluginInstances.set(id, instance);
+            }
         }
     })();
 
@@ -110,7 +162,6 @@ async function ensureSetup(): Promise<void> {
 }
 
 async function startBatched(ids: string[], method: "start" | "eagerStart"): Promise<void> {
-
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
         await Promise.allSettled(
             ids.slice(i, i + BATCH_SIZE).map(id => runPluginLifecycle(id, method))
@@ -137,5 +188,7 @@ export function definePlugin(instance: t.rainPlugin): t.rainPlugin {
 }
 
 export function getPluginSettingsComponent(id: string): (() => any) | null {
-    return pluginInstances.get(id)?.settings ?? null;
+    const raw = pluginInstances.get(id);
+    if (raw === undefined && lazyPluginIds.has(id)) return null;
+    return raw?.settings ?? null;
 }
