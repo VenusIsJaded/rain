@@ -15,9 +15,9 @@ const selfDeletedMessages = new Set<string>();
 const deleteableIds = new Set<string>();
 
 // Hoisted module references — resolved once at start(), shared by all patches.
-let MessageStore: any;
-let UserStore: any;
-let FluxDispatcher: any;
+const MessageStore = findByStoreNameLazy("MessageStore");
+const UserStore = findByStoreNameLazy("UserStore");
+const FluxDispatcher = findByPropsLazy("dispatch", "_subscriptions");
 
 function logToDatabase(message: any, type: "DELETE" | "UPDATE") {
     const logEntry = {
@@ -340,9 +340,9 @@ export default definePlugin({
     settings: Settings,
     start() {
         // Resolve shared module references once — all patch functions reuse them
-        FluxDispatcher = findByProps("dispatch", "_subscriptions");
-        UserStore = findByStoreName("UserStore");
-        MessageStore = findByStoreName("MessageStore");
+        
+        
+        
 
         repairCorruptedLogs();
         patches.push(patchDeleteAction());

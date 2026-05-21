@@ -2,7 +2,7 @@ import { after, instead } from "@api/patcher";
 import { waitForHydration } from "@api/storage";
 import { logger } from "@lib/utils/logger";
 import { ReactNative } from "@metro/common";
-import { findByProps, findByStoreName } from "@metro/wrappers";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
@@ -323,7 +323,7 @@ function hookMessagesHandlersGetter() {
 
     unpatchGetter = () => {
         try {
-            Object.defineProperty(MessagesHandlers.prototype, used!, {
+            Object.defineProperty(mhModule.MessagesHandlers.prototype, used!, {
                 configurable: true,
                 get: origGet,
             });
@@ -333,18 +333,7 @@ function hookMessagesHandlersGetter() {
     };
 }
 
-function resolveRuntimeModules() {
-    ChannelStore = findByStoreName("ChannelStore");
-    MessageStore = findByStoreName("MessageStore");
-    UserStore = findByStoreName("UserStore");
-    Messages = findByProps("sendMessage", "startEditMessage");
-    ReplyManager = findByProps("createPendingReply");
-    ChatInputRef = findByProps("insertText");
-    getChatInputRef = findByProps("getChatInputRef").getChatInputRef;
 
-    const mhModule = findByPropsLazy("MessagesHandlers");
-    MessagesHandlers = mhModule?.MessagesHandlers ?? null;
-}
 
 export default definePlugin({
     name: "TapTap",
@@ -355,9 +344,9 @@ export default definePlugin({
     async start() {
         waitForHydration(useTapTapSettings);
 
-        resolveRuntimeModules();
+        
 
-        if (!MessagesHandlers) {
+        if (!mhModule?.MessagesHandlers) {
             logger.error("TapTap: MessagesHandlers not found; plugin inactive");
             return;
         }
