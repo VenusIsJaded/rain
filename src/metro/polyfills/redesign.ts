@@ -122,7 +122,7 @@ for (const [id, moduleExports] of cacher.getModules()) {
         }
 
         _module[prop] = actualExports[prop];
-        _source[prop] = Reflect.ownKeys(actualExports).length;
+        _source[prop] = exportsKeysLength;
         cacher.cacheId(id);
 
         if (exportsKeysLength === 1) {
