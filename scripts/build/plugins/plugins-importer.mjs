@@ -76,7 +76,7 @@ function wrapRequire(id, importPath) {
 }
 
 function wrapGetter(id, importPath) {
-    return `    get "${id}"() {
+    return `    \"${id}\": () => {
         try {
             return require("${importPath}").default;
         } catch (error) {
@@ -87,7 +87,7 @@ function wrapGetter(id, importPath) {
 }
 
 function wrapImport(id, importPath) {
-    return `    get "${id}"() {
+    return `    \"${id}\": () => {
         return import("${importPath}").then(m => m.default).catch(err => {
             console.error("[PluginImporter] Failed to dynamically import '${id}':", err.message);
             return null;
