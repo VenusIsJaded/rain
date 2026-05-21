@@ -150,7 +150,7 @@ export function patchMiscellaneous(): PatchCleanupFn {
         MetricsUtils?._metrics && noop("push", MetricsUtils._metrics),
     ].filter(Boolean) as PatchCleanupFn[];
 
-    return () => miscPatches.forEach(p => p());
+    return () => { for (const p of miscPatches) p(); };
 }
 
 // Sentry error reporting prevention
@@ -188,7 +188,7 @@ export function patchSentry(): PatchCleanupFn {
 
     return () => {
         try {
-            sentryPatches.forEach(p => p());
+            for (const p of sentryPatches) p();
 
             // Re-enable Sentry client on cleanup
             if (Sentry.client) {
