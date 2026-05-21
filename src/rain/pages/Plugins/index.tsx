@@ -3,7 +3,7 @@ import { Strings } from "@i18n";
 import { allPluginIds, ensureAllPluginsLoaded, pluginInstances } from "@plugins";
 import { developer } from "@plugins/types";
 import AddonPage from "@rain/pages/Addon/AddonPage";
-import { ComponentProps, useEffect, useMemo } from "react";
+import { ComponentProps, useEffect, useMemo, useState } from "react";
 
 import PluginCard from "./components/PluginCard";
 import { UnifiedPluginModel } from "./models";
@@ -89,14 +89,20 @@ function PluginPage(props: PluginPageProps) {
 export default function Plugins() {
     useSettings();
 
-    // Load all plugin objects so the list can show every plugin (even disabled ones)
+    // Re-render trigger so plugin list updates after lazy plugins load
+    const [loadTick, setLoadTick] = useState(0);
+
     useEffect(() => {
-        ensureAllPluginsLoaded();
+        let cancelled = false;
+        ensureAllPluginsLoaded().then(() => {
+            if (!cancelled) setLoadTick(t => t + 1);
+        });
+        return () => { cancelled = true; };
     }, []);
 
     const items = useMemo(() => {
         return Array.from(pluginInstances.values()).map(unifyRainPlugin);
-    }, [allPluginIds.length, pluginInstances.size]);
+    }, [allPluginIds.length, loadTick]);
 
     return (
         <PluginPage useItems={() => items} />

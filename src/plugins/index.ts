@@ -76,7 +76,8 @@ function loadPlugin(id: string): t.rainPlugin | null {
     }
 }
 
-export function ensureAllPluginsLoaded(): void {
+export async function ensureAllPluginsLoaded(): Promise<void> {
+    await ensureSetup();
     if (!_optionalPluginGetters) return;
     for (const id of Object.keys(_optionalPluginGetters)) {
         if (!pluginInstances.has(id)) loadPlugin(id);
