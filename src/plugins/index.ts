@@ -76,7 +76,10 @@ export const startEagerPlugin = (id: string) => runPluginLifecycle(id, "eagerSta
 
 export async function stopPlugin(id: string): Promise<void> {
   const instance = pluginInstances.get(id);
-  if (!instance) return;
+  if (!instance) {
+        usePluginSettings.getState().updatePluginSetting(id, false);
+        return;
+    }
 
   try {
     await instance.stop?.();

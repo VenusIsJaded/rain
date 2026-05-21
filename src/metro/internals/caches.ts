@@ -49,7 +49,8 @@ export async function initMetroCache() {
             _metroCache = null!;
             throw "cache invalidated; version mismatch";
         }
-        if (_metroCache._modulesCount !== Object.keys(window.modules).length) {
+        const _currentModuleCount = Object.keys(window.modules).length;
+        if (_metroCache._modulesCount !== _currentModuleCount) {
             _metroCache = null!;
             throw "cache invalidated; modules count mismatch";
         }

@@ -1,13 +1,11 @@
 import { findAssetId } from "@api/assets";
-import { lazyDestructure } from "@lib/utils/lazy";
 import { toasts } from "@metro/common";
-import { findByProps } from "@metro/wrappers";
 import { Strings } from "@rain/i18n";
 
-const { uuid4 } = lazyDestructure(() => findByProps("uuid4"));
+let _toastId = 0;
 
 export const showToast = (content: string, asset?: number) => toasts.open({
-    key: `rain-toast-${uuid4()}`,
+    key: `rain-toast-${++_toastId}`,
     content: content,
     source: asset,
     icon: asset,
