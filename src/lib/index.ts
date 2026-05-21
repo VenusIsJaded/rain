@@ -8,10 +8,6 @@ export * as metro from "@metro";
 /** @internal */
 export * as _jsx from "react/jsx-runtime";
 
-/**
- * @internal
- */
-
 const _disposer = [] as Array<() => unknown>;
 
 export function unload() {
@@ -21,11 +17,9 @@ export function unload() {
 }
 
 /**
- * For internal use only, do not use!
+ * For internal use only.
  * @internal
  */
-unload.push = (fn: typeof _disposer[number]) => {
+(unload as any).push = (fn: typeof _disposer[number]) => {
     _disposer.push(fn);
 };
-
-// todo: rewrite this

@@ -94,7 +94,7 @@ const redesignProps = new Set([
     "useSegmentedControlState",
     "useStackNavigation",
     "useTabNavigation",
-    "useTooltip"
+    "useTooltip",
 ] as const);
 
 type Keys = LiteralUnion<typeof redesignProps extends Set<infer U> ? U : string, string>;
@@ -103,6 +103,20 @@ const _module = {} as Record<Keys, any>;
 const _source = {} as Record<Keys, number>;
 
 const cacher = getPolyfillModuleCacher("redesign_module");
+
+// Cache Reflect.ownKeys length per exports object via WeakMap so that when a
+// single module exports multiple redesign props we don't recompute the key
+// count for each one — only once per object reference.
+const _keysLengthCache = new WeakMap<object, number>();
+
+function getExportsKeysLength(obj: object): number {
+    let len = _keysLengthCache.get(obj);
+    if (len === undefined) {
+        len = Reflect.ownKeys(obj).length;
+        _keysLengthCache.set(obj, len);
+    }
+    return len;
+}
 
 for (const [id, moduleExports] of cacher.getModules()) {
     for (const prop of redesignProps) {
@@ -116,7 +130,7 @@ for (const [id, moduleExports] of cacher.getModules()) {
             continue;
         }
 
-        const exportsKeysLength = Reflect.ownKeys(actualExports).length;
+        const exportsKeysLength = getExportsKeysLength(actualExports);
         if (_source[prop] && exportsKeysLength >= _source[prop]) {
             continue;
         }

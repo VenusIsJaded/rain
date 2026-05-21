@@ -6,7 +6,8 @@ import { createJSONStorage, persist, StorageValue } from "zustand/middleware";
 
 export const createFileStorage = (filePath: string) => {
     return {
-        getItem: async (name: string): Promise<string | null> => {
+        // _name is the Zustand store key — unused here since we key by filePath
+        getItem: async (_name: string): Promise<string | null> => {
             try {
                 const exists = await fileExists(filePath);
                 if (!exists) return null;
@@ -16,43 +17,45 @@ export const createFileStorage = (filePath: string) => {
                 return null;
             }
         },
-        setItem: async (name: string, value: string): Promise<void> => {
+        setItem: async (_name: string, value: string): Promise<void> => {
             try {
                 await writeFile(filePath, value);
             } catch (e) {
                 console.error(`Failed to write storage to '${filePath}'`, e);
             }
         },
-        removeItem: async (name: string): Promise<void> => {
-            // we dont need this
+        removeItem: async (_name: string): Promise<void> => {
+            // intentionally no-op
         },
     };
 };
 
-export const createFlattenedFileStorage = <T>(filePath: string) => {
+export const createFlattenedFileStorage = (filePath: string) => {
     return {
-        getItem: async (name: string): Promise<string | null> => {
+        getItem: async (_name: string): Promise<string | null> => {
             try {
                 const exists = await fileExists(filePath);
                 if (!exists) return null;
                 const content = await readFile(filePath);
                 const data = JSON.parse(content);
                 if (data.state) return content;
-                const wrapped: StorageValue<T> = {
+                const wrapped: StorageValue<unknown> = {
                     state: data,
                     version: 0,
                 };
                 return JSON.stringify(wrapped);
             } catch (e) {
+                console.error(`Failed to read flattened storage from '${filePath}'`, e);
                 return null;
             }
         },
-        setItem: async (name: string, value: string): Promise<void> => {
+        setItem: async (_name: string, value: string): Promise<void> => {
             try {
-                const parsed = JSON.parse(value) as StorageValue<T>;
+                const parsed = JSON.parse(value) as StorageValue<unknown>;
                 const rawState = JSON.stringify(parsed.state);
                 await writeFile(filePath, rawState);
             } catch (e) {
+                console.error(`Failed to write flattened storage to '${filePath}'`, e);
             }
         },
         removeItem: async () => {},
@@ -74,6 +77,8 @@ export async function waitForHydration(usePluginSettings: any): Promise<void> {
         });
 
         setTimeout(() => {
+            // Warn so developers can diagnose slow or failed hydration
+            console.warn("[rain/storage] waitForHydration timed out after 5s — resolving anyway");
             unsubscribe();
             resolve();
         }, 5000);
@@ -119,16 +124,21 @@ export function createPluginStore<T extends object>(
     const settingsProxy = new Proxy({} as T, {
         get(_, prop: string) {
             const state = useStore.getState();
-            if (prop.includes(".")) {
-                const [parent, child] = prop.split(".");
+            // Single indexOf scan instead of includes() + split() (two string scans)
+            const dotIdx = prop.indexOf(".");
+            if (dotIdx !== -1) {
+                const parent = prop.slice(0, dotIdx);
+                const child = prop.slice(dotIdx + 1);
                 return (state as any)[parent]?.[child];
             }
             return (state as any)[prop];
         },
         set(_, prop: string, value: any) {
             const state = useStore.getState();
-            if (prop.includes(".")) {
-                const [parent, child] = prop.split(".");
+            const dotIdx = prop.indexOf(".");
+            if (dotIdx !== -1) {
+                const parent = prop.slice(0, dotIdx);
+                const child = prop.slice(dotIdx + 1);
                 state.updateSettings({
                     [parent]: { ...(state as any)[parent], [child]: value }
                 } as any);
