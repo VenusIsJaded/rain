@@ -2,8 +2,6 @@ import { after, before } from "@api/patcher";
 import { findInTree } from "@lib/utils";
 import { proxyLazy } from "@lib/utils/lazy";
 import { findByProps } from "@metro";
-// import { wrapNativeModule } from "@api/native/modules";
-
 import { _colorRef } from "../updater";
 
 const mmkvStorage = proxyLazy(() => {
@@ -41,5 +39,5 @@ export default function patchStorage() {
         })
     ];
 
-    return () => patches.forEach(p => p());
+    return () => { for (const p of patches) p(); };
 }
