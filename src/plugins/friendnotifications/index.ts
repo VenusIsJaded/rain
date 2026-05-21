@@ -28,9 +28,11 @@ function onPresenceUpdate(event: any) {
             if (!userId) continue;
 
             // Check if friend
-            if (!RelationshipStore.isFriend?.(userId)) continue;
+            if (typeof RelationshipStore.isFriend !== "function" || !RelationshipStore.isFriend(userId)) continue;
 
             const newStatus = update.status;
+            if (!newStatus) continue;
+
             const oldStatus = previousStatuses.get(userId) || "offline";
 
             if (oldStatus !== newStatus) {
@@ -42,15 +44,13 @@ function onPresenceUpdate(event: any) {
                 if (wasOffline && !isOffline && friendNotificationsSettings.notifyOnline) {
                     const user = UserStore.getUser?.(userId);
                     if (user) {
-                        const avatar = { uri: user.getAvatarURL?.(false, 128, true) };
-                        // Note: Toasts crash the React Native bridge if passed a full React Element. 
-                        // We must pass the raw uri object instead.
+                        const avatar = { uri: typeof user.getAvatarURL === "function" ? user.getAvatarURL(false, 128, true) : undefined };
                         showToast(`${user.globalName || user.username} is now online`, avatar);
                     }
                 } else if (!wasOffline && isOffline && friendNotificationsSettings.notifyOffline) {
                     const user = UserStore.getUser?.(userId);
                     if (user) {
-                        const avatar = { uri: user.getAvatarURL?.(false, 128, true) };
+                        const avatar = { uri: typeof user.getAvatarURL === "function" ? user.getAvatarURL(false, 128, true) : undefined };
                         showToast(`${user.globalName || user.username} went offline`, avatar);
                     }
                 }
