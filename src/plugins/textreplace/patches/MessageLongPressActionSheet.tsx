@@ -8,7 +8,8 @@ import { React } from "@metro/common";
 import { useTextReplaceSettings } from "../storage";
 
 const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
-const ActionSheetRow = findByProps("ActionSheetRow")?.ActionSheetRow;
+const rowMod = findByPropsLazy("ActionSheetRow");
+const ActionSheetRow = (props) => { const Comp = rowMod.ActionSheetRow; return <Comp {...props} />; };
 const DownloadIcon = findAssetId("DownloadIcon");
 const JSON_CODEBLOCK_PATTERN = /^```(?:json)\n([\s\S]*?)```$/gm;
 

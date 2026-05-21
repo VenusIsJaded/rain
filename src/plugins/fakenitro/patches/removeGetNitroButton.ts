@@ -1,6 +1,6 @@
 import { after,before } from "@api/patcher";
 import findInReactTree from "@lib/utils/findInReactTree";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 function patchSheet(funcName: string, sheetModule: any, once: boolean) {
     const unpatch = after(funcName, sheetModule, (args: any[], res: any) => {
@@ -42,7 +42,7 @@ function patchSheet(funcName: string, sheetModule: any, once: boolean) {
 export default function getPatches() {
     return [
         (() => {
-            const LazyActionSheet = findByProps("openLazy", "hideActionSheet");
+            const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
             if (!LazyActionSheet) return () => {};
             const patches: Array<() => void> = [];
             const unpatchLazy = before("openLazy", LazyActionSheet, ([lazySheet, name]) => {

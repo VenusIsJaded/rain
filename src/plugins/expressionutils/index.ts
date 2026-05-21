@@ -1,5 +1,5 @@
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
 
@@ -36,7 +36,7 @@ async function downloadEmoji(emojiId: string, emojiName: string, animated: boole
             const base64data = reader.result as string;
             const base64 = base64data.split(",")[1];
 
-            const FileManager = findByProps("writeFile", "readFile");
+            const FileManager = findByPropsLazy("writeFile", "readFile");
             if (FileManager) {
                 const fileName = `${emojiName}_${emojiId}.${extension}`;
                 await FileManager.writeFile("documents", `emojis/${fileName}`, base64, "base64");
@@ -64,10 +64,10 @@ async function cloneEmojiToGuild(emojiId: string, emojiName: string, animated: b
         reader.onloadend = async () => {
             const base64data = reader.result as string;
 
-            const { createGuildEmoji } = findByProps("createGuildEmoji") || {};
-            if (createGuildEmoji) {
+            const emjMod = findByPropsLazy("createGuildEmoji");
+            if (emjMod.createGuildEmoji) {
                 try {
-                    await createGuildEmoji({
+                    await emjMod.createGuildEmoji({
                         guildId,
                         name: emojiName,
                         image: base64data,

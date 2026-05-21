@@ -1,7 +1,7 @@
 import { findAssetId } from "@api/assets";
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByName } from "@metro";
+import { findByNameLazy } from "@metro";
 import { ActionSheetRow } from "@metro/common/components";
 
 import { UpsideDown } from "../components/UpsideDown";
@@ -12,12 +12,12 @@ import {
     jumpToTopOfForum,
 } from "../utils";
 
-const ForumPostLongPressActionSheet = findByName(
+const ForumPostLongPressActionSheet = findByNameLazy(
     "ForumPostLongPressActionSheet",
     false,
 );
 
-const ChannelLongPressActionSheet = findByName(
+const ChannelLongPressActionSheet = findByNameLazy(
     "ChannelLongPressActionSheet",
     false,
 );

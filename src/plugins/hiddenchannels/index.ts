@@ -11,7 +11,7 @@ import Settings from "./settings";
 import { hiddenChannelsSettings } from "./storage";
 
 const Permissions = findByPropsLazy("getChannelPermissions", "can");
-const ChannelTypesModule = findByProps("ChannelTypes") ?? {};
+const ChannelTypesModule = findByPropsLazy("ChannelTypes");
 const ChannelTypes = ChannelTypesModule.ChannelTypes ?? {};
 const getChannelModule = findByPropsLazy("getChannel") || findByName("getChannel", false);
 const getChannel = getChannelModule?.getChannel ?? getChannelModule;

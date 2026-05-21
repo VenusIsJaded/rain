@@ -1,7 +1,7 @@
 import { patcher } from "@api";
 import { useSettings } from "@api/settings";
 import { showConfirmationAlert } from "@api/ui/alerts";
-import { findByProps, findByStoreName } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { UserStore } from "@metro/common/stores";
 import { definePlugin } from "@plugins";
 import { Developers } from "@rain/Developers";
@@ -10,7 +10,7 @@ let unpatchIsStaffEnv: any;
 let unpatchDevStoreProps: any;
 
 function reinitStore() {
-    const DeveloperExperimentStore = findByStoreName("DeveloperExperimentStore");
+    const DeveloperExperimentStore = findByStoreNameLazy("DeveloperExperimentStore");
     try {
         if (unpatchDevStoreProps) unpatchDevStoreProps();
 
@@ -58,7 +58,7 @@ export default definePlugin({
             useSettings.setState({ experimentsConfirmed: true });
         }
 
-        const targetModule = findByProps("isStaffEnv");
+        const targetModule = findByPropsLazy("isStaffEnv");
 
         unpatchIsStaffEnv = patcher.instead("isStaffEnv", targetModule, (args: any[], origFunc: { apply: (arg0: any, arg1: any) => any; }) => {
             const user = args[0];

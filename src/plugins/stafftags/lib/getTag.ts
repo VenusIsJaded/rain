@@ -5,7 +5,7 @@ import chroma from "chroma-js";
 
 import { useStaffTagsSettings } from "../storage";
 
-const { computePermissions } = findByProps("computePermissions", "canEveryoneRole") ?? {};
+const permsMod = findByPropsLazy("computePermissions", "canEveryoneRole");
 const GuildMemberStore = findByStoreNameLazy("GuildMemberStore");
 
 const getBuiltInTags = () => [
@@ -64,7 +64,7 @@ export default function getTag(guild: any, channel: any, user: any) {
 
     let permissions: string[] = [];
     if (computePermissions) {
-        const permissionsInt = computePermissions({
+        const permissionsInt = (permsMod.computePermissions ?? (()=>0n))({
             user: user,
             context: guild,
             overwrites: channel?.permissionOverwrites

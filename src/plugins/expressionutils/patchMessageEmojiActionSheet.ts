@@ -1,6 +1,6 @@
 import { after,before } from "@api/patcher";
 import findInReactTree from "@lib/utils/findInReactTree";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { React } from "@metro/common";
 
 import StealButtons from "./ui/components/StealButtons";
@@ -53,7 +53,7 @@ function patchSheet(funcName: string, sheetModule: any, once: boolean) {
 }
 
 export default function patchMessageEmojiActionSheet() {
-    const LazyActionSheet = findByProps("openLazy", "hideActionSheet");
+    const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
     if (!LazyActionSheet) return () => {};
     const patches: Array<() => void> = [];
     const unpatchLazy = before("openLazy", LazyActionSheet, ([lazySheet, name]) => {

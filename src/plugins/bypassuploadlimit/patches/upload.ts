@@ -2,7 +2,7 @@ import { findAssetId } from "@api/assets";
 import { before } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { clipboard } from "@metro/common";
 import { findByProps as findByPropsWrappers } from "@metro/wrappers";
 
@@ -15,9 +15,12 @@ import { uploadToZipline } from "../api/zipline";
 import { formatBytes } from "../lib/utils";
 import { uploaderSettings } from "../storage";
 
-const CloudUpload = findByProps("CloudUpload")?.CloudUpload;
-const MessageSender = findByProps("sendMessage");
-const PendingMessages = findByProps("getPendingMessages", "deletePendingMessage");
+const cloudUploadModule = findByPropsLazy("CloudUpload");
+const CloudUpload = new Proxy({}, {
+    get: (_, prop) => cloudUploadModule.CloudUpload?.[prop]
+});
+const MessageSender = findByPropsLazy("sendMessage");
+const PendingMessages = findByPropsLazy("getPendingMessages", "deletePendingMessage");
 
 /** Cleans up any failed pending messages in the channel after an upload. */
 function cleanupPendingMessages(channelId: string) {

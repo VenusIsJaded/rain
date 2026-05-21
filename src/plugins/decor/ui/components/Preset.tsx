@@ -13,7 +13,8 @@ const { FormTitle } = Forms;
 const { View, FlatList, Image } = ReactNative;
 const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
 const { default: SummarizedIconRow, OverflowCircle } = findByNameLazy("SummarizedIconRow", false);
-const { type: Avatar } = findByProps("AvatarSizes");// .default;
+const avatarMod = findByPropsLazy("AvatarSizes");
+const Avatar = (props) => { const Comp = avatarMod.type; return <Comp {...props} />; };
 
 const useStyles = createStyles(_ => ({
     wrapper: {

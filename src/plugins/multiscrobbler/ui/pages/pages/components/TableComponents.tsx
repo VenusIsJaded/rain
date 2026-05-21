@@ -1,7 +1,8 @@
 import { SliderRow } from "@api/ui/components/SliderRow";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
-export const { ScrollView } = findByProps("ScrollView");
+const svMod = findByPropsLazy("ScrollView");
+export const ScrollView = (props) => { const Comp = svMod.ScrollView; return <Comp {...props} />; };
 export const {
     Card,
     TableRowGroup,
@@ -21,5 +22,6 @@ export const {
     "TableRadioRow",
     "TableRadioGroup",
 );
-export const { TextInput } = findByProps("TextInput");
+const tiMod = findByPropsLazy("TextInput");
+export const TextInput = (props) => { const Comp = tiMod.TextInput; return <Comp {...props} />; };
 export { SliderRow };

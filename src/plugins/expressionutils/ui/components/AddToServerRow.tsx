@@ -8,8 +8,8 @@ import { Emojis } from "../../modules";
 const { TableRow: TR } = findByPropsLazy("TableRow");
 
 export default function AddToServerRow({ guild, emoji, emojiName }: { guild: any, emoji: any, emojiName: string }) {
-    const emojiSlotModule = findByProps("getMaxEmojiSlots");
-    const EmojiStore = findByProps("getGuilds");
+    const emojiSlotModule = findByPropsLazy("getMaxEmojiSlots");
+    const EmojiStore = findByPropsLazy("getGuilds");
 
     const [isLoading, setIsLoading] = React.useState(false);
 

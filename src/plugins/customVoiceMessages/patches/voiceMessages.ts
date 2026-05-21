@@ -1,5 +1,5 @@
 import { before } from "@api/patcher";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import { customVoiceMessagesSettings } from "../storage";
 
@@ -14,7 +14,7 @@ const unpatches: (() => void)[] = [];
 
 function patchUploadMethod(methodName: string) {
     try {
-        const mod = findByProps(methodName);
+        const mod = findByPropsLazy(methodName);
         if (!mod || typeof mod[methodName] !== "function") {
             console.warn(`[CVM] Module "${methodName}" not found, skipping`);
             return;

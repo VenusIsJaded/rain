@@ -1,6 +1,6 @@
 import { after } from "@api/patcher";
 import { logger } from "@lib/utils/logger";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
 
@@ -103,7 +103,7 @@ function applyPatch(): boolean {
 
 function patchAddFavorite() {
     try {
-        const favModule = findByProps("addFavoriteGIF");
+        const favModule = findByPropsLazy("addFavoriteGIF");
         if (!favModule) return;
 
         unpatchAddFavorite = after("addFavoriteGIF", favModule, args => {
@@ -130,7 +130,7 @@ function patchAddFavorite() {
 
 function patchMobileFavorites() {
     try {
-        const mod = findByProps("useFavoriteGIFsMobile");
+        const mod = findByPropsLazy("useFavoriteGIFsMobile");
         if (!mod) return;
 
         const origFn = mod.useFavoriteGIFsMobile;

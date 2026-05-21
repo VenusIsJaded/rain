@@ -1,5 +1,5 @@
 import { before } from "@api/patcher";
-import { findByProps } from "@metro/wrappers";
+import { findByPropsLazy } from "@metro/wrappers";
 
 import { cleanUrl } from "./rules";
 
@@ -29,7 +29,7 @@ export function setupPatches(): Unpatch[] {
     const patches: Unpatch[] = [];
 
     try {
-        const Messages = findByProps("sendMessage", "editMessage", "startEditMessage");
+        const Messages = findByPropsLazy("sendMessage", "editMessage", "startEditMessage");
 
         if (Messages?.sendMessage) {
             patches.push(

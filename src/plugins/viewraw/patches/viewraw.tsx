@@ -2,14 +2,14 @@ import { findAssetId } from "@api/assets";
 import { after,before } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
 import { logger } from "@lib/utils/logger";
-import { findByName, findByProps } from "@metro";
+import { findByNameLazy, findByPropsLazy } from "@metro";
 import { React } from "@metro/common";
 import { Forms } from "@metro/common/components";
 
 import RawPage from "./RawPage";
 
-const LazyActionSheet = findByProps("openLazy", "hideActionSheet");
-const Navigation = findByProps("push", "pushLazy", "pop");
+const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
+const Navigation = findByPropsLazy("push", "pushLazy", "pop");
 const modalCloseButton =
     findByProps("getRenderCloseButton")?.getRenderCloseButton ??
     findByProps("getHeaderCloseButton")?.getHeaderCloseButton;

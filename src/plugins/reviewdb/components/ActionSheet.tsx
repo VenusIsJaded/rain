@@ -14,7 +14,7 @@ const actionSheetComponents = findByPropsLazy(
     "ActionSheetCloseButton",
 );
 
-export const LazyActionSheet = findByProps("openLazy", "hideActionSheet") as {
+export const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet") as unknown as {
     openLazy: (component: Promise<any>, key: string, props?: object) => void;
     hideActionSheet: () => void;
 };

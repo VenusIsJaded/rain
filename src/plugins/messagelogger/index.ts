@@ -217,16 +217,17 @@ function patchMessageEditHandler() {
 
 function patchRowManager() {
     try {
-        const RowManager = findByName("RowManager");
+        const RowManager = findByNameLazy("RowManager");
         if (!RowManager) return () => {};
 
         const EDIT_HISTORY_SEPARATOR = "`[ EDITED ]`";
 
         // Hoist all module lookups out of the hot generate() path
         const React = require("react");
-        const ActionSheet = findByName("ActionSheet");
-        const FormRow = findByName("FormRow");
-        const getAssetIDByName = findByProps("getAssetIDByName")?.getAssetIDByName;
+        const ActionSheet = findByNameLazy("ActionSheet");
+        const FormRow = findByNameLazy("FormRow");
+        const assetMod = findByPropsLazy("getAssetIDByName");
+const getAssetIDByName = (name) => assetMod.getAssetIDByName?.(name);
 
         return before("generate", RowManager.prototype, args => {
             try {
@@ -312,7 +313,7 @@ function patchRowManager() {
 
 function patchDeleteAction() {
     try {
-        const MessageActions = findByProps("deleteMessage");
+        const MessageActions = findByPropsLazy("deleteMessage");
         if (!MessageActions) return () => {};
 
         return before("deleteMessage", MessageActions, args => {

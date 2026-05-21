@@ -1,10 +1,11 @@
-import { findByName } from "@metro";
+import { findByNameLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 
 const { View } = ReactNative;
 
-const Svg = findByName("Svg", false)?.default;
-const Path = findByName("Svg", false)?.Path;
+const svgMod = findByNameLazy("Svg", false);
+const Svg = (props) => { const Comp = svgMod.default; return <Comp {...props} />; };
+const Path = (props) => { const Comp = svgMod.Path; return <Comp {...props} />; };
 
 const IconPaths: Record<string, string> = {
     desktop: "M4 2.5c-1.103 0-2 .897-2 2v11c0 1.104.897 2 2 2h7v2H7v2h10v-2h-4v-2h7c1.103 0 2-.896 2-2v-11c0-1.103-.897-2-2-2H4Zm16 2v9H4v-9h16Z",

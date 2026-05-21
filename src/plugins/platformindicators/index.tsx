@@ -2,7 +2,7 @@ import { findAssetId } from "@api/assets";
 import { after, before } from "@api/patcher";
 import { waitForHydration } from "@api/storage";
 import { findInReactTree } from "@lib/utils";
-import { findByName,findByProps, findByTypeName, findByTypeNameAll } from "@metro";
+import { findByNameLazy, findByPropsLazy, findByTypeName, findByTypeNameAll } from "@metro";
 import { ReactNative } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
@@ -108,7 +108,7 @@ export default definePlugin({
         }));
 
         // DisplayName patch
-        const DisplayName = findByProps("DisplayName");
+        const DisplayName = findByPropsLazy("DisplayName");
         unpatches.push(after("DisplayName", DisplayName, (args, res) => {
             const user = args[0]?.user;
             if (user === undefined) return;
@@ -119,7 +119,7 @@ export default definePlugin({
         }));
 
         // Status patch
-        const Status = findByName("Status", false);
+        const Status = findByNameLazy("Status", false);
         unpatches.push(before("default", Status, args => {
             if (!args) return;
             if (!args[0]) return;
@@ -128,7 +128,7 @@ export default definePlugin({
         }));
 
         // Guild member row
-        const Rows = findByProps("GuildMemberRow");
+        const Rows = findByPropsLazy("GuildMemberRow");
         if (Rows?.GuildMemberRow) {
             unpatches.push(after("type", Rows.GuildMemberRow, (args: any[], res: any) => {
                 const user = args[0]?.user;

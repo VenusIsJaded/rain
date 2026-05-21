@@ -49,7 +49,7 @@ function openKeyboard(channelId: string) {
             ChatInputRef?.openSystemKeyboard();
             return;
         }
-        const keyboardModule = findByProps(
+        const keyboardModule = findByPropsLazy(
             "openSystemKeyboard",
             "openSystemKeyboardForLastCreatedInput",
         );
@@ -342,7 +342,7 @@ function resolveRuntimeModules() {
     ChatInputRef = findByProps("insertText");
     getChatInputRef = findByProps("getChatInputRef").getChatInputRef;
 
-    const mhModule = findByProps("MessagesHandlers");
+    const mhModule = findByPropsLazy("MessagesHandlers");
     MessagesHandlers = mhModule?.MessagesHandlers ?? null;
 }
 

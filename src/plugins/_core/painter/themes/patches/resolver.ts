@@ -1,12 +1,12 @@
 import { NativeThemeModule } from "@api/native/modules";
 import { before, instead } from "@api/patcher";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import chroma from "chroma-js";
 
 import { _colorRef } from "../updater";
 
-const tokenReference = findByProps("SemanticColor");
-const themeTypes = findByProps("ThemeTypes")?.ThemeTypes;
+const tokenReference = findByPropsLazy("SemanticColor");
+const themeModule = findByPropsLazy("ThemeTypes");
 
 const origRawColor = tokenReference?.RawColor ? { ...tokenReference.RawColor } : {};
 let origDarker: string;
@@ -29,15 +29,15 @@ export default function patchDefinitionAndResolver() {
     const callback = ([theme]: any[]) => theme === _colorRef.key ? [_colorRef.current!.reference] : void 0;
 
     if (themeTypes) {
-        origDarker = themeTypes?.DARKER as string;
-        origLight = themeTypes?.LIGHT as string;
+        origDarker = themeModule?.ThemeTypes?.DARKER as string;
+        origLight = themeModule?.ThemeTypes?.LIGHT as string;
 
-        Object.defineProperty(themeTypes, "DARKER", {
+        Object.defineProperty(themeModule?.ThemeTypes, "DARKER", {
             configurable: true,
             enumerable: true,
             get: () => _colorRef.current?.reference === "darker" ? _colorRef.key : origDarker,
         });
-        Object.defineProperty(themeTypes, "LIGHT", {
+        Object.defineProperty(themeModule?.ThemeTypes, "LIGHT", {
             configurable: true,
             enumerable: true,
             get: () => _colorRef.current?.reference === "light" ? _colorRef.key : origLight,
@@ -88,10 +88,10 @@ export default function patchDefinitionAndResolver() {
         }),
         () => {
             if (themeTypes) {
-                Object.defineProperty(themeTypes, "DARKER", {
+                Object.defineProperty(themeModule?.ThemeTypes, "DARKER", {
                     configurable: true, writable: true, value: origDarker
                 });
-                Object.defineProperty(themeTypes, "LIGHT", {
+                Object.defineProperty(themeModule?.ThemeTypes, "LIGHT", {
                     configurable: true, writable: true, value: origLight
                 });
             }

@@ -2,7 +2,7 @@ import { isChatBubblesSupported } from "@api/native/loader";
 import BubbleModule from "@api/native/modules/bubble";
 import { waitForHydration } from "@api/storage";
 import { logger } from "@lib/utils/logger";
-import { findByStoreName } from "@metro";
+import { findByStoreNameLazy } from "@metro";
 import { FluxDispatcher, tokens } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
@@ -39,7 +39,7 @@ export default definePlugin({
             if (bubbleChatColor) return bubbleChatColor;
             try {
                 const token = tokens.colors.BACKGROUND_SECONDARY_ALT;
-                const theme = findByStoreName("ThemeStore")?.theme;
+                const ThemeStore = findByStoreNameLazy("ThemeStore");
                 const resolved = tokens.internal.resolveSemanticColor(theme, token);
                 if (typeof resolved === "string" && resolved.startsWith("#")) return resolved;
             } catch {}

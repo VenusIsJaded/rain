@@ -1,20 +1,22 @@
-import { findByName, findByProps } from "@metro";
+import { findByNameLazy, findByPropsLazy } from "@metro";
 
 import CreateDecoration from "../pages/CreateDecoration";
 
-const Navigator = findByName("Navigator") ?? findByProps("Navigator")?.Navigator;
+const navModule1 = findByNameLazy("Navigator");
+const navModule2 = findByPropsLazy("Navigator");
+const Navigator = (props) => { const Comp = navModule1.default ?? navModule2.Navigator; return <Comp {...props} />; };
 const modalCloseButton =
   findByProps("getRenderCloseButton")?.getRenderCloseButton ??
   findByProps("getHeaderCloseButton")?.getHeaderCloseButton;
 
-const { popModal } = findByProps("pushModal");
+const pushMod = findByPropsLazy("pushModal");
 
 export default () => (
     <Navigator
         initialRouteName="CREATE_DECORATION"
         screens={{
             CREATE_DECORATION: {
-                headerLeft: modalCloseButton(() => popModal("create-decoration")),
+                headerLeft: getModalCloseButton()(() => pushMod.popModal("create-decoration")),
                 render: CreateDecoration,
                 title: "Create Decoration"
             }
