@@ -45,17 +45,20 @@ export function findAsset(filter: (a: Asset) => boolean): Asset | undefined;
 export function findAsset(param: number | string | ((a: Asset) => boolean)) {
     if (typeof param === "number") return getAssetById(param);
 
-    if (typeof param === "string" && _nameToAssetCache[param]) {
-        return _nameToAssetCache[param];
+    if (typeof param === "string") {
+        if (_nameToAssetCache[param]) return _nameToAssetCache[param];
+        for (const asset of iterateAssets()) {
+            if (asset.name === param) {
+                _nameToAssetCache[param] = asset;
+                return asset;
+            }
+        }
+        return undefined;
     }
 
+    // param is a filter function
     for (const asset of iterateAssets()) {
-        if (typeof param === "string" && asset.name === param) {
-            _nameToAssetCache[param] = asset;
-            return asset;
-        } else if (typeof param === "function" && param(asset)) {
-            return asset;
-        }
+        if (param(asset)) return asset;
     }
 }
 
