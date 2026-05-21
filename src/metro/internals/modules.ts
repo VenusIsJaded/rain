@@ -1,4 +1,4 @@
-import { getMetroCache, indexBlacklistFlag, indexExportsFlags } from "@metro/internals/caches";
+import { getMetroCache, indexBlacklistFlag } from "@metro/internals/caches";
 import { Metro } from "@metro/types";
 
 import { ModuleFlags, ModulesMapInternal } from "./enums";
