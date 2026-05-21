@@ -104,6 +104,15 @@ const _source = {} as Record<Keys, number>;
 
 const cacher = getPolyfillModuleCacher("redesign_module");
 
+// Cache Reflect.ownKeys().length per exports object — avoids recomputing it
+// for every prop when a single module exports multiple redesign props.
+const _keysLenCache = new WeakMap<object, number>();
+function getKeysLen(obj: object): number {
+    let n = _keysLenCache.get(obj);
+    if (n === undefined) { n = Reflect.ownKeys(obj).length; _keysLenCache.set(obj, n); }
+    return n;
+}
+
 for (const [id, moduleExports] of cacher.getModules()) {
     for (const prop of redesignProps) {
         let actualExports: any;
@@ -116,7 +125,7 @@ for (const [id, moduleExports] of cacher.getModules()) {
             continue;
         }
 
-        const exportsKeysLength = Reflect.ownKeys(actualExports).length;
+        const exportsKeysLength = getKeysLen(actualExports);
         if (_source[prop] && exportsKeysLength >= _source[prop]) {
             continue;
         }
