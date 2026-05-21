@@ -33,7 +33,7 @@ export async function fetchUserEffectData() {
         userEffects = [];
         userEffectData = {};
 
-        Object.entries(data || {}).forEach(([userId, userInfo]: [string, any]) => {
+        for (const [userId, userInfo] of Object.entries(data || {})) {
             if (!userInfo) return;
 
             if (userInfo.selected) {
