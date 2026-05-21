@@ -14,5 +14,5 @@ export default function initColors(manifest: ColorManifest | null) {
         patchChatBackground()
     ];
 
-    return () => patches.forEach(p => p());
+    return () => { for (const p of patches) p(); };
 }
