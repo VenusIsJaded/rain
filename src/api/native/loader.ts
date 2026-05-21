@@ -11,8 +11,17 @@ export interface ThemeInfo {
     data: ThemeManifest;
 }
 
-export const isPyonLoader = () => pyonLoaderIdentity != null;
-export const isRainLoader = () => rainLoaderIdentity != null;
+// Keep as regular function declarations (not arrow consts) — function declarations
+// are hoisted, arrow-const exports are not. Loader functions are imported eagerly
+// by several modules and must be available before module evaluation completes.
+
+export function isPyonLoader() {
+    return pyonLoaderIdentity != null;
+}
+
+export function isRainLoader() {
+    return rainLoaderIdentity != null;
+}
 
 export function getLoaderIdentity() {
     return rainLoaderIdentity ?? pyonLoaderIdentity ?? null;
@@ -61,7 +70,6 @@ export function getReactDevToolsProp(): string | null {
 
 export function getReactDevToolsVersion(): string | null {
     if (!isReactDevToolsPreloaded()) return null;
-    // Both loaders expose the version on the same shape
     return window.__REACT_DEVTOOLS__?.version ?? null;
 }
 

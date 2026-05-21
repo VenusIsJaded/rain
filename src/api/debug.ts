@@ -39,36 +39,27 @@ let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
 
 const VERSION = 1;
 
-const enum MessageType {
-    Hello = "hello",
-    Hi = "hi",
-    Log = "log",
-    Run = "run",
-}
-
-const enum LogLevel {
-    Debug = "debug",
-    Default = "default",
-    Warn = "warn",
-    Error = "error",
-}
+// Use plain string union types instead of enum — enums generate runtime objects
+// that add bundle weight; string literals are erased entirely by the compiler.
+type MessageType = "hello" | "hi" | "log" | "run";
+type LogLevel = "debug" | "default" | "warn" | "error";
 
 interface LogMessage {
-    type: MessageType.Log;
+    type: "log";
     data: { level: LogLevel; message: any[] };
 }
 
 interface HelloMessage {
-    type: MessageType.Hello;
+    type: "hello";
     data: { version: number };
 }
 
 function sendLog(level: LogLevel, ...args: any[]) {
     if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
-            type: MessageType.Log,
+            type: "log",
             data: { level, message: args }
-        } satisfies LogMessage));
+        } as LogMessage));
     }
 }
 
@@ -76,30 +67,30 @@ function patchConsoleAndLogger() {
     originalConsoleLog = console.log;
     console.log = (...args: any[]) => {
         originalConsoleLog!.apply(console, args);
-        sendLog(LogLevel.Default, ...args);
+        sendLog("default", ...args);
     };
 
     originalConsoleError = console.error;
     console.error = (...args: any[]) => {
         originalConsoleError!.apply(console, args);
-        sendLog(LogLevel.Error, ...args);
+        sendLog("error", ...args);
     };
 
     originalConsoleWarn = console.warn;
     console.warn = (...args: any[]) => {
         originalConsoleWarn!.apply(console, args);
-        sendLog(LogLevel.Warn, ...args);
+        sendLog("warn", ...args);
     };
 
     if (logger) {
         originalLoggerLog = logger.log;
-        logger.log = (...args: any[]) => { originalLoggerLog.apply(logger, args); sendLog(LogLevel.Default, ...args); };
+        logger.log = (...args: any[]) => { originalLoggerLog.apply(logger, args); sendLog("default", ...args); };
 
         originalLoggerError = logger.error;
-        logger.error = (...args: any[]) => { originalLoggerError.apply(logger, args); sendLog(LogLevel.Error, ...args); };
+        logger.error = (...args: any[]) => { originalLoggerError.apply(logger, args); sendLog("error", ...args); };
 
         originalLoggerWarn = logger.warn;
-        logger.warn = (...args: any[]) => { originalLoggerWarn.apply(logger, args); sendLog(LogLevel.Warn, ...args); };
+        logger.warn = (...args: any[]) => { originalLoggerWarn.apply(logger, args); sendLog("warn", ...args); };
     }
 }
 
@@ -131,19 +122,17 @@ export function connectToDebugger(url: string) {
 
         socket.addEventListener("open", () => {
             showToast("Connected to debugger.", findAssetId("Check"));
-
             socket?.send(JSON.stringify({
-                type: MessageType.Hello,
+                type: "hello",
                 data: { version: VERSION }
-            } satisfies HelloMessage));
-
+            } as HelloMessage));
             patchConsoleAndLogger();
         });
 
         socket.addEventListener("message", (message: any) => {
             try {
                 const data = JSON.parse(message.data);
-                if (data.type === MessageType.Run && data.data?.code) {
+                if (data.type === "run" && data.data?.code) {
                     try {
                         // eslint-disable-next-line no-eval
                         (0, eval)(data.data.code);
@@ -209,7 +198,7 @@ function cleanupRdt() {
 export function connectRdt(url: string, quiet?: boolean) {
     if (!isReactDevToolsPreloaded() || rdtClient) return;
 
-    // Strip the port from the URL (everything after the last colon) and append rdtPort
+    // Strip port from url with a single slice instead of split+slice+join
     const base = url.slice(0, url.lastIndexOf(":"));
     const ws = (rdtClient = new WebSocket(`ws://${base}:${rdtPort}`));
 
@@ -256,9 +245,9 @@ export function useIsRdtConnected() {
 export function patchLogHook() {
     const unpatch = after("nativeLoggingHook", globalThis, args => {
         if (socket?.readyState === WebSocket.OPEN) {
-            const level = args[1] === "error" ? LogLevel.Error
-                : args[1] === "warn" ? LogLevel.Warn
-                : LogLevel.Default;
+            const level: LogLevel = args[1] === "error" ? "error"
+                : args[1] === "warn" ? "warn"
+                : "default";
             sendLog(level, args[0]);
         }
         logger.log(args[0]);
@@ -273,7 +262,7 @@ export function patchLogHook() {
 /** @internal */
 export const versionHash = version;
 
-// Cache the NativeClientInfoModule constants to avoid re-calling getConstants() twice
+// Cache NativeClientInfoModule constants — avoids duplicate getConstants() calls
 const _clientConstants = NativeClientInfoModule.getConstants();
 
 export function getDebugInfo() {
@@ -317,7 +306,7 @@ export function getDebugInfo() {
     };
 }
 
-// Simple fast hash for change detection — no need for a closure/constructor per hotReloadTheme call
+// Hoisted module-level hash function — avoids closure re-creation on every hotReloadTheme() call
 function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
