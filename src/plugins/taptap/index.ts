@@ -270,11 +270,7 @@ function patchHandlers(handlers: any) {
 
         unpatchHandlers = () => {
             try {
-                patches.forEach(u => {
-                    try {
-                        u?.();
-                    } catch {}
-                });
+                for (const u of patches) { try { u?.(); } catch {} }
                 patches = [];
                 handlerInstances = new WeakSet();
             } catch (e) {
@@ -385,11 +381,7 @@ export default definePlugin({
             clearTimeout(timeoutTap);
             timeoutTap = null;
         }
-        patches.forEach(u => {
-            try {
-                u?.();
-            } catch {}
-        });
+        for (const u of patches) { try { u?.(); } catch {} }
         patches = [];
         handlerInstances = new WeakSet();
     },

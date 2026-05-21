@@ -56,7 +56,7 @@ export default function getPatches() {
             });
             return () => {
                 unpatchLazy();
-                patches.forEach((p: () => void) => p?.());
+                for (const p of patches) p?.();
             };
         })()
     ];
