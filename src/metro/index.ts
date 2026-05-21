@@ -4,5 +4,3 @@ export * as filters from "./filters";
 export * from "./finders";
 export * as lazy from "./lazy";
 export * from "./wrappers";
-
-// todo: rewrite this

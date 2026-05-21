@@ -11,17 +11,14 @@ import { grabEverything } from "./lib/syncStuff";
 import { useCloudSyncSettings } from "./storage";
 import { useAuthorizationStore } from "./stores/AuthorizationStore";
 
-let syncTimeout: number;
-let unsubscribeSettings;
+let syncTimeout: ReturnType<typeof setTimeout> | undefined;
+let unsubscribeSettings: (() => void) | undefined;
 
 const autoSync = () => {
-    if (syncTimeout) {
+    if (syncTimeout !== undefined) {
         clearTimeout(syncTimeout);
     }
-
-    syncTimeout = setTimeout(() => {
-        performSync();
-    }, 5000);
+    syncTimeout = setTimeout(performSync, 5000);
 };
 
 const performSync = async () => {
@@ -33,9 +30,9 @@ const performSync = async () => {
         const everything = await grabEverything();
         await saveData(everything);
     } catch (e) {
-        // Suppress logger for Cloudflare 1102 timeout
         const msg = typeof e === "string" ? e : e instanceof Error ? e.message : "";
-        if (!(msg.includes("error code: 1102") || msg.includes("1102"))) {
+        // Suppress logger for Cloudflare 1102 timeout — it's expected and noisy
+        if (!msg.includes("1102")) {
             logger.error("[CloudSync] Auto-sync failed:", e);
         }
     }
@@ -48,7 +45,6 @@ export default definePlugin({
     id: "cloudsync",
     version: "1.0.0",
     start() {
-        // im too lazy to add this to the ui
         unsubscribeSettings = useSettings.subscribe((state, prevState) => {
             if (!shallowEqual(state, prevState)) {
                 FluxDispatcher.dispatch({ type: "RAIN_SETTING_UPDATED" });
@@ -59,14 +55,14 @@ export default definePlugin({
     },
     settings: Settings,
     stop() {
-        if (unsubscribeSettings) {
-            unsubscribeSettings();
-            unsubscribeSettings = undefined;
-        }
+        unsubscribeSettings?.();
+        unsubscribeSettings = undefined;
+
         FluxDispatcher.unsubscribe("RAIN_SETTING_UPDATED", autoSync);
-        if (syncTimeout) {
+
+        if (syncTimeout !== undefined) {
             clearTimeout(syncTimeout);
-            syncTimeout = undefined as any;
+            syncTimeout = undefined;
         }
     },
 });

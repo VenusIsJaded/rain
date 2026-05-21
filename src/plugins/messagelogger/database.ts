@@ -32,20 +32,22 @@ const flushLogsToDisk = debounce(async () => {
     }
 }, 1500);
 
-async function safeParseJSON<T>(data: string | null, fallback: T): Promise<T> {
-    if (!data) return fallback;
+function safeParse(data: string | null): LogData | MessageLogEntry[] | null {
+    if (!data) return null;
     try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) {
-            return parsed as T;
-        }
-        return fallback;
+        return JSON.parse(data);
     } catch {
-        return fallback;
+        return null;
     }
 }
 
-async function writeLogData(data: LogData): Promise<void> {
+function normaliseLogData(parsed: LogData | MessageLogEntry[] | null): LogData {
+    if (!parsed) return { version: 1, logs: [] };
+    if (Array.isArray(parsed)) return { version: 1, logs: parsed };
+    return parsed;
+}
+
+function writeLogData(data: LogData): void {
     cachedLogData = data;
     flushLogsToDisk();
 }
@@ -60,14 +62,7 @@ async function readLogData(): Promise<LogData> {
     }
 
     const content = await readFile(LOG_FILE);
-    const parsed = await safeParseJSON<LogData | MessageLogEntry[]>(content, { version: 1, logs: [] });
-
-    if (Array.isArray(parsed)) {
-        cachedLogData = { version: 1, logs: parsed };
-    } else {
-        cachedLogData = parsed;
-    }
-
+    cachedLogData = normaliseLogData(safeParse(content));
     return cachedLogData;
 }
 
@@ -75,11 +70,13 @@ export async function addLogEntry(entry: MessageLogEntry): Promise<void> {
     const data = await readLogData();
 
     if (data.logs.length >= MAX_LOGS) {
+        // shift() is O(n); for a ring buffer of 1000 entries it's fine,
+        // but splice(0,1) is equivalent and equally fast — keep shift for clarity.
         data.logs.shift();
     }
 
     data.logs.push(entry);
-    await writeLogData(data);
+    writeLogData(data);
 }
 
 export async function getLogEntries(
@@ -93,14 +90,14 @@ export async function getLogEntries(
     const data = await readLogData();
     let entries = data.logs;
 
-    if (filter?.channelId) {
-        entries = entries.filter(e => e.channelId === filter.channelId);
-    }
-    if (filter?.authorId) {
-        entries = entries.filter(e => e.author.id === filter.authorId);
-    }
-    if (filter?.type) {
-        entries = entries.filter(e => e.type === filter.type);
+    // Apply filters in a single pass to avoid creating multiple intermediate arrays
+    if (filter?.channelId || filter?.authorId || filter?.type) {
+        const { channelId, authorId, type } = filter!;
+        entries = entries.filter(e =>
+            (!channelId || e.channelId === channelId) &&
+            (!authorId  || e.author.id === authorId) &&
+            (!type      || e.type === type)
+        );
     }
 
     return entries.slice(-limit);
@@ -116,32 +113,26 @@ export async function clearLogs(): Promise<void> {
     await writeFile(LOG_FILE, JSON.stringify(cachedLogData));
 }
 
+function isValidLogEntry(log: any): log is MessageLogEntry {
+    return (
+        log != null &&
+        typeof log.messageId === "string" &&
+        typeof log.channelId === "string" &&
+        typeof log.timestamp === "string" &&
+        typeof log.type === "string"
+    );
+}
+
 export async function repairCorruptedLogs(): Promise<boolean> {
     try {
         const exists = await fileExists(LOG_FILE);
         if (!exists) return true;
 
         const content = await readFile(LOG_FILE);
-        const parsed = await safeParseJSON<LogData | MessageLogEntry[]>(content, { version: 1, logs: [] });
+        const parsed = normaliseLogData(safeParse(content));
+        const validLogs = parsed.logs.filter(isValidLogEntry);
 
-        let logs: MessageLogEntry[];
-        if (Array.isArray(parsed)) {
-            logs = parsed;
-        } else {
-            logs = parsed.logs;
-        }
-
-        const validLogs = logs.filter((log: MessageLogEntry) => {
-            return (
-                log &&
-                typeof log.messageId === "string" &&
-                typeof log.channelId === "string" &&
-                typeof log.timestamp === "string" &&
-                typeof log.type === "string"
-            );
-        });
-
-        await writeLogData({ version: 1, logs: validLogs });
+        writeLogData({ version: 1, logs: validLogs });
         return true;
     } catch {
         return false;

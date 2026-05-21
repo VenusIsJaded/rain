@@ -29,9 +29,9 @@ export interface RNConstants extends PlatformConstants {
 }
 
 let socket: WebSocket | undefined;
-let originalConsoleLog: any;
-let originalConsoleError: any;
-let originalConsoleWarn: any;
+let originalConsoleLog: typeof console.log | undefined;
+let originalConsoleError: typeof console.error | undefined;
+let originalConsoleWarn: typeof console.warn | undefined;
 let originalLoggerLog: any;
 let originalLoggerError: any;
 let originalLoggerWarn: any;
@@ -39,14 +39,14 @@ let hotReloadIntervalId: ReturnType<typeof setInterval> | undefined;
 
 const VERSION = 1;
 
-enum MessageType {
+const enum MessageType {
     Hello = "hello",
     Hi = "hi",
     Log = "log",
     Run = "run",
 }
 
-enum LogLevel {
+const enum LogLevel {
     Debug = "debug",
     Default = "default",
     Warn = "warn",
@@ -55,110 +55,63 @@ enum LogLevel {
 
 interface LogMessage {
     type: MessageType.Log;
-    data: {
-        level: LogLevel;
-        message: any[];
-    };
+    data: { level: LogLevel; message: any[] };
 }
 
 interface HelloMessage {
     type: MessageType.Hello;
-    data: {
-        version: number;
-    };
-}
-
-interface RunMessage {
-    type: MessageType.Run;
-    data: {
-        code: string;
-    };
-}
-
-function serializeMessage(msg: any): string {
-    return JSON.stringify(msg);
+    data: { version: number };
 }
 
 function sendLog(level: LogLevel, ...args: any[]) {
     if (socket?.readyState === WebSocket.OPEN) {
-        const message: LogMessage = {
+        socket.send(JSON.stringify({
             type: MessageType.Log,
-            data: {
-                level,
-                message: args
-            }
-        };
-        socket.send(serializeMessage(message));
+            data: { level, message: args }
+        } satisfies LogMessage));
     }
 }
 
 function patchConsoleAndLogger() {
     originalConsoleLog = console.log;
-    console.log = function(...args: any[]) {
-        originalConsoleLog.apply(console, args);
+    console.log = (...args: any[]) => {
+        originalConsoleLog!.apply(console, args);
         sendLog(LogLevel.Default, ...args);
     };
 
     originalConsoleError = console.error;
-    console.error = function(...args: any[]) {
-        originalConsoleError.apply(console, args);
+    console.error = (...args: any[]) => {
+        originalConsoleError!.apply(console, args);
         sendLog(LogLevel.Error, ...args);
     };
 
     originalConsoleWarn = console.warn;
-    console.warn = function(...args: any[]) {
-        originalConsoleWarn.apply(console, args);
+    console.warn = (...args: any[]) => {
+        originalConsoleWarn!.apply(console, args);
         sendLog(LogLevel.Warn, ...args);
     };
 
     if (logger) {
         originalLoggerLog = logger.log;
-        logger.log = function(...args: any[]) {
-            originalLoggerLog.apply(logger, args);
-            sendLog(LogLevel.Default, ...args);
-        };
+        logger.log = (...args: any[]) => { originalLoggerLog.apply(logger, args); sendLog(LogLevel.Default, ...args); };
 
         originalLoggerError = logger.error;
-        logger.error = function(...args: any[]) {
-            originalLoggerError.apply(logger, args);
-            sendLog(LogLevel.Error, ...args);
-        };
+        logger.error = (...args: any[]) => { originalLoggerError.apply(logger, args); sendLog(LogLevel.Error, ...args); };
 
         originalLoggerWarn = logger.warn;
-        logger.warn = function(...args: any[]) {
-            originalLoggerWarn.apply(logger, args);
-            sendLog(LogLevel.Warn, ...args);
-        };
+        logger.warn = (...args: any[]) => { originalLoggerWarn.apply(logger, args); sendLog(LogLevel.Warn, ...args); };
     }
 }
 
 function unpatchConsoleAndLogger() {
-    if (originalConsoleLog) {
-        console.log = originalConsoleLog;
-        originalConsoleLog = undefined;
-    }
-    if (originalConsoleError) {
-        console.error = originalConsoleError;
-        originalConsoleError = undefined;
-    }
-    if (originalConsoleWarn) {
-        console.warn = originalConsoleWarn;
-        originalConsoleWarn = undefined;
-    }
+    if (originalConsoleLog) { console.log = originalConsoleLog; originalConsoleLog = undefined; }
+    if (originalConsoleError) { console.error = originalConsoleError; originalConsoleError = undefined; }
+    if (originalConsoleWarn) { console.warn = originalConsoleWarn; originalConsoleWarn = undefined; }
 
     if (logger) {
-        if (originalLoggerLog) {
-            logger.log = originalLoggerLog;
-            originalLoggerLog = undefined;
-        }
-        if (originalLoggerError) {
-            logger.error = originalLoggerError;
-            originalLoggerError = undefined;
-        }
-        if (originalLoggerWarn) {
-            logger.warn = originalLoggerWarn;
-            originalLoggerWarn = undefined;
-        }
+        if (originalLoggerLog) { logger.log = originalLoggerLog; originalLoggerLog = undefined; }
+        if (originalLoggerError) { logger.error = originalLoggerError; originalLoggerError = undefined; }
+        if (originalLoggerWarn) { logger.warn = originalLoggerWarn; originalLoggerWarn = undefined; }
     }
 }
 
@@ -179,13 +132,10 @@ export function connectToDebugger(url: string) {
         socket.addEventListener("open", () => {
             showToast("Connected to debugger.", findAssetId("Check"));
 
-            const hello: HelloMessage = {
+            socket?.send(JSON.stringify({
                 type: MessageType.Hello,
-                data: {
-                    version: VERSION
-                }
-            };
-            socket?.send(serializeMessage(hello));
+                data: { version: VERSION }
+            } satisfies HelloMessage));
 
             patchConsoleAndLogger();
         });
@@ -193,16 +143,17 @@ export function connectToDebugger(url: string) {
         socket.addEventListener("message", (message: any) => {
             try {
                 const data = JSON.parse(message.data);
-
                 if (data.type === MessageType.Run && data.data?.code) {
                     try {
+                        // eslint-disable-next-line no-eval
                         (0, eval)(data.data.code);
                     } catch (e) {
                         console.error("Error executing remote code:", e);
                     }
                 }
-            } catch (e) {
+            } catch {
                 try {
+                    // eslint-disable-next-line no-eval
                     (0, eval)(message.data);
                 } catch (err) {
                     console.error(err);
@@ -258,7 +209,8 @@ function cleanupRdt() {
 export function connectRdt(url: string, quiet?: boolean) {
     if (!isReactDevToolsPreloaded() || rdtClient) return;
 
-    const base = url.split(":").slice(0, -1).join(":");
+    // Strip the port from the URL (everything after the last colon) and append rdtPort
+    const base = url.slice(0, url.lastIndexOf(":"));
     const ws = (rdtClient = new WebSocket(`ws://${base}:${rdtPort}`));
 
     ws.addEventListener("open", () => {
@@ -267,9 +219,7 @@ export function connectRdt(url: string, quiet?: boolean) {
         bump();
     });
 
-    ws.addEventListener("close", () => {
-        cleanupRdt();
-    });
+    ws.addEventListener("close", () => { cleanupRdt(); });
 
     ws.addEventListener("error", (e: any) => {
         cleanupRdt();
@@ -302,25 +252,29 @@ export function useIsRdtConnected() {
     return connected;
 }
 
-/**
- * @internal
- */
+/** @internal */
 export function patchLogHook() {
     const unpatch = after("nativeLoggingHook", globalThis, args => {
         if (socket?.readyState === WebSocket.OPEN) {
-            sendLog(args[1] === "error" ? LogLevel.Error : args[1] === "warn" ? LogLevel.Warn : LogLevel.Default, args[0]);
+            const level = args[1] === "error" ? LogLevel.Error
+                : args[1] === "warn" ? LogLevel.Warn
+                : LogLevel.Default;
+            sendLog(level, args[0]);
         }
         logger.log(args[0]);
     });
 
     return () => {
-        socket && socket.close();
+        socket?.close();
         unpatch();
     };
 }
 
 /** @internal */
 export const versionHash = version;
+
+// Cache the NativeClientInfoModule constants to avoid re-calling getConstants() twice
+const _clientConstants = NativeClientInfoModule.getConstants();
 
 export function getDebugInfo() {
     const hermesProps = window.HermesInternal.getRuntimeProperties();
@@ -337,14 +291,15 @@ export function getDebugInfo() {
                 version: getLoaderVersion()
             }
         },
-
         discord: {
-            version: NativeClientInfoModule.getConstants().Version,
-            build: NativeClientInfoModule.getConstants().Build,
+            version: _clientConstants.Version,
+            build: _clientConstants.Build,
         },
         react: {
             version: React.version,
-            nativeVersion: hermesVer.startsWith(padding) ? hermesVer.substring(padding.length) : `${rnVer.major}.${rnVer.minor}.${rnVer.patch}`,
+            nativeVersion: hermesVer.startsWith(padding)
+                ? hermesVer.substring(padding.length)
+                : `${rnVer.major}.${rnVer.minor}.${rnVer.patch}`,
         },
         hermes: {
             version: hermesVer,
@@ -362,29 +317,29 @@ export function getDebugInfo() {
     };
 }
 
+// Simple fast hash for change detection — no need for a closure/constructor per hotReloadTheme call
+function hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+}
+
 export function hotReloadTheme() {
     if (hotReloadIntervalId !== undefined) {
         clearInterval(hotReloadIntervalId);
         hotReloadIntervalId = undefined;
     }
-    let lastHash: string | null = null;
 
-    const hashString = (str: string): string => {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
-        }
-        return hash.toString(16);
-    };
+    let lastHash = 0;
 
     hotReloadIntervalId = setInterval(async () => {
         const currentSettings = settings();
         if (!currentSettings.hotReloadThemeUrl) return;
 
         try {
-            const response = await fetch(currentSettings.hotReloadThemeUrl, {
-                cache: "no-store",
-            });
+            const response = await fetch(currentSettings.hotReloadThemeUrl, { cache: "no-store" });
             if (!response.ok) return;
 
             const text = await response.text();
@@ -398,35 +353,20 @@ export function hotReloadTheme() {
     }, 2000);
 }
 
-/**
- * @internal
- */
+/** @internal */
 export function initDebugger() {
     const currentSettings = settings();
 
     if (currentSettings.autoDebugger) {
-        try {
-            connectToDebugger(currentSettings.debuggerUrl);
-        } catch (e) {
-            logger.error("Failed to connect to Debugger during startup:", e);
-        }
+        try { connectToDebugger(currentSettings.debuggerUrl); }
+        catch (e) { logger.error("Failed to connect to Debugger during startup:", e); }
     }
-    if (currentSettings.autoDevTools) {
-        try {
-            if (currentSettings.devToolsUrl) {
-                connectRdt(currentSettings.devToolsUrl, true);
-            }
-        } catch (e) {
-            logger.error("Failed to connect to ReactDevTools during startup:", e);
-        }
+    if (currentSettings.autoDevTools && currentSettings.devToolsUrl) {
+        try { connectRdt(currentSettings.devToolsUrl, true); }
+        catch (e) { logger.error("Failed to connect to ReactDevTools during startup:", e); }
     }
-    if (currentSettings.hotReloadTheme) {
-        try {
-            if (currentSettings.hotReloadThemeUrl) {
-                hotReloadTheme();
-            }
-        } catch (e) {
-            logger.error("Failed to run hotReloadThemes:", e);
-        }
+    if (currentSettings.hotReloadTheme && currentSettings.hotReloadThemeUrl) {
+        try { hotReloadTheme(); }
+        catch (e) { logger.error("Failed to run hotReloadThemes:", e); }
     }
 }

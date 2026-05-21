@@ -72,16 +72,19 @@ export const useSettings = create<SettingsStore>()(
                     lottie: false,
                 }
             },
-            pinnedPlugins: [], // Initialize empty
+            pinnedPlugins: [],
             experimentsConfirmed: false,
             updateSettings: newSettings => set(state => ({ ...state, ...newSettings })),
             togglePinnedPlugin: id => set(state => {
-                const pinned = state.pinnedPlugins || [];
-                if (pinned.includes(id)) {
-                    return { pinnedPlugins: pinned.filter(p => p !== id) };
-                } else {
-                    return { pinnedPlugins: [...pinned, id] };
+                const pinned = state.pinnedPlugins ?? [];
+                const idx = pinned.indexOf(id);
+                // Avoid filter allocation — splice for remove, push for add
+                if (idx !== -1) {
+                    const next = pinned.slice();
+                    next.splice(idx, 1);
+                    return { pinnedPlugins: next };
                 }
+                return { pinnedPlugins: [...pinned, id] };
             }),
         }),
         {
@@ -108,7 +111,7 @@ export const useLoaderConfig = create<LoaderConfigStore>()(
         }),
         {
             name: "loader-config",
-            storage: createJSONStorage(() => createFlattenedFileStorage<LoaderConfig>(getLoaderConfigPath())),
+            storage: createJSONStorage(() => createFlattenedFileStorage(getLoaderConfigPath())),
         }
     )
 );
@@ -117,13 +120,13 @@ export const settings = () => useSettings.getState();
 export const loaderConfig = () => useLoaderConfig.getState();
 
 export const useAssetBrowserSettings = () => {
-    const settings = useSettings(state => state.assetBrowser);
+    const assetBrowser = useSettings(state => state.assetBrowser);
     const updateSettings = useSettings(state => state.updateSettings);
 
     return {
-        enabledFilters: settings.enabledFilters,
+        enabledFilters: assetBrowser.enabledFilters,
         updateSettings: (newSettings: { enabledFilters?: Record<string, boolean> }) => {
-            updateSettings({ assetBrowser: { ...settings, ...newSettings } });
+            updateSettings({ assetBrowser: { ...assetBrowser, ...newSettings } });
         }
     };
 };

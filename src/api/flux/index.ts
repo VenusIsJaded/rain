@@ -2,6 +2,8 @@
 import { FluxDispatcher } from "@metro/common";
 
 const blockedSym = Symbol.for("rain.flux.blocked");
+// modifiedSym is set but never read anywhere — keep it for future-compat but
+// note it as intentional so linters don't flag it.
 const modifiedSym = Symbol.for("rain.flux.modified");
 
 export const dispatcher = FluxDispatcher;
@@ -9,13 +11,12 @@ export const dispatcher = FluxDispatcher;
 type Intercept = (payload: Record<string, any> & { type: string; }) => any;
 let intercepts: Intercept[] = [];
 
-/**
- * @internal
- */
+/** @internal */
 export function injectFluxInterceptor() {
     const cb = (payload: any) => {
-        for (const intercept of intercepts) {
-            const res = intercept(payload);
+        const len = intercepts.length;
+        for (let i = 0; i < len; i++) {
+            const res = intercepts[i](payload);
 
             // nullish -> nothing, falsy -> block, object -> modify
             if (res == null) {
@@ -33,17 +34,20 @@ export function injectFluxInterceptor() {
 
     (dispatcher._interceptors ??= []).unshift(cb);
 
-    return () => dispatcher._interceptors &&= dispatcher._interceptors.filter(v => v !== cb);
+    return () => {
+        dispatcher._interceptors &&= dispatcher._interceptors.filter(v => v !== cb);
+    };
 }
 
 /**
- * Intercept Flux dispatches. Return type affects the end result, where
- * nullish -> nothing, falsy -> block, object -> modify
+ * Intercept Flux dispatches. Return type affects the end result:
+ * nullish → nothing, falsy → block, object → modify
  */
 export function intercept(cb: Intercept) {
     intercepts.push(cb);
 
     return () => {
-        intercepts = intercepts.filter(i => i !== cb);
+        const idx = intercepts.indexOf(cb);
+        if (idx !== -1) intercepts.splice(idx, 1);
     };
 }

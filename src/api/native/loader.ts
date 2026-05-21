@@ -2,7 +2,6 @@ import { ThemeManifest } from "@plugins/_core/painter/themes/types";
 
 // @ts-ignore
 const pyonLoaderIdentity = globalThis.__PYON_LOADER__;
-
 // @ts-ignore
 const rainLoaderIdentity = globalThis.__RAIN_LOADER__;
 
@@ -12,61 +11,36 @@ export interface ThemeInfo {
     data: ThemeManifest;
 }
 
-export function isPyonLoader() {
-    return pyonLoaderIdentity != null;
-}
-
-export function isRainLoader() {
-    return rainLoaderIdentity != null;
-}
+export const isPyonLoader = () => pyonLoaderIdentity != null;
+export const isRainLoader = () => rainLoaderIdentity != null;
 
 export function getLoaderIdentity() {
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity;
-    }
-    if (isRainLoader()) {
-        return rainLoaderIdentity;
-    }
-
-    return null;
+    return rainLoaderIdentity ?? pyonLoaderIdentity ?? null;
 }
 
-export function getLoaderName() {
-    if (isPyonLoader()) return pyonLoaderIdentity.loaderName;
+export function getLoaderName(): string {
     if (isRainLoader()) return rainLoaderIdentity.loaderName;
-
+    if (isPyonLoader()) return pyonLoaderIdentity.loaderName;
     return "Unknown";
 }
 
 export function getLoaderVersion(): string | null {
-    if (isPyonLoader()) return pyonLoaderIdentity.loaderVersion;
     if (isRainLoader()) return rainLoaderIdentity.loaderVersion;
+    if (isPyonLoader()) return pyonLoaderIdentity.loaderVersion;
     return null;
 }
 
-export function isLoaderConfigSupported() {
-    if (isRainLoader()) {
-        return true;
-    }
-    if (isPyonLoader()) {
-        return true;
-    }
-
-    return false;
+export function isLoaderConfigSupported(): boolean {
+    return isRainLoader() || isPyonLoader();
 }
 
-export function getThemeFilePath() {
-    if (isRainLoader()) {
-        return "current-theme.json";
-    }
-    if (isPyonLoader()) {
-        return "current-theme.json";
-    }
-
+export function getThemeFilePath(): string | null {
+    // Both loaders use the same path
+    if (isRainLoader() || isPyonLoader()) return "current-theme.json";
     return null;
 }
 
-export function isReactDevToolsPreloaded() {
+export function isReactDevToolsPreloaded(): boolean {
     return Boolean(window.__REACT_DEVTOOLS__);
 }
 
@@ -77,7 +51,6 @@ export function getReactDevToolsProp(): string | null {
         window.__rain_rdt = window.__REACT_DEVTOOLS__.exports;
         return "__rain_rdt";
     }
-
     if (isPyonLoader()) {
         window.__pyoncord_rdt = window.__REACT_DEVTOOLS__.exports;
         return "__pyoncord_rdt";
@@ -86,57 +59,28 @@ export function getReactDevToolsProp(): string | null {
     return null;
 }
 
-export function getReactDevToolsVersion() {
+export function getReactDevToolsVersion(): string | null {
     if (!isReactDevToolsPreloaded()) return null;
-
-    if (isRainLoader()) {
-        return window.__REACT_DEVTOOLS__.version || null;
-    }
-    if (isPyonLoader()) {
-        return window.__REACT_DEVTOOLS__.version || null;
-    }
-
-    return null;
+    // Both loaders expose the version on the same shape
+    return window.__REACT_DEVTOOLS__?.version ?? null;
 }
 
 export function getSysColors() {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.sysColors;
-    }
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity.sysColors;
-    }
+    return rainLoaderIdentity?.sysColors ?? pyonLoaderIdentity?.sysColors;
 }
 
 export function getStoredTheme(): ThemeInfo | null {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.storedTheme;
-    }
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity.storedTheme;
-    }
-
-    return null;
+    return rainLoaderIdentity?.storedTheme ?? pyonLoaderIdentity?.storedTheme ?? null;
 }
 
-export function isChatBubblesSupported() {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.isChatBubblesSupported;
-    }
-    else {
-        return false;
-    }
+export function isChatBubblesSupported(): boolean {
+    return rainLoaderIdentity?.isChatBubblesSupported ?? false;
 }
 
-export function isSysColorsSupported() {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.isSysColorsSupported;
-    }
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity.isSysColorsSupported;
-    }
+export function isSysColorsSupported(): boolean {
+    return rainLoaderIdentity?.isSysColorsSupported ?? pyonLoaderIdentity?.isSysColorsSupported;
 }
 
-export function getLoaderConfigPath() {
+export function getLoaderConfigPath(): string {
     return "loader.json";
 }

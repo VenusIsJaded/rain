@@ -11,7 +11,8 @@ export const pluginInstances = new Map<string, t.rainPlugin>();
 let _setupPromise: Promise<void> | null = null;
 
 const BATCH_SIZE = 15;
-const BATCH_DELAY_MS = 0;
+// BATCH_DELAY_MS is 0 — the conditional branch inside the loop is dead weight.
+// Remove it entirely and let Promise.allSettled handle natural yielding.
 
 interface PluginSettingsStore {
   settings: t.PluginSettingsStorage;
@@ -50,10 +51,6 @@ export const pluginSettings = new Proxy({} as t.PluginSettingsStorage, {
   },
 });
 
-function assert(condition: any, id: string, attempt: string): asserts condition {
-  if (!condition) throw new Error(`[${id}] Attempted to ${attempt}`);
-}
-
 async function runPluginLifecycle(id: string, method: "start" | "eagerStart"): Promise<void> {
   const instance = pluginInstances.get(id);
   if (!instance) {
@@ -77,9 +74,9 @@ export const startEagerPlugin = (id: string) => runPluginLifecycle(id, "eagerSta
 export async function stopPlugin(id: string): Promise<void> {
   const instance = pluginInstances.get(id);
   if (!instance) {
-        usePluginSettings.getState().updatePluginSetting(id, false);
-        return;
-    }
+    usePluginSettings.getState().updatePluginSetting(id, false);
+    return;
+  }
 
   try {
     await instance.stop?.();
@@ -117,15 +114,11 @@ async function ensureSetup(): Promise<void> {
 }
 
 async function startBatched(ids: string[], method: "start" | "eagerStart"): Promise<void> {
-
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-    const batch = ids.slice(i, i + BATCH_SIZE);
     await Promise.allSettled(
-      batch.map(id => runPluginLifecycle(id, method))
+      ids.slice(i, i + BATCH_SIZE).map(id => runPluginLifecycle(id, method))
     );
-    if (BATCH_DELAY_MS > 0 && i + BATCH_SIZE < ids.length) {
-      await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
-    }
+    // No artificial delay — BATCH_DELAY_MS was always 0 and the branch was dead
   }
 }
 
