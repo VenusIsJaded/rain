@@ -81,11 +81,9 @@ export default () => before("openLazy", LazyActionSheet, ([component, key, msg])
                     var translateResult: { text: string } | undefined;
                     switch(settings.translator) {
                         case 0:
-                            console.log("Translating with DeepL: ", textToTranslate);
                             translateResult = { text: (await DeepL.translate(textToTranslate, undefined, target_lang, !isTranslated)).text ?? "" };
                             break;
                         case 1:
-                            console.log("Translating with GTranslate: ", textToTranslate);
                             translateResult = { text: (await GTranslate.translate(textToTranslate, undefined, target_lang, !isTranslated)).text ?? "" };
                             break;
                     }

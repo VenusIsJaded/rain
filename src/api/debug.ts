@@ -370,6 +370,13 @@ function _hashString(str: string): number {
 }
 
 export function hotReloadTheme() {
+    if (!settings().hotReloadTheme) {
+        if (hotReloadIntervalId !== undefined) {
+            clearInterval(hotReloadIntervalId);
+            hotReloadIntervalId = undefined;
+        }
+        return;
+    }
     if (hotReloadIntervalId !== undefined) {
         clearInterval(hotReloadIntervalId);
         hotReloadIntervalId = undefined;
@@ -378,6 +385,11 @@ export function hotReloadTheme() {
 
     hotReloadIntervalId = setInterval(async () => {
         const currentSettings = settings();
+        if (!currentSettings.hotReloadTheme) {
+            clearInterval(hotReloadIntervalId);
+            hotReloadIntervalId = undefined;
+            return;
+        }
         if (!currentSettings.hotReloadThemeUrl) return;
 
         try {

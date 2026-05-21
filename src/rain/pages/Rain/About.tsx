@@ -81,7 +81,7 @@ export default function About() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
             <Stack style={{ paddingVertical: 24, paddingHorizontal: 12 }} spacing={24}>
                 <TableRowGroup title={Strings.VERSIONS}>
-                    {versions.map(v => <Version label={v.label} version={v.version} icon={v.icon} />)}
+                    {versions.map(v => <Version key={v.label} label={v.label} version={v.version} icon={v.icon} />)}
                 </TableRowGroup>
                 <TableRowGroup title={Strings.PLATFORMS}>
                     {platformInfo.filter((p): p is typeof p & { version: string; icon: string } => p.version !== undefined && p.icon !== undefined).map(p => <Version key={p.label} label={p.label} version={p.version} icon={p.icon} />)}

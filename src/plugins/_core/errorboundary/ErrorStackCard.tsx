@@ -27,7 +27,7 @@ export default function ErrorStackCard(props: {
                 Call Stack
             </Text>
             <View style={{ gap: 4 }}>
-                {stack.map((f, id) => <Line id={id} frame={f} />)}
+                {stack.map((f, id) => <Line key={id} id={id} frame={f} />)}
             </View>
             {collapsed && <Text>...</Text>}
             <View style={{ gap: 8, flexDirection: "row", justifyContent: "center", alignItems: "center" }}>

@@ -1,7 +1,6 @@
 /**
  * Fetch wrapper that throws on non-2xx responses and aborts after `timeout` ms.
- * signal is placed before spreading options so a caller cannot accidentally
- * override the abort controller with their own signal.
+ * signal is placed after spreading options to ensure the timeout signal works, unless overridden.
  */
 export default async function safeFetch(
     input: RequestInfo | URL,
@@ -13,8 +12,8 @@ export default async function safeFetch(
 
     try {
         const req = await fetch(input, {
-            signal: controller.signal,
             ...options,
+            signal: options?.signal ?? controller.signal,
         });
 
         if (!req.ok) throw new Error(`Request returned non-ok: ${req.status} ${req.statusText}`);
