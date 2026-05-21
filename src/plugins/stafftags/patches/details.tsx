@@ -60,7 +60,7 @@ const rowPatch = ([{ guildId, user }]: [{ guildId: string, user: any }], res: an
 export default () => {
     const patches: any[] = [];
 
-    findByTypeNameAll("UserRow").forEach((UserRow: any) => patches.push(after("type", UserRow, (args: any[], res: any) => rowPatch(args as any, res))));
+    for (const UserRow of findByTypeNameAll("UserRow")) patches.push(after("type", UserRow, (args: any[], res: any) => rowPatch(args as any, res)));
 
     return () => { for (const unpatch of patches) unpatch(); };
 };
