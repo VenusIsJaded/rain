@@ -13,12 +13,10 @@ export function patchCommands() {
 
         return res.concat(
             commands.filter(c => {
-                if (Array.isArray(commandType)) {
-                    return commandType.includes(c.type);
-                }
-                return c.type === commandType;
-            }).filter(c => {
-                return !c.__rain?.shouldHide || !c.__rain.shouldHide();
+                const typeMatch = Array.isArray(commandType)
+                    ? commandType.includes(c.type)
+                    : c.type === commandType;
+                return typeMatch && (!c.__rain?.shouldHide || !c.__rain.shouldHide());
             })
         );
     });
@@ -80,5 +78,8 @@ export function registerCommand(command: RainApplicationCommand): () => void {
     commands.push(command);
 
     // Return command id so it can be unregistered
-    return () => (commands = commands.filter(({ id }) => id !== command.id));
+    return () => {
+        const idx = commands.findIndex(c => c.id === command.id);
+        if (idx !== -1) commands.splice(idx, 1);
+    };
 }
