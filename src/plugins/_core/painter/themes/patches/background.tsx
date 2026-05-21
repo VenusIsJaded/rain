@@ -53,7 +53,7 @@ export default function patchChatBackground() {
                 return <ThemeBackground>{ret}</ThemeBackground>;
             })
         ];
-        return () => patches.forEach(x => x());
+        return () => { for (const x of patches) x(); };
     } catch (e) {
         logger.error("Failed to patch chat background.", e);
         return () => { };
