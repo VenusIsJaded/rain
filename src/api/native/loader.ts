@@ -21,14 +21,7 @@ export function isRainLoader() {
 }
 
 export function getLoaderIdentity() {
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity;
-    }
-    if (isRainLoader()) {
-        return rainLoaderIdentity;
-    }
-
-    return null;
+    return rainLoaderIdentity ?? pyonLoaderIdentity ?? null;
 }
 
 export function getLoaderName() {
@@ -45,25 +38,11 @@ export function getLoaderVersion(): string | null {
 }
 
 export function isLoaderConfigSupported() {
-    if (isRainLoader()) {
-        return true;
-    }
-    if (isPyonLoader()) {
-        return true;
-    }
-
-    return false;
+    return isRainLoader() || isPyonLoader();
 }
 
 export function getThemeFilePath() {
-    if (isRainLoader()) {
-        return "current-theme.json";
-    }
-    if (isPyonLoader()) {
-        return "current-theme.json";
-    }
-
-    return null;
+    return (isRainLoader() || isPyonLoader()) ? "current-theme.json" : null;
 }
 
 export function isReactDevToolsPreloaded() {
@@ -88,53 +67,23 @@ export function getReactDevToolsProp(): string | null {
 
 export function getReactDevToolsVersion() {
     if (!isReactDevToolsPreloaded()) return null;
-
-    if (isRainLoader()) {
-        return window.__REACT_DEVTOOLS__.version || null;
-    }
-    if (isPyonLoader()) {
-        return window.__REACT_DEVTOOLS__.version || null;
-    }
-
-    return null;
+    return window.__REACT_DEVTOOLS__.version || null;
 }
 
 export function getSysColors() {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.sysColors;
-    }
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity.sysColors;
-    }
+    return rainLoaderIdentity?.sysColors ?? pyonLoaderIdentity?.sysColors;
 }
 
 export function getStoredTheme(): ThemeInfo | null {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.storedTheme;
-    }
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity.storedTheme;
-    }
-
-    return null;
+    return rainLoaderIdentity?.storedTheme ?? pyonLoaderIdentity?.storedTheme ?? null;
 }
 
 export function isChatBubblesSupported() {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.isChatBubblesSupported;
-    }
-    else {
-        return false;
-    }
+    return rainLoaderIdentity?.isChatBubblesSupported ?? false;
 }
 
 export function isSysColorsSupported() {
-    if (isRainLoader()) {
-        return rainLoaderIdentity.isSysColorsSupported;
-    }
-    if (isPyonLoader()) {
-        return pyonLoaderIdentity.isSysColorsSupported;
-    }
+    return rainLoaderIdentity?.isSysColorsSupported ?? pyonLoaderIdentity?.isSysColorsSupported;
 }
 
 export function getLoaderConfigPath() {
