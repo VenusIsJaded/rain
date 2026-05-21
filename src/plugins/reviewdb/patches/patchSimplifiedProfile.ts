@@ -1,10 +1,10 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByTypeName } from "@metro";
+import { findByTypeNameLazy } from "@metro";
 
 import ReviewSection from "../components/ReviewSection";
 
-const SimplifiedUserProfileContent = findByTypeName(
+const SimplifiedUserProfileContent = findByTypeNameLazy(
     "SimplifiedUserProfileContent",
 );
 

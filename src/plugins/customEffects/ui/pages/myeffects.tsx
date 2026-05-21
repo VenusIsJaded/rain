@@ -6,7 +6,7 @@ import { apiFetch } from "../../lib/api";
 import { userEffects } from "../../patches/effects";
 import EffectCard from "../components/EffectCard";
 
-const { FlatList } = ReactNative;
+import { FlashList } from "@metro/common/components";
 
 export default function MyEffects() {
     const [effects, setEffects] = React.useState<any[]>([]);
@@ -76,7 +76,7 @@ export default function MyEffects() {
     );
 
     return (
-        <FlatList
+        <FlashList estimatedItemSize={100}
             data={effects}
             keyExtractor={item => item.skuId}
             renderItem={renderItem}

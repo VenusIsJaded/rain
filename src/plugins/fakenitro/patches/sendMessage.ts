@@ -24,7 +24,6 @@ export default function getPatches() {
             // dont care if we got nitro (premiumType 2 is full Nitro)
             if (getCurrentUser?.()?.premiumType === 2) return origFunc(...args);
             const sticker = getStickerById(args[1]);
-            logger.log(sticker);
             // dont care if its a discord sticker
             if (!sticker || sticker.format_type === 3 || sticker.pack_id !== undefined) return origFunc(...args);
             const channel = ChannelStore.getChannel(args[0])?.guild_id;

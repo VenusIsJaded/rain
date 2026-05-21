@@ -1,13 +1,13 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByTypeName } from "@metro";
+import { findByTypeNameLazy } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-let UserProfile = findByTypeName("UserProfile");
+let UserProfile = findByTypeNameLazy("UserProfile");
 if (UserProfile === undefined)
-    UserProfile = findByTypeName("UserProfileContent");
+    UserProfile = findByTypeNameLazy("UserProfileContent");
 
 export default () =>
     after("type", UserProfile, (args, ret) => {

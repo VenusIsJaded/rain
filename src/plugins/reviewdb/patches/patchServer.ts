@@ -6,7 +6,6 @@ import { React } from "@metro/common";
 import ReviewCard from "../components/ReviewCard";
 
 const GuildActionSheetProgress = findByNameLazy("GuildActionSheetProgress", false);
-logger.log(GuildActionSheetProgress);
 
 export default () =>
     instead("default", GuildActionSheetProgress, (args, ret) => {

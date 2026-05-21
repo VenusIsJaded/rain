@@ -2,7 +2,7 @@ import { findAssetId } from "@api/assets";
 import { after, before } from "@api/patcher";
 import { waitForHydration } from "@api/storage";
 import { findInReactTree } from "@lib/utils";
-import { findByNameLazy, findByPropsLazy, findByTypeName, findByTypeNameAll } from "@metro";
+import { findByNameLazy, findByPropsLazy, findByTypeNameLazy, findByTypeNameAll } from "@metro";
 import { ReactNative } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
@@ -30,7 +30,7 @@ export default definePlugin({
         const debugLabels = false;
 
         // tabs v2 dm header
-        unpatches.push(after("default", findByName("ChannelHeader", false), (args, res) => {
+        unpatches.push(after("default", findByNameLazy("ChannelHeader", false), (args, res) => {
             if (!platformIndicatorSettings.dmTopBar) return;
             if (!(res.type?.type?.name === "PrivateChannelHeader")) return;
 
@@ -83,7 +83,7 @@ export default definePlugin({
         }));
 
         // User profile content
-        const UserProfileContent = findByTypeName("UserProfileContent");
+        const UserProfileContent = findByTypeNameLazy("UserProfileContent");
 
         unpatches.push(after("type", UserProfileContent, (args, res) => {
             const primaryInfo = findInReactTree(res, c => c?.type?.name === "PrimaryInfo");
@@ -187,7 +187,7 @@ export default definePlugin({
         for (const UserRow of findByTypeNameAll("UserRow")) unpatches.push(after("type", UserRow, rowPatch));
 
         // Messages item channel content
-        const MessagesItemChannelContent = findByTypeName("MessagesItemChannelContent");
+        const MessagesItemChannelContent = findByTypeNameLazy("MessagesItemChannelContent");
         unpatches.push(after("type", MessagesItemChannelContent, (args, res) => {
             const channel = args[0]?.channel;
             if (channel?.recipients?.length === 1) {

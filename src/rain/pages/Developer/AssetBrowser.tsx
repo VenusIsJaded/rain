@@ -5,8 +5,9 @@ import { showSheet } from "@api/ui/sheets";
 import { NavigationNative } from "@metro/common";
 import { ActionSheet, BottomSheetTitleHeader,IconButton, TableCheckboxRow, TableRowGroup } from "@metro/common/components";
 import { Strings } from "@rain/i18n";
-import { useCallback,useEffect,useMemo, useState } from "react";
-import { FlatList, View } from "react-native";
+import { useCallback,useEffect,useMemo, useState, useDeferredValue } from "react";
+import { View } from "react-native";
+import { FlashList } from "@metro/common/components";
 
 import AssetDisplay from "./AssetDisplay";
 
@@ -26,6 +27,7 @@ export const TEXT_FILES = [
 
 export default function AssetBrowser() {
     const [search, setSearch] = useState("");
+    const deferredSearch = useDeferredValue(search);
     const [updateTick, setUpdateTick] = useState(0);
     const navigation = NavigationNative.useNavigation();
 
@@ -121,10 +123,8 @@ export default function AssetBrowser() {
                         backgroundColor: "transparent",
                     }}
                 >
-                    <FlatList
-                        data={all.filter(
-                            a => (a.name.includes(search) || a.id.toString() === search),
-                        )}
+                    <FlashList estimatedItemSize={50}
+                        data={useMemo(() => all.filter(a => (a.name.includes(deferredSearch) || a.id.toString() === deferredSearch)), [all, deferredSearch])}
                         renderItem={({ item }: any) => <AssetDisplay asset={item} />}
                         contentContainerStyle={{
                             overflow: "hidden",

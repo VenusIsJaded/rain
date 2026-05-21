@@ -56,7 +56,7 @@ export default function ReviewSection({ userId }: ReviewSectionProps) {
         <ErrorBoundary>
             <RN.View style={[styles.card]}>
                 <UserProfileCard title="Reviews" styles={[styles.card]}>
-                    <FlashList
+                    <FlashList estimatedItemSize={100}
                         ItemSeparatorComponent={() => (
                             <RN.View style={{ height: 8 }} />
                         )}
@@ -72,8 +72,8 @@ export default function ReviewSection({ userId }: ReviewSectionProps) {
                         )}
                         keyExtractor={(item: any) => item.sender.username}
                         scrollEnabled={false}
-                        estimatedSize={100}
-                        estimatedItemSize={74}
+                        
+                        
                     />
                     <ReviewInput
                         userId={userId}

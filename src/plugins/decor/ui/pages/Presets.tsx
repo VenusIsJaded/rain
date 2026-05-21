@@ -4,7 +4,7 @@ import { View } from "react-native";
 import { getPresets,Preset as PresetInterface } from "../../lib/api";
 import Preset from "../components/Preset";
 
-const { FlatList } = ReactNative;
+import { FlashList } from "@metro/common/components";
 
 export default function Presets() {
     const [presets, setPresets] = React.useState<PresetInterface[]>([]);
@@ -13,7 +13,7 @@ export default function Presets() {
         getPresets().then(presets => setPresets(presets));
     }, []);
 
-    return <FlatList
+    return <FlashList estimatedItemSize={200} keyExtractor={item => item.id || item.name || Math.random().toString()}
         data={presets}
         renderItem={({ item }) => <Preset preset={item} />}
         ListFooterComponent={() => <View style={{ height: 18 }} />}

@@ -10,11 +10,12 @@ const { ScrollView } = ReactNative;
 export default function TargetLang() {
     const settings = useTranslatorSettings();
     const [query, setQuery] = React.useState("");
+    const deferredQuery = React.useDeferredValue(query);
 
     const langs = settings.translator === 0 ? DeepLLangs : GTranslateLangs;
-    const filteredLangs = Object.entries(langs).filter(([key]) =>
-        key.toLowerCase().includes(query.toLowerCase())
-    );
+    const filteredLangs = React.useMemo(() => Object.entries(langs).filter(([key]) =>
+        key.toLowerCase().includes(deferredQuery.toLowerCase())
+    ), [langs, deferredQuery]);
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>

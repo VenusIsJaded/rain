@@ -11,7 +11,8 @@ import { useCurrentUserDecorationsStore } from "../../lib/stores/CurrentUserDeco
 import DecorationCard from "./DecorationCard";
 
 const { FormTitle } = Forms;
-const { View, FlatList, Image } = ReactNative;
+const { View, Image } = ReactNative;
+import { FlashList } from "@metro/common/components";
 const { TextStyleSheet, Text } = lazyDestructure(() => findByProps("TextStyleSheet"));
 const { default: SummarizedIconRow, OverflowCircle } = lazyDestructure(() => findByName("SummarizedIconRow", false));
 const avatarMod = findByPropsLazy("AvatarSizes");
@@ -104,7 +105,7 @@ export default function Preset({ preset }: { preset: Preset }) {
                 )}
             </View>
 
-            <FlatList
+            <FlashList estimatedItemSize={74}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 data={preset.decorations}
@@ -174,7 +175,7 @@ export default function Preset({ preset }: { preset: Preset }) {
                 )}
             </View>
 
-            <FlatList
+            <FlashList estimatedItemSize={74}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 data={preset.decorations}
