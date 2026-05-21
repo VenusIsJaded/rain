@@ -1,10 +1,10 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByFilePath } from "@metro";
+import { findByFilePathLazy } from "@metro";
 
 import ReviewSection from "../components/ReviewSection";
 
-const SegmentedControlPages = findByFilePath("design/components/SegmentedControl/native/SegmentedControlPages.native.tsx");
+const SegmentedControlPages = findByFilePathLazy("design/components/SegmentedControl/native/SegmentedControlPages.native.tsx");
 
 export default () =>
     SegmentedControlPages !== undefined ? after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {

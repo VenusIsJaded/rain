@@ -95,8 +95,8 @@ export async function getLogEntries(
         const { channelId, authorId, type } = filter!;
         entries = entries.filter(e =>
             (!channelId || e.channelId === channelId) &&
-            (!authorId  || e.author.id === authorId) &&
-            (!type      || e.type === type)
+            (!authorId || e.author.id === authorId) &&
+            (!type || e.type === type)
         );
     }
 

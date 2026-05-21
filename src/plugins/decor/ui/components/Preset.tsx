@@ -1,7 +1,7 @@
 import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByName, findByProps, findByStoreName } from "@metro";
+import { findByNameLazy, findByProps, findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { Forms } from "@metro/common/components";
 
@@ -11,8 +11,8 @@ import DecorationCard from "./DecorationCard";
 
 const { FormTitle } = Forms;
 const { View, FlatList, Image } = ReactNative;
-const { TextStyleSheet, Text } = findByProps("TextStyleSheet");
-const { default: SummarizedIconRow, OverflowCircle } = findByName("SummarizedIconRow", false);
+const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
+const { default: SummarizedIconRow, OverflowCircle } = findByNameLazy("SummarizedIconRow", false);
 const { type: Avatar } = findByProps("AvatarSizes");// .default;
 
 const useStyles = createStyles(_ => ({
@@ -24,8 +24,8 @@ const useStyles = createStyles(_ => ({
     }
 }));
 
-const UserUtils = findByProps("getUser", "fetchCurrentUser");
-const UserStore = findByStoreName("UserStore");
+const UserUtils = findByPropsLazy("getUser", "fetchCurrentUser");
+const UserStore = findByStoreNameLazy("UserStore");
 
 const defaultAvatars = [
     findAssetId("default_avatar_0"),

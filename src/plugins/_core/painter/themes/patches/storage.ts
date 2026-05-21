@@ -2,6 +2,7 @@ import { after, before } from "@api/patcher";
 import { findInTree } from "@lib/utils";
 import { proxyLazy } from "@lib/utils/lazy";
 import { findByProps } from "@metro";
+
 import { _colorRef } from "../updater";
 
 const mmkvStorage = proxyLazy(() => {

@@ -1,9 +1,9 @@
 import { after, instead } from "@api/patcher";
-import { findByProps, findByStoreName } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 
-const nitroInfo = findByProps("canUseEmojisEverywhere");
-const emojiUtils = findByProps("getEmojiUnavailableReason");
-const { getCurrentUser } = findByStoreName("UserStore");
+const nitroInfo = findByPropsLazy("canUseEmojisEverywhere");
+const emojiUtils = findByPropsLazy("getEmojiUnavailableReason");
+const { getCurrentUser } = findByStoreNameLazy("UserStore");
 
 
 function patchReaction(args: any[], result: any, response: any) {

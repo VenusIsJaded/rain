@@ -2,12 +2,12 @@ import { findAssetId } from "@api/assets";
 import { after, before } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
 import { findInReactTree } from "@lib/utils";
-import { findByProps } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { React } from "@metro/common";
 
 import { useTextReplaceSettings } from "../storage";
 
-const LazyActionSheet = findByProps("openLazy", "hideActionSheet");
+const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
 const ActionSheetRow = findByProps("ActionSheetRow")?.ActionSheetRow;
 const DownloadIcon = findAssetId("DownloadIcon");
 const JSON_CODEBLOCK_PATTERN = /^```(?:json)\n([\s\S]*?)```$/gm;

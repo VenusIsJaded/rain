@@ -1,12 +1,12 @@
 import { findAssetId } from "@api/assets";
 import SettingsTextInput from "@api/ui/components/SettingsTextInput";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { Stack, TableRow,TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import React from "react";
 import { ScrollView } from "react-native";
 
 import { useMessageLoggerSettings } from "./storage";
-const { Card } = findByProps("Card");
+const { Card } = findByPropsLazy("Card");
 
 export default function MessageLoggerSettings() {
     const settings = useMessageLoggerSettings();

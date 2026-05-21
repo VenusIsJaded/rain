@@ -1,6 +1,6 @@
 import { findAssetId } from "@api/assets";
 import { after } from "@api/patcher";
-import { findByName, findByProps, findByStoreName } from "@metro";
+import { findByNameLazy, findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { React } from "@metro/common";
 
 import JumpToTopButton from "../components/JumpToTopButton";
@@ -8,11 +8,11 @@ import { OldButtons } from "../components/OldButtons";
 import { jumpToTopSettings } from "../storage";
 import { ChannelType } from "../utils";
 
-const JumpToPresentModule = findByName("JumpToPresentButton", false);
-const Design = findByProps("Stack", "Button", "Text");
+const JumpToPresentModule = findByNameLazy("JumpToPresentButton", false);
+const Design = findByPropsLazy("Stack", "Button", "Text");
 const { Stack } = Design;
 
-const ChannelStore = findByStoreName("ChannelStore");
+const ChannelStore = findByStoreNameLazy("ChannelStore");
 
 const SYM_PATCHED = Symbol.for("Patched by JumpToTop");
 

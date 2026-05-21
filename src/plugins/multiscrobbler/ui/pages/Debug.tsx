@@ -1,4 +1,4 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { React } from "@metro/common";
 import { useEffect } from "react";
 import { ScrollView, Text } from "react-native";
@@ -9,7 +9,7 @@ import {
     useDebugInfo,
 } from "../../utils/debug";
 
-const { FormText } = findByProps("FormText");
+const { FormText } = findByPropsLazy("FormText");
 
 export default React.memo(function Debug() {
     useEffect(() => {

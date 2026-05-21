@@ -1,7 +1,7 @@
 import { findAssetId } from "@api/assets";
 import { after, instead } from "@api/patcher";
 import { showConfirmationAlert } from "@api/ui/alerts";
-import { findByName,findByProps } from "@metro";
+import { findByName,findByProps, findByPropsLazy } from "@metro";
 import { constants, React, ReactNative as RN } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
@@ -10,10 +10,10 @@ import AlertContent from "./AlertContent";
 import Settings from "./settings";
 import { hiddenChannelsSettings } from "./storage";
 
-const Permissions = findByProps("getChannelPermissions", "can");
+const Permissions = findByPropsLazy("getChannelPermissions", "can");
 const ChannelTypesModule = findByProps("ChannelTypes") ?? {};
 const ChannelTypes = ChannelTypesModule.ChannelTypes ?? {};
-const getChannelModule = findByProps("getChannel") || findByName("getChannel", false);
+const getChannelModule = findByPropsLazy("getChannel") || findByName("getChannel", false);
 const getChannel = getChannelModule?.getChannel ?? getChannelModule;
 
 const skipChannels = [ChannelTypes?.DM, ChannelTypes?.GROUP_DM, ChannelTypes?.GUILD_CATEGORY].filter(Boolean);

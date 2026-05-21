@@ -1,10 +1,10 @@
 import { findAssetId } from "@api/assets";
+import { before } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
 import { findByProps } from "@metro";
 import { clipboard } from "@metro/common";
 import { findByProps as findByPropsWrappers } from "@metro/wrappers";
-import { before } from "@api/patcher";
 
 // For robust chat input manipulation
 let getChatInputRef: ((channelId: string, idx?: number) => any) | null = null;

@@ -4,7 +4,7 @@ import { commands as commandsModule, messageUtil } from "@metro/common";
 
 import { ApplicationCommand, ApplicationCommandInputType, ApplicationCommandType, RainApplicationCommand } from "./types";
 
-let commands: ApplicationCommand[] = [];
+const commands: ApplicationCommand[] = [];
 const patches = new Set<() => void>();
 
 export function patchCommands() {

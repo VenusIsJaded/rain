@@ -1,6 +1,6 @@
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ReactNative as RN } from "@metro/common";
 import { Forms } from "@metro/common/components";
 import { ViewProps } from "react-native";
@@ -27,7 +27,7 @@ const useStyles = createStyles({
 });
 
 const { FormRow, FormSubLabel } = Forms;
-const { TableRowGroup } = findByProps("TableRow");
+const { TableRowGroup } = findByPropsLazy("TableRow");
 
 export default ({ review, style }: ReviewRowProps) => {
     const styles = useStyles();

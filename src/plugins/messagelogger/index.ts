@@ -1,6 +1,6 @@
 import { before } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
-import { findByName, findByProps, findByStoreName } from "@metro";
+import { findByName, findByProps, findByPropsLazy,findByStoreName } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
 
@@ -54,7 +54,7 @@ function shouldIgnoreMessage(message: any, storage: any): boolean {
 }
 
 // Hoisted moment reference — avoids re-scanning modules on every formatTimestamp call.
-const _momentModule = findByProps("utc", "unix", "duration");
+const _momentModule = findByPropsLazy("utc", "unix", "duration");
 
 function formatTimestamp(use12Hour: boolean): string {
     try {

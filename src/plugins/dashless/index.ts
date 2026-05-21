@@ -1,9 +1,9 @@
 import { after } from "@api/patcher";
-import { findByProps } from "@metro/wrappers";
+import { findByPropsLazy } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
-const { View } = findByProps("View", "Text");
+const { View } = findByPropsLazy("View", "Text");
 const patches: (() => void)[] = [];
 
 export default definePlugin({

@@ -1,4 +1,4 @@
-import { findByStoreName } from "@metro/wrappers";
+import { findByStoreNameLazy } from "@metro/wrappers";
 import { getCurrentTheme } from "@plugins/_core/painter/themes";
 
 import { InactiveReason } from "..";
@@ -10,7 +10,7 @@ import constants from "./constants";
 import getIconpackData, { type FetchedIconpackData } from "./iconpackDataGetter";
 import { cFetch } from "./util";
 
-const UserStore = findByStoreName("UserStore");
+const UserStore = findByStoreNameLazy("UserStore");
 
 export const patches: (() => void)[] = [];
 

@@ -1,5 +1,5 @@
 import { showToast } from "@api/ui/toasts";
-import { findByName } from "@metro";
+import { findByNameLazy } from "@metro";
 
 import { useCurrentUserDecorationsStore } from "../../lib/stores/CurrentUserDecorationsStore";
 import discordifyDecoration from "../../lib/utils/discordifyDecoration";
@@ -7,7 +7,7 @@ import showDecorationActionSheet from "../../lib/utils/showDecorationActionSheet
 import Card from "./Card";
 
 
-const CutoutableAvatarDecoration = findByName("CutoutableAvatarDecoration");
+const CutoutableAvatarDecoration = findByNameLazy("CutoutableAvatarDecoration");
 
 export default function DecorationCard({ decoration, onPress = undefined, selectable = undefined, disabled = undefined }) {
     const selectedDecoration = useCurrentUserDecorationsStore(s => s.selectedDecoration);

@@ -8,7 +8,7 @@ interface LazyOptions<E extends ExemptedEntries> {
 const unconfigurable = new Set(["arguments", "caller", "prototype"]);
 const isUnconfigurable = (key: PropertyKey) => typeof key === "string" && unconfigurable.has(key);
 
-const factories = new WeakMap<any, () => any>();
+const factories = new WeakMap<any,() => any>();
 
 function healHandler(handler: ProxyHandler<any>, resolved: any, opts: LazyOptions<any>) {
     const exemptedEntries = opts.exemptedEntries;

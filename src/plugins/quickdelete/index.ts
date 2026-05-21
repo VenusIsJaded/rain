@@ -1,12 +1,12 @@
 import { instead } from "@api/patcher";
-import { findByProps } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
 
 import Settings from "./Settings";
 import { quickDeleteSettings } from "./storage";
 
-const { intl, t: intlMap } = findByProps("intl");
+const { intl, t: intlMap } = findByPropsLazy("intl");
 
 const KEYS = {
     message: {

@@ -1,6 +1,6 @@
 import { after, before } from "@api/patcher";
 import { logger } from "@lib/utils/logger";
-import { findByTypeDisplayName } from "@metro";
+import { findByTypeDisplayNameLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 import React from "react";
@@ -8,7 +8,7 @@ import React from "react";
 import BetterChatButtonsSettings from "./settings";
 import { useBetterChatButtonsSettings } from "./storage";
 
-const ChatInputActions = findByTypeDisplayName("ChatInputActions");
+const ChatInputActions = findByTypeDisplayNameLazy("ChatInputActions");
 let actionsRef: React.RefObject<{ onShowActions(): void; onDismissActions(): void }>;
 
 type Unpatch = () => void;

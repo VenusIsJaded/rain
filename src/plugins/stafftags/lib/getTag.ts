@@ -1,12 +1,12 @@
 import { rawColors } from "@api/ui/components/color";
-import { findByProps, findByStoreName } from "@metro";
+import { findByProps, findByStoreNameLazy } from "@metro";
 import { constants, i18n } from "@metro/common";
 import chroma from "chroma-js";
 
 import { useStaffTagsSettings } from "../storage";
 
 const { computePermissions } = findByProps("computePermissions", "canEveryoneRole") ?? {};
-const GuildMemberStore = findByStoreName("GuildMemberStore");
+const GuildMemberStore = findByStoreNameLazy("GuildMemberStore");
 
 const getBuiltInTags = () => [
     i18n?.Messages?.AI_TAG,

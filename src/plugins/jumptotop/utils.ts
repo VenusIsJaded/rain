@@ -1,10 +1,10 @@
-import { findByProps, findByStoreName } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 
-const SelectedChannelStore = findByStoreName("SelectedChannelStore");
-const ChannelStore = findByStoreName("ChannelStore");
-const messageUtil = findByProps("jumpToMessage");
+const SelectedChannelStore = findByStoreNameLazy("SelectedChannelStore");
+const ChannelStore = findByStoreNameLazy("ChannelStore");
+const messageUtil = findByPropsLazy("jumpToMessage");
 
-const { openUrl } = findByProps("openUrl");
+const { openUrl } = findByPropsLazy("openUrl");
 
 export function jumpToTopOfCurrentChannel() {
     const currentChannelId = SelectedChannelStore.getChannelId();

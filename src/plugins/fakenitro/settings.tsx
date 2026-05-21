@@ -1,4 +1,4 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ReactNative as RN } from "@metro/common";
 import { ScrollView } from "react-native";
 
@@ -9,8 +9,8 @@ const {
     TableRadioGroup,
     TableRadioRow,
     TableRowGroup,
-} = findByProps("TableRow");
-const { Stack } = findByProps("Stack");
+} = findByPropsLazy("TableRow");
+const { Stack } = findByPropsLazy("Stack");
 
 const sizeOptions = {
     Tiny: 16,

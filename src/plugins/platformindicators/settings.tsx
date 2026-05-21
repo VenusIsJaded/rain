@@ -1,9 +1,9 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import { usePlatformIndicatorSettings } from "./storage";
 
-const { TableSwitchRow, TableRowGroup } = findByProps("TableSwitchRow");
-const { Stack } = findByProps("Stack");
+const { TableSwitchRow, TableRowGroup } = findByPropsLazy("TableSwitchRow");
+const { Stack } = findByPropsLazy("Stack");
 
 export default function Settings() {
     const settings = usePlatformIndicatorSettings();

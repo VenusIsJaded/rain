@@ -1,14 +1,14 @@
 import { after } from "@api/patcher";
-import { findByName, findByProps, findByStoreName } from "@metro";
+import { findByNameLazy, findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 
-const { Pressable } = findByProps("Button", "Text", "View");
-const ProfileBanner = findByName("ProfileBanner", false);
-const HeaderAvatar = findByName("HeaderAvatar", false);
-const { openMediaModal } = findByProps("openMediaModal");
-const { hideActionSheet } = findByProps("hideActionSheet");
-const { getChannelId } = findByStoreName("SelectedChannelStore");
-const { getGuildId } = findByStoreName("SelectedGuildStore");
+const { Pressable } = findByPropsLazy("Button", "Text", "View");
+const ProfileBanner = findByNameLazy("ProfileBanner", false);
+const HeaderAvatar = findByNameLazy("HeaderAvatar", false);
+const { openMediaModal } = findByPropsLazy("openMediaModal");
+const { hideActionSheet } = findByPropsLazy("hideActionSheet");
+const { getChannelId } = findByStoreNameLazy("SelectedChannelStore");
+const { getGuildId } = findByStoreNameLazy("SelectedGuildStore");
 
 function getImageSize(uri: string): Promise<{ width: number, height: number; }> {
     return new Promise((resolve, reject) => {

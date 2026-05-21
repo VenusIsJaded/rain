@@ -1,7 +1,7 @@
 import { ErrorBoundary } from "@api/ui/components";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByName, findByProps, findByStoreName } from "@metro";
+import { findByNameLazy, findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { React, ReactNative as RN } from "@metro/common";
 
 import { Review } from "../def";
@@ -10,14 +10,14 @@ import { useReviewDBSettings } from "../storage";
 import ReviewInput from "./ReviewInput";
 import ReviewRow from "./ReviewRow";
 
-const { getCurrentUser } = findByStoreName("UserStore");
-const UserProfileCard = findByName("UserProfileCard");
+const { getCurrentUser } = findByStoreNameLazy("UserStore");
+const UserProfileCard = findByNameLazy("UserProfileCard");
 
 interface ReviewSectionProps {
     userId: string;
 }
 
-const { FlashList } = findByProps("FlashList");
+const { FlashList } = findByPropsLazy("FlashList");
 
 export default function ReviewSection({ userId }: ReviewSectionProps) {
     const [reviews, setReviews] = React.useState<Review[]>([]);

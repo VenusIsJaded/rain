@@ -1,9 +1,9 @@
 import { ErrorBoundary } from "@api/ui/components";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import { ActionSheet } from "./ActionSheet";
 import ReviewActionSheet from "./ReviewActionSheet";
-const { TableRow, TableRowGroup } = findByProps("TableRow");
+const { TableRow, TableRowGroup } = findByPropsLazy("TableRow");
 
 interface ReviewCardProps {
     userId: string;

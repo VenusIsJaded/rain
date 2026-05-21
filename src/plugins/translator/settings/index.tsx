@@ -1,5 +1,5 @@
 import { findAssetId } from "@api/assets";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { Stack, TableCheckboxRow, TableRow,TableRowGroup } from "@metro/common/components";
 
@@ -7,8 +7,8 @@ import { useTranslatorSettings } from "../storage";
 import TargetLang from "./TargetLang";
 
 const { ScrollView, Text } = ReactNative;
-const { showSimpleActionSheet } = findByProps("showSimpleActionSheet");
-const { hideActionSheet } = findByProps("openLazy", "hideActionSheet");
+const { showSimpleActionSheet } = findByPropsLazy("showSimpleActionSheet");
+const { hideActionSheet } = findByPropsLazy("openLazy", "hideActionSheet");
 
 export default function Settings() {
     const navigation = NavigationNative.useNavigation();

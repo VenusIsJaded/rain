@@ -1,8 +1,8 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Developers } from "@rain/Developers";
 
-const ExperimentManager = findByProps("overrideBucket");
+const ExperimentManager = findByPropsLazy("overrideBucket");
 const EXPERIMENT_ID = "2025-08-animated-keyboard-android";
 
 // this plugin is also kinda a demo on how to override apex experiments :P

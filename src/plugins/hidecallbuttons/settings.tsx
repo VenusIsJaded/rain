@@ -1,10 +1,10 @@
 import { findAssetId } from "@api/assets";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import { useHideCallButtonsSettings } from "./storage";
 
-const { TableRow, TableSwitchRow, TableRowGroup } = findByProps("TableRow");
-const { Stack } = findByProps("Stack");
+const { TableRow, TableSwitchRow, TableRowGroup } = findByPropsLazy("TableRow");
+const { Stack } = findByPropsLazy("Stack");
 
 export default () => {
     const hidecallbuttonsSettings = useHideCallButtonsSettings();

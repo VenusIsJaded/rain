@@ -1,8 +1,8 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
-const Tag = findByProps("getBotLabel");
+const Tag = findByPropsLazy("getBotLabel");
 
 export default () => {
     if (!Tag) return () => {};

@@ -1,8 +1,9 @@
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
-import patchVoiceMessages from "./patches/voiceMessages";
-import { patchMessageCreate, patchMessageSuccess, patchMessageUpdate } from "./patches/messagePatches";
+
 import patchDownload from "./patches/download";
+import { patchMessageCreate, patchMessageSuccess, patchMessageUpdate } from "./patches/messagePatches";
+import patchVoiceMessages from "./patches/voiceMessages";
 import Settings from "./settings";
 
 const unpatches: Array<(() => void) | void> = [];

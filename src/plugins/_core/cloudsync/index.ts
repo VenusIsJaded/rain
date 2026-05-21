@@ -1,4 +1,3 @@
-import { shallowEqual } from "../../../lib/utils/shallowEqual";
 import { useSettings } from "@api/settings";
 import { logger } from "@lib/utils/logger";
 import { FluxDispatcher } from "@metro/common";
@@ -6,6 +5,7 @@ import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
 import Settings from "@rain/pages/CloudSync";
 
+import { shallowEqual } from "../../../lib/utils/shallowEqual";
 import { saveData } from "./api";
 import { grabEverything } from "./lib/syncStuff";
 import { useCloudSyncSettings } from "./storage";

@@ -1,11 +1,11 @@
 import { after, before } from "@api/patcher";
-import { findByName, findByStoreName } from "@metro";
+import { findByNameLazy, findByStoreNameLazy } from "@metro";
 
 import { rainenhancementsSettings } from "../../storage";
 import { Embed, Message } from "../def";
 
-const { getCustomEmojiById } = findByStoreName("EmojiStore");
-const RowManager = findByName("RowManager");
+const { getCustomEmojiById } = findByStoreNameLazy("EmojiStore");
+const RowManager = findByNameLazy("RowManager");
 const emojiRegex = /https:\/\/cdn.discordapp.com\/emojis\/(\d+)\.\w+/;
 
 export default [

@@ -2,7 +2,7 @@ import { registerCommand } from "@api/commands";
 import { RainApplicationCommand } from "@api/commands/types";
 import { waitForHydration } from "@api/storage";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
@@ -10,7 +10,7 @@ import AnimalCommandsSettings from "./settings";
 import { AnimalSource, ensureImageUrl, sources } from "./sources";
 import { ensureAnimalDefaults, getAnimalSourceId, isAnimalEnabled, useAnimalCommandsSettings } from "./storage";
 
-const MessageActions = findByProps("sendMessage");
+const MessageActions = findByPropsLazy("sendMessage");
 
 export default definePlugin({
     name: "AnimalCommands",

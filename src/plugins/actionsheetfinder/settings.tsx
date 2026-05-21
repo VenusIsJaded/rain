@@ -2,13 +2,13 @@ import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import SettingsTextInput from "@api/ui/components/SettingsTextInput";
 import { Stack, TableRow, TableRowGroup, Text } from "@metro/common/components";
-import { findByProps } from "@metro/wrappers";
+import { findByPropsLazy } from "@metro/wrappers";
 import React, { useMemo,useState } from "react";
 import { ScrollView, View } from "react-native";
 
 import { clearLogs,useActionSheetFinderSettings } from "./storage";
 
-const { Card: CardComponent } = findByProps("Card");
+const { Card: CardComponent } = findByPropsLazy("Card");
 
 const LOG_COLORS = [
     semanticColors.CARD_SECONDARY_BG,

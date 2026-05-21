@@ -1,11 +1,11 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { Forms } from "@metro/common/components";
 
 import Card from "./Card";
 import Icon from "./Icon";
 
 const { FormIcon } = Forms;
-const { TextStyleSheet, Text } = findByProps("TextStyleSheet");
+const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
 
 export default function CardButton({ source, label, onPress, disabled, lookDisabled = false, selected = false }) {
     return (

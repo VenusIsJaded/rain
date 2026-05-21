@@ -2,11 +2,11 @@ import { findAssetId } from "@api/assets";
 import { before } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import { useTextReplaceSettings } from "../storage";
 
-const Messages = findByProps("sendMessage", "receiveMessage");
+const Messages = findByPropsLazy("sendMessage", "receiveMessage");
 
 const Warning = findAssetId("ic_warning_24px");
 

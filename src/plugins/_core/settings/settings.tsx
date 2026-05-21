@@ -1,5 +1,5 @@
 import { useSettings } from "@api/settings";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ScrollView } from "react-native";
 
 const {
@@ -8,7 +8,7 @@ const {
     TableRadioRow,
     TableRowGroup,
     TableSwitchRow,
-} = findByProps("TableRow");
+} = findByPropsLazy("TableRow");
 
 const SETTINGS_POSITIONS = [
     { key: "TOP", label: "At the top of the settings page" },

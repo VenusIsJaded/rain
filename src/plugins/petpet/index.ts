@@ -1,11 +1,11 @@
 import { registerCommand } from "@api/commands";
 import { ApplicationCommandOptionType, RainApplicationCommand } from "@api/commands/types";
-import { findByProps, findByStoreName } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
-const UserStore = findByStoreName("UserStore");
-const MessageActions = findByProps("sendMessage");
+const UserStore = findByStoreNameLazy("UserStore");
+const MessageActions = findByPropsLazy("sendMessage");
 
 const getPetPetData = async (image: string) => {
     const data = await fetch(

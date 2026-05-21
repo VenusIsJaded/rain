@@ -1,13 +1,13 @@
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByName, findByStoreName } from "@metro";
+import { findByNameLazy, findByStoreNameLazy } from "@metro";
 import { CDN_URL } from "@plugins/decor/lib/constants";
 import { useCurrentUserDecorationsStore } from "@plugins/decor/lib/stores/CurrentUserDecorationsStore";
 import discordifyDecoration from "@plugins/decor/lib/utils/discordifyDecoration";
 import { Image, View } from "react-native";
 
-const HeaderAvatar = findByName("HeaderAvatar");
-const UserStore = findByStoreName("UserStore");
+const HeaderAvatar = findByNameLazy("HeaderAvatar");
+const UserStore = findByStoreNameLazy("UserStore");
 
 const useStyles = createStyles(_ => ({
     headerAvatarContainer: {

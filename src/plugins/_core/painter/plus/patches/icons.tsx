@@ -1,7 +1,7 @@
 import { findAsset } from "@api/assets";
 import { before, instead } from "@api/patcher";
 import { waitFor } from "@metro/internals/modules";
-import { findByName, findByProps } from "@metro/wrappers";
+import { findByNameLazy, findByPropsLazy } from "@metro/wrappers";
 
 import { useColorsPref } from "../../themes/preferences";
 import { PatchType } from "..";
@@ -12,8 +12,8 @@ import modIcons from "../stuff/modIcons";
 import { fixPath } from "../stuff/util";
 import type { IconpackConfig } from "../types";
 
-const Status = findByName("Status", false);
-const RN = findByProps("Image", "View");
+const Status = findByNameLazy("Status", false);
+const RN = findByPropsLazy("Image", "View");
 const OriginalImage = RN.Image;
 
 export default function patchIcons(

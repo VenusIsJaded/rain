@@ -2,14 +2,14 @@ import { after } from "@api/patcher";
 import { showConfirmationAlert } from "@api/ui/alerts";
 import { showToast } from "@api/ui/toasts";
 import { findInReactTree } from "@lib/utils";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ActionSheet, ActionSheetRow } from "@metro/common/components";
 import { definePlugin } from "@plugins";
 import { Developers } from "@rain/Developers";
 import { ReactElement } from "react";
 
 const patches: (() => void)[] = [];
-const APIUtils = findByProps("getAPIBaseURL", "del");
+const APIUtils = findByPropsLazy("getAPIBaseURL", "del");
 
 export default definePlugin({
     name: "SilentLeave",

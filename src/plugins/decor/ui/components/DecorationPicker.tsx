@@ -1,7 +1,7 @@
 import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByProps, findByStoreName } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 import { NavigationNative, ReactNative } from "@metro/common";
 import { TableRow, TableRowGroup } from "@metro/common/components";
 
@@ -14,12 +14,12 @@ import Presets from "../pages/Presets";
 import AvatarDecorationPreviews from "./AvatarDecorationPreviews";
 
 const { View, ActivityIndicator, Pressable } = ReactNative;
-const { TextStyleSheet, Text } = findByProps("TextStyleSheet");
+const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
 
-const UserStore = findByStoreName("UserStore");
-const Parser = findByProps("parse", "parseToAST");
-const { showUserProfile } = findByProps("showUserProfile");
-const UserUtils = findByProps("getUser", "fetchCurrentUser");
+const UserStore = findByStoreNameLazy("UserStore");
+const Parser = findByPropsLazy("parse", "parseToAST");
+const { showUserProfile } = findByPropsLazy("showUserProfile");
+const UserUtils = findByPropsLazy("getUser", "fetchCurrentUser");
 
 const useStyles = createStyles(_ => ({
     decorationListContainer: {

@@ -1,8 +1,9 @@
-import { shallowEqual } from "../../lib/utils/shallowEqual";
 import { fileExists, readFile, writeFile } from "@api/native/fs";
 import { FluxDispatcher } from "@metro/common";
 import { create } from "zustand";
 import { createJSONStorage, persist, StorageValue } from "zustand/middleware";
+
+import { shallowEqual } from "../../lib/utils/shallowEqual";
 
 export const createFileStorage = (filePath: string) => {
     return {

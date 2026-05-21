@@ -1,13 +1,13 @@
 import { findAssetId } from "@api/assets";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { findByName, findByProps } from "@metro";
+import { findByNameLazy, findByPropsLazy } from "@metro";
 
 import { getClientId, getRedirectUrl } from "../constants";
 import { useAuthorizationStore } from "../stores/AuthorizationStore";
 
-const { pushModal, popModal } = findByProps("pushModal");
-const OAuth2AuthorizeModal = findByName("OAuth2AuthorizeModal");
+const { pushModal, popModal } = findByPropsLazy("pushModal");
+const OAuth2AuthorizeModal = findByNameLazy("OAuth2AuthorizeModal");
 
 export default () =>
     pushModal({

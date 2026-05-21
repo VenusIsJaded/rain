@@ -1,11 +1,11 @@
 import { before } from "@api/patcher";
-import { findByName, findByProps } from "@metro";
+import { findByNameLazy, findByPropsLazy } from "@metro";
 import { FluxDispatcher } from "@metro/common";
 
 import { hideblockedandignoredmessagesSettings as storage } from "../storage";
 
-const RowManager = findByName("RowManager");
-const { isBlocked, isIgnored } = findByProps("isBlocked", "isIgnored");
+const RowManager = findByNameLazy("RowManager");
+const { isBlocked, isIgnored } = findByPropsLazy("isBlocked", "isIgnored");
 
 // User filter logic
 const isFilteredUser = (id: any) => {

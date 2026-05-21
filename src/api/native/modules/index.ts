@@ -5,7 +5,7 @@ const nmp = window.nativeModuleProxy;
 export function wrapNativeModule<T = any>(rawModule: any): T | undefined {
     if (!rawModule) return undefined;
     if (rawModule.__isRainProxied) return rawModule;
-    return rawModule;   // Minimal - no heavy Proxy = no bridge conflict
+    return rawModule; // Minimal - no heavy Proxy = no bridge conflict
 }
 
 export function getNativeModule<T = any>(...names: string[]): T | undefined {

@@ -1,12 +1,12 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByProps, findByStoreName, findByTypeNameAll } from "@metro";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro";
 
 import getTag, { BUILT_IN_TAGS } from "../lib/getTag";
 
-const TagModule = findByProps("getBotLabel");
+const TagModule = findByPropsLazy("getBotLabel");
 const getBotLabel = TagModule?.getBotLabel;
-const GuildStore = findByStoreName("GuildStore");
+const GuildStore = findByStoreNameLazy("GuildStore");
 
 const rowPatch = ([{ guildId, user }]: [{ guildId: string, user: any }], res: any) => {
     const label = res?.props?.label;

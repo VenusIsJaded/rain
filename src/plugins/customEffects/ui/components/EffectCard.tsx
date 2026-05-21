@@ -1,8 +1,8 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import React from "react";
 import { Image, Pressable, View } from "react-native";
 
-const { TextStyleSheet, Text } = findByProps("TextStyleSheet");
+const { TextStyleSheet, Text } = findByPropsLazy("TextStyleSheet");
 
 // @ts-ignore
 function EffectCardComponent({ effect, onSelect, selected }) {

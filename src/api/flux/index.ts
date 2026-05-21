@@ -7,7 +7,7 @@ const modifiedSym = Symbol.for("rain.flux.modified");
 export const dispatcher = FluxDispatcher;
 
 type Intercept = (payload: Record<string, any> & { type: string; }) => any;
-let intercepts: Intercept[] = [];
+const intercepts: Intercept[] = [];
 
 /**
  * @internal

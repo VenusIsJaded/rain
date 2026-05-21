@@ -1,11 +1,11 @@
 import { registerCommand } from "@api/commands";
 import { RainApplicationCommand } from "@api/commands/types";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
-const MessageActions = findByProps("sendMessage");
+const MessageActions = findByPropsLazy("sendMessage");
 
 // Helper function to format fact response
 const formatFactResponse = (fact: { text: string; source?: string; length?: number }) => {

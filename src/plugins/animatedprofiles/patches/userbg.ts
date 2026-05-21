@@ -1,13 +1,13 @@
 import { after } from "@api/patcher";
 import { safeFetch } from "@lib/utils";
 import { logger } from "@lib/utils/logger";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 const dataBannerURL = "https://usrbg.is-hardly.online/users";
 
 let userBgData: userBGData | undefined;
 
-const getUserBannerURL = findByProps("default", "getUserBannerURL");
+const getUserBannerURL = findByPropsLazy("default", "getUserBannerURL");
 
 interface userBGData {
     endpoint: string;

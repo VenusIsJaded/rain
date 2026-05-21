@@ -1,7 +1,7 @@
 const {
-  after: _after,
-  before: _before,
-  instead: _instead
+    after: _after,
+    before: _before,
+    instead: _instead
 } = require("sublimation");
 
 /** @internal */
@@ -21,42 +21,42 @@ type InsteadFn = PatchFn<(args: any[], origFunc: Function) => unknown>;
 type AfterFn = PatchFn<(args: any[], ret: any) => unknown>;
 
 function create(fn: Function) {
-  function patchFn(this: any, ...args: any[]) {
-    if (typeof args[1][_patcherDelaySymbol] === "function") {
-      const delayCallback: DelayCallback = args[1][_patcherDelaySymbol];
+    function patchFn(this: any, ...args: any[]) {
+        if (typeof args[1][_patcherDelaySymbol] === "function") {
+            const delayCallback: DelayCallback = args[1][_patcherDelaySymbol];
 
-      let cancel = false;
-      let unpatch = () => cancel = true;
+            let cancel = false;
+            let unpatch = () => cancel = true;
 
-      delayCallback(target => {
-        if (cancel) return;
-        args[1] = target;
-        unpatch = fn.apply(this, args);
-      });
+            delayCallback(target => {
+                if (cancel) return;
+                args[1] = target;
+                unpatch = fn.apply(this, args);
+            });
 
-      return () => unpatch();
+            return () => unpatch();
+        }
+
+        return fn.apply(this, args);
     }
 
-    return fn.apply(this, args);
-  }
+    function promisePatchFn(this: any, ...args: [any, Thenable, ...any]) {
+        const thenable = args[1];
+        if (!thenable || !("then" in thenable)) throw new Error("target is not a then-able object");
 
-  function promisePatchFn(this: any, ...args: [any, Thenable, ...any]) {
-    const thenable = args[1];
-    if (!thenable || !("then" in thenable)) throw new Error("target is not a then-able object");
+        let cancel = false;
+        let unpatch = () => cancel = true;
 
-    let cancel = false;
-    let unpatch = () => cancel = true;
+        thenable.then(target => {
+            if (cancel) return;
+            args[1] = target;
+            unpatch = patchFn.apply(this, args);
+        });
 
-    thenable.then(target => {
-      if (cancel) return;
-      args[1] = target;
-      unpatch = patchFn.apply(this, args);
-    });
+        return () => unpatch();
+    }
 
-    return () => unpatch();
-  }
-
-  return Object.assign(patchFn, { await: promisePatchFn });
+    return Object.assign(patchFn, { await: promisePatchFn });
 }
 
 export const after = create(_after) as AfterFn;

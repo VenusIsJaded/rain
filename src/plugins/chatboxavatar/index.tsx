@@ -1,5 +1,5 @@
 import { after } from "@api/patcher";
-import { findByNameLazy, findByProps, findByPropsLazy, findByStoreName, findByTypeDisplayName } from "@metro";
+import { findByNameLazy, findByPropsLazy, findByStoreNameLazy, findByTypeDisplayNameLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
@@ -8,9 +8,9 @@ import React, { useEffect, useRef } from "react";
 import ChatboxAvatarSettings from "./settings";
 import { useChatboxAvatarSettings } from "./storage";
 
-const Flux = findByProps("useStateFromStores");
-const ChatInputActions = findByTypeDisplayName("ChatInputActions");
-const ChatInputSendButton = findByTypeDisplayName("ChatInputSendButton");
+const Flux = findByPropsLazy("useStateFromStores");
+const ChatInputActions = findByTypeDisplayNameLazy("ChatInputActions");
+const ChatInputSendButton = findByTypeDisplayNameLazy("ChatInputSendButton");
 let hasText = false;
 let sendBtnRef: { setHasText?: (hasText: boolean) => void } | undefined;
 const { Pressable, View, Animated } = ReactNative;
@@ -19,10 +19,10 @@ const avatarCollapse = new Animated.Value(0);
 
 const Avatar = findByPropsLazy("default", "AvatarSizes", "getStatusSize")?.default;
 
-const UserStore = findByStoreName("UserStore");
-const SelectedChannelStore = findByStoreName("SelectedChannelStore");
-const ChannelStore = findByStoreName("ChannelStore");
-const SelfPresenceStore = findByStoreName("SelfPresenceStore");
+const UserStore = findByStoreNameLazy("UserStore");
+const SelectedChannelStore = findByStoreNameLazy("SelectedChannelStore");
+const ChannelStore = findByStoreNameLazy("ChannelStore");
+const SelfPresenceStore = findByStoreNameLazy("SelfPresenceStore");
 const showUserProfileActionSheet = findByNameLazy("showUserProfileActionSheet");
 const showYouAccountActionSheetByProp = findByPropsLazy("showYouAccountActionSheet");
 

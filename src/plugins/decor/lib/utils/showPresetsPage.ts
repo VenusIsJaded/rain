@@ -1,8 +1,8 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import Presets from "../../ui/pages/Presets";
 
-const { pushModal } = findByProps("pushModal");
+const { pushModal } = findByPropsLazy("pushModal");
 
 export default () =>
     pushModal({

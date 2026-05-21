@@ -1,14 +1,14 @@
 import { findAssetId } from "@api/assets";
 import { showToast } from "@api/ui/toasts";
 import { logger } from "@lib/utils/logger";
-import { findByName, findByProps } from "@metro";
+import { findByNameLazy, findByPropsLazy } from "@metro";
 
 import { useReviewDBSettings } from "../storage";
 import { API_URL,CLIENT_ID } from "./constants";
 import { jsonFetch } from "./utils";
 
-const { pushModal, popModal } = findByProps("pushModal");
-const OAuth2AuthorizeModal = findByName("OAuth2AuthorizeModal");
+const { pushModal, popModal } = findByPropsLazy("pushModal");
+const OAuth2AuthorizeModal = findByNameLazy("OAuth2AuthorizeModal");
 
 // Thank you to Fiery for figuring out the base for this
 // Some inspiration taken from https://github.com/Vendicated/Vencord/blob/77c691651e72ba1569666d560f96af04bfde9a4e/src/plugins/reviewDB/Utils/Utils.tsx#L39-L73

@@ -1,11 +1,11 @@
 import SettingsTextInput from "@api/ui/components/SettingsTextInput";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { Stack, TableRadioGroup, TableRadioRow, TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import { ScrollView } from "react-native";
 
 import { useUploaderSettings } from "./storage";
 
-const { Card } = findByProps("Card");
+const { Card } = findByPropsLazy("Card");
 
 const LITTERBOX_DURATIONS = [
     { label: "1 hour", value: "1" },

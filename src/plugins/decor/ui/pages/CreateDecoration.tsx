@@ -2,7 +2,7 @@ import { findAssetId } from "@api/assets";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { React, ReactNative } from "@metro/common";
 import {
     Button,
@@ -21,10 +21,10 @@ import { useCurrentUserDecorationsStore } from "../../lib/stores/CurrentUserDeco
 import readFileAsBase64 from "../../lib/utils/readFileAsBase64";
 import AvatarDecorationPreviews from "../components/AvatarDecorationPreviews";
 
-const { launchImageLibrary } = findByProps("launchImageLibrary") as typeof import("react-native-image-picker");
-const { useSafeAreaInsets } = findByProps("useSafeAreaInsets");
-const { useNavigation } = findByProps("useNavigation");
-const Parser = findByProps("parseTopic");
+const { launchImageLibrary } = findByPropsLazy("launchImageLibrary") as typeof import("react-native-image-picker");
+const { useSafeAreaInsets } = findByPropsLazy("useSafeAreaInsets");
+const { useNavigation } = findByPropsLazy("useNavigation");
+const Parser = findByPropsLazy("parseTopic");
 
 const useStyles = createStyles(_ => ({
     root: {

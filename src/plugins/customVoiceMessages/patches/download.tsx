@@ -1,11 +1,11 @@
-import { before, after } from "@api/patcher";
 import { findAssetId } from "@api/assets";
-import { findByProps } from "@metro";
-import { findInReactTree } from "@lib/utils";
-import { React, clipboard, ReactNative as RN } from "@metro/common";
+import { after,before } from "@api/patcher";
 import { semanticColors } from "@api/ui/components/color";
+import { findInReactTree } from "@lib/utils";
+import { findByProps, findByPropsLazy } from "@metro";
+import { clipboard, React, ReactNative as RN } from "@metro/common";
 
-const LazyActionSheet = findByProps("openLazy", "hideActionSheet");
+const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
 
 const styles = RN.StyleSheet.create({
     iconComponent: {
@@ -20,29 +20,29 @@ export default function patchDownload() {
         const [component, actionArgs, actionMessage] = args;
         const message = actionMessage?.message;
         if (actionArgs !== "MessageLongPressActionSheet" || !message) return;
-        
+
         component.then((instance: any) => {
             const unpatch = after("default", instance, (_, res) => {
-                React.useEffect(() => () => { unpatch() }, []);
-                
+                React.useEffect(() => () => { unpatch(); }, []);
+
                 // Get the main container groups
                 const actionSheetContainer = findInReactTree(
                     res,
                     x => Array.isArray(x) && x[0]?.type?.name === "ActionSheetRowGroup"
                 );
-                
+
                 if (!actionSheetContainer || !actionSheetContainer[1]) return res;
-                
+
                 // middleGroup is where message actions go
                 const middleGroup = actionSheetContainer[1];
                 const ActionSheetRow = middleGroup.props.children[0].type;
 
-                const hasVoiceMessageFlag = typeof message.hasFlag === 'function' 
-                    ? message.hasFlag(8192) 
+                const hasVoiceMessageFlag = typeof message.hasFlag === "function"
+                    ? message.hasFlag(8192)
                     : (message.flags & 8192) === 8192;
 
                 if (hasVoiceMessageFlag && message.attachments?.[0]?.url) {
-                    
+
                     const downloadButton = (
                         <ActionSheetRow
                             label="Download Voice Message"

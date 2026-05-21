@@ -1,12 +1,12 @@
-import { findByStoreName } from "@metro";
+import { findByStoreNameLazy } from "@metro";
 
 import { getStatusColor } from "./colors";
 import StatusIcon from "./StatusIcon";
 import { usePlatformIndicatorSettings } from "./storage";
 
-const PresenceStore = findByStoreName("PresenceStore");
-const SessionsStore = findByStoreName("SessionsStore");
-const UserStore = findByStoreName("UserStore");
+const PresenceStore = findByStoreNameLazy("PresenceStore");
+const SessionsStore = findByStoreNameLazy("SessionsStore");
+const UserStore = findByStoreNameLazy("UserStore");
 
 
 let statusCache: any;

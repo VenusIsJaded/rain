@@ -1,11 +1,11 @@
 import { rawColors, resolveSemanticColor, semanticColors } from "@api/ui/components/color";
-import { findByStoreName } from "@metro";
+import { findByStoreNameLazy } from "@metro";
 
 type PlusColorResolvable =
 	| string
 	| [string, string | undefined, string | undefined, string | undefined];
 
-const ThemeStore = findByStoreName("ThemeStore");
+const ThemeStore = findByStoreNameLazy("ThemeStore");
 
 // Hoisted Set avoids allocating ["dark","midnight"] on every matchTheme call
 const DARK_THEMES = new Set(["dark", "midnight"]);

@@ -1,4 +1,4 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import chroma from "chroma-js";
 import { omit } from "es-toolkit";
 import { Platform, processColor } from "react-native";
@@ -6,7 +6,7 @@ import { Platform, processColor } from "react-native";
 import { colorsPref } from "./preferences";
 import { ColorManifest, InternalColorDefinition, RainColorManifest } from "./types";
 
-const tokenRef = findByProps("SemanticColor");
+const tokenRef = findByPropsLazy("SemanticColor");
 
 export function parseColorManifest(manifest: ColorManifest): InternalColorDefinition {
     const resolveType = (type = "dark") => (colorsPref.type ?? type) === "dark" ? "darker" : "light";

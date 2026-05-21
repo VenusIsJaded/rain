@@ -1,15 +1,15 @@
 import { findAssetId } from "@api/assets";
 import { showConfirmationAlert } from "@api/ui/alerts";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { clipboard } from "@metro/common";
 
 import { Review } from "../def";
 import { useReviewDBSettings } from "../storage";
 import { deleteReview, reportReview } from "./api";
 import { canDeleteReview } from "./utils";
-const { hideActionSheet } = findByProps("openLazy", "hideActionSheet");
-const { showSimpleActionSheet } = findByProps("showSimpleActionSheet");
+const { hideActionSheet } = findByPropsLazy("openLazy", "hideActionSheet");
+const { showSimpleActionSheet } = findByPropsLazy("showSimpleActionSheet");
 
 export default (review: Review) =>
     showSimpleActionSheet({

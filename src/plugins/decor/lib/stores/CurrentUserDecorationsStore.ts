@@ -1,4 +1,4 @@
-import { findByStoreName } from "@metro";
+import { findByStoreNameLazy } from "@metro";
 import { FluxDispatcher } from "@metro/common";
 import { debounce } from "lodash";
 import { create } from "zustand";
@@ -10,7 +10,7 @@ import discordifyDecoration from "../utils/discordifyDecoration";
 import subscribeToFluxDispatcher from "../utils/subscribeToFluxDispatcher";
 import { useUsersDecorationsStore } from "./UsersDecorationsStore";
 
-const UserStore = findByStoreName("UserStore");
+const UserStore = findByStoreNameLazy("UserStore");
 
 interface CurrentUserDecorationsState {
     decorations: Decoration[];

@@ -1,13 +1,13 @@
 import { findAssetId } from "@api/assets";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { Stack, TableRow, TableRowGroup, TableSwitchRow, TextInput } from "@metro/common/components";
 import { ScrollView, View } from "react-native";
 
 import { type Activity, type ActivityButton, DEFAULT_APP_ID, useRichPresenceSettings } from "./storage";
 
-const { showSimpleActionSheet } = findByProps("showSimpleActionSheet");
-const { hideActionSheet } = findByProps("openLazy", "hideActionSheet");
+const { showSimpleActionSheet } = findByPropsLazy("showSimpleActionSheet");
+const { hideActionSheet } = findByPropsLazy("openLazy", "hideActionSheet");
 
 const ACTIVITY_TYPES = [
     { label: "Playing", value: 0 },

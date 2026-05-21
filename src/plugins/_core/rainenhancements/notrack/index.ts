@@ -1,16 +1,16 @@
 import { instead } from "@api/patcher";
 import { logger } from "@lib/utils/logger";
-import { findByProps } from "@metro";
+import { findByProps, findByPropsLazy } from "@metro";
 
 // Type for functions that need to be cleaned up when plugin is disabled
 type PatchCleanupFn = () => void;
 
 // AnalyticsUtils and other tracking utilities
-const AnalyticsUtils = findByProps("AnalyticsActionHandlers");
-const SuperPropUtils = findByProps("encodeProperties", "track");
-const VoiceStateUtils = findByProps("getVoiceStateMetadata");
-const CrashReportUtils = findByProps("submitLiveCrashReport");
-const MetricsUtils = findByProps("_metrics");
+const AnalyticsUtils = findByPropsLazy("AnalyticsActionHandlers");
+const SuperPropUtils = findByPropsLazy("encodeProperties", "track");
+const VoiceStateUtils = findByPropsLazy("getVoiceStateMetadata");
+const CrashReportUtils = findByPropsLazy("submitLiveCrashReport");
+const MetricsUtils = findByPropsLazy("_metrics");
 
 // Sentry interface definition to avoid TypeScript errors
 interface SentryClient {

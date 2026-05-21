@@ -1,12 +1,12 @@
 import { after } from "@api/patcher";
-import { findByProps } from "@metro/wrappers";
+import { findByPropsLazy } from "@metro/wrappers";
 
 import { PatchType } from "..";
 import { state } from "../stuff/active";
 import { patches } from "../stuff/loader";
 import resolveColor from "../stuff/resolveColor";
 
-const RowGeneratorUtils = findByProps("createBackgroundHighlight");
+const RowGeneratorUtils = findByPropsLazy("createBackgroundHighlight");
 
 export default function patchMentionLineColors(plus: any) {
     if (plus.mentionLineColor) {

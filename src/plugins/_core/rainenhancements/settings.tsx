@@ -1,4 +1,4 @@
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ScrollView } from "react-native";
 
 import { useRainEnhancementsSettings } from "./storage";
@@ -6,8 +6,8 @@ import { useRainEnhancementsSettings } from "./storage";
 const {
     TableSwitchRow,
     TableRowGroup,
-} = findByProps("TableRow");
-const { Stack } = findByProps("Stack");
+} = findByPropsLazy("TableRow");
+const { Stack } = findByPropsLazy("Stack");
 
 export default () => {
     const settings = useRainEnhancementsSettings();

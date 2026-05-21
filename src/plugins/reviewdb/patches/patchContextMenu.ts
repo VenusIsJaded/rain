@@ -1,10 +1,10 @@
 import { before } from "@api/patcher";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 
 import { ActionSheet } from "../components/ActionSheet";
 import ReviewActionSheet from "../components/ReviewActionSheet";
 
-const ContextMenuPopout = findByProps("ContextMenuPopout");
+const ContextMenuPopout = findByPropsLazy("ContextMenuPopout");
 
 export default () =>
     before("ContextMenuPopout", ContextMenuPopout, args => {

@@ -1,14 +1,14 @@
 import { findAssetId } from "@api/assets";
 import { before } from "@api/patcher";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro/wrappers";
+import { findByPropsLazy } from "@metro/wrappers";
 import { definePlugin } from "@plugins";
 import { Contributors,Developers } from "@rain/Developers";
 
 import settings from "./settings";
 import { useActionSheetFinderSettings } from "./storage";
 
-const LazyActionSheet = findByProps("openLazy", "hideActionSheet");
+const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
 
 let unpatch: () => void;
 let lastKey: string | undefined;

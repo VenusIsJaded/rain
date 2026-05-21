@@ -1,9 +1,9 @@
 import { after } from "@api/patcher";
-import { findByStoreName } from "@metro";
+import { findByStoreNameLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Contributors } from "@rain/Developers";
 
-const MaskedLink = findByStoreName("MaskedLinkStore");
+const MaskedLink = findByStoreNameLazy("MaskedLinkStore");
 const patches: (() => boolean)[] = [];
 
 export default definePlugin({

@@ -1,7 +1,7 @@
 import { after } from "@api/patcher";
-import { findByName } from "@metro";
+import { findByNameLazy } from "@metro";
 
-const RowManager = findByName("RowManager");
+const RowManager = findByNameLazy("RowManager");
 
 export function onLoad() {
     return after("generate", RowManager.prototype, ([row], { message }) => {

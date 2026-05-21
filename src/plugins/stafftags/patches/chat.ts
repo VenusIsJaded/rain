@@ -1,13 +1,13 @@
 import { after } from "@api/patcher";
-import { findByName, findByStoreName } from "@metro";
+import { findByNameLazy, findByStoreNameLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 import chroma from "chroma-js";
 
 import getTag, { BUILT_IN_TAGS } from "../lib/getTag";
 
-const getTagProperties = findByName("getTagProperties", false);
-const GuildStore = findByStoreName("GuildStore");
-const ChannelStore = findByStoreName("ChannelStore");
+const getTagProperties = findByNameLazy("getTagProperties", false);
+const GuildStore = findByStoreNameLazy("GuildStore");
+const ChannelStore = findByStoreNameLazy("ChannelStore");
 
 export default () => after("default", getTagProperties, ([{ message }], ret) => {
     if (!BUILT_IN_TAGS.includes(ret.tagText)) {

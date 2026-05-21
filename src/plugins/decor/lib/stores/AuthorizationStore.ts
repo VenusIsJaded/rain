@@ -1,11 +1,11 @@
 import { createFileStorage, PluginStore } from "@api/storage";
-import { findByStoreName } from "@metro";
+import { findByStoreNameLazy } from "@metro";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import subscribeToFluxDispatcher from "../utils/subscribeToFluxDispatcher";
 
-const UserStore = findByStoreName("UserStore");
+const UserStore = findByStoreNameLazy("UserStore");
 
 interface AuthorizationState {
   token: string | null;

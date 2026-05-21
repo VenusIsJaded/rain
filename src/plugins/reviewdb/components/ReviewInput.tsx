@@ -2,7 +2,7 @@ import { findAssetId } from "@api/assets";
 import { rawColors, semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { constants, ReactNative as RN } from "@metro/common";
 
 import { addReview } from "../lib/api";
@@ -49,7 +49,7 @@ const useStyles = createStyles({
     },
 });
 
-const { useThemeContext } = findByProps("useThemeContext");
+const { useThemeContext } = findByPropsLazy("useThemeContext");
 
 export default function ReviewInput({
     userId,

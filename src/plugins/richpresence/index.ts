@@ -1,5 +1,5 @@
 import { logger } from "@lib/utils/logger";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { FluxDispatcher } from "@metro/common";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
@@ -8,7 +8,7 @@ import Settings from "./Settings";
 import { type Activity,useRichPresenceSettings } from "./storage";
 import { cloneAndFilter } from "./utils";
 
-const assetManager = findByProps("getAssetIds", "fetchAssetIds");
+const assetManager = findByPropsLazy("getAssetIds", "fetchAssetIds");
 const pluginStartSince = Date.now();
 
 async function sendRequest(activity: Activity | null): Promise<Activity | null> {

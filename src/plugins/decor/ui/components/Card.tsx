@@ -1,12 +1,12 @@
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
-import { findByProps } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ReactNative } from "@metro/common";
 
 
 const { View, TouchableOpacity } = ReactNative;
 
-const { triggerHapticFeedback, HapticFeedbackTypes } = findByProps("triggerHapticFeedback");
+const { triggerHapticFeedback, HapticFeedbackTypes } = findByPropsLazy("triggerHapticFeedback");
 
 const useStyles = createStyles(_ => ({
     container: {
