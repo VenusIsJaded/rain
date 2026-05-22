@@ -156,8 +156,10 @@ export default definePlugin({
         }));
 
         // Guild member row
-        let Rows: any; try { Rows = findByPropsLazy("GuildMemberRow"); } catch (e) {}
-        if (Rows?.GuildMemberRow) {
+        try {
+            const Rows = findByPropsLazy("GuildMemberRow");
+            if (Rows.GuildMemberRow) {
+
             unpatches.push(after("type", Rows.GuildMemberRow, (args: any[], res: any) => {
                 const user = args[0]?.user;
                 if (!platformIndicatorSettings.userList) return;
@@ -177,7 +179,8 @@ export default definePlugin({
                     }
                 }
             }));
-        }
+                }
+        } catch (e) {}
 
         let patchedAvatar = false;
         // User row patch
