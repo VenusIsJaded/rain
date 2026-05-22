@@ -13,9 +13,16 @@ export default () => {
     if (!SegmentedControlPages) return () => false;
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
-        // Search the ENTIRE rendered tree of SegmentedControlPages recursively
+        // 1. Safely extract the page node to bypass circular navigation fibers
+        const page = 
+            ret?.props?.children?.[0]?.props?.item?.page || 
+            ret?.props?.item?.page;
+
+        if (!page) return;
+
+        // 2. Walk only the page props (clean tree, no circular fiber loops)
         const profileSections = findInReactTree(
-            ret,
+            page.props || page,
             r =>
                 r?.type?.displayName === "View" &&
                 r?.props?.children?.findIndex(
@@ -29,13 +36,15 @@ export default () => {
                 ) !== -1,
         )?.props?.children;
 
-        // Extract userId robustly by finding any profile child component that carries it
-        const userId = 
-            profileSections?.find((c: any) => c?.props?.userId)?.props?.userId ||
-            profileSections?.find((c: any) => c?.props?.user?.id)?.props?.user?.id ||
-            profileSections?.[profileSections.length - 1]?.props?.userId;
+        if (!profileSections) return;
 
-        if (!profileSections || !userId) return;
+        // 3. Extract userId robustly from the children elements
+        const userId = 
+            profileSections.find((c: any) => c?.props?.userId)?.props?.userId ||
+            profileSections.find((c: any) => c?.props?.user?.id)?.props?.user?.id ||
+            profileSections[profileSections.length - 1]?.props?.userId;
+
+        if (!userId) return;
         if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
 
         profileSections.push(React.createElement(ReviewSection, { userId }));
