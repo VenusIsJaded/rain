@@ -83,10 +83,31 @@ export default function ReviewSection({ userId }: ReviewSectionProps) {
         [reviews, reviewdbSettings.showWarning]
     );
 
+    // DIAGNOSTIC: log resolved components on first render (once per mount)
+    React.useEffect(() => {
+        _rdbLogger.log(
+            "[reviewdb/section] mounted; UserProfileCard=", typeof UserProfileCard,
+            "FlashList=", typeof FlashList,
+            "reviews=", reviews.length,
+        );
+    }, []);
+
+    // DIAGNOSTIC: hot pink border so we can SEE where this component lands
+    const debugBorder = { borderWidth: 2, borderColor: "magenta" };
+
+    // Fallback if UserProfileCard didn't resolve on this build
+    const Card: any = UserProfileCard ?? ((props: any) =>
+        <RN.View style={[{ padding: 12 }, debugBorder]}>
+            <RN.Text style={{ color: "magenta", fontWeight: "bold" }}>
+                ReviewDB (UserProfileCard missing — fallback render)
+            </RN.Text>
+            {props.children}
+        </RN.View>);
+
     return (
         <ErrorBoundary>
-            <RN.View style={[styles.card]}>
-                <UserProfileCard title="Reviews" styles={[styles.card]}>
+            <RN.View style={[styles.card, debugBorder]}>
+                <Card title="Reviews" styles={[styles.card]}>
                     <FlashList estimatedItemSize={100}
                         ItemSeparatorComponent={ItemSeparator}
                         data={displayedReviews}
@@ -109,7 +130,7 @@ export default function ReviewSection({ userId }: ReviewSectionProps) {
                         refetch={fetchReviews}
                         shouldEdit={hasExistingReview}
                     />
-                </UserProfileCard>
+                </Card>
             </RN.View>
         </ErrorBoundary>
     );
