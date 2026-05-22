@@ -4,7 +4,12 @@ import { rawColors, semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
 import { findByProps } from "@metro";
-import { constants, ReactNative as RN } from "@metro/common";
+// BUG FIX: React was used (React.useState) but never imported.
+// In Metro, React is NOT a global — every file that uses React.* or JSX
+// must import it explicitly. Without this import React === undefined at
+// runtime, causing: "[reviewdb] Failed to start: Error: type is not a
+// function in Object" because React.useState is called on undefined.
+import { React, constants, ReactNative as RN } from "@metro/common";
 
 import { addReview } from "../lib/api";
 import { Button, TextInput } from "../lib/redesign";

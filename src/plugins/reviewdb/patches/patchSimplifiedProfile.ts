@@ -1,19 +1,31 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByTypeNameLazy } from "@metro";
+import { findByTypeName } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-// NOTE: findByTypeNameLazy returns a Proxy, never undefined, so the previous
-// `SimplifiedUserProfileContent !== undefined ? after(...) : () => false`
-// ternary always took the true branch. Simplified to a direct after() call.
-const SimplifiedUserProfileContent = findByTypeNameLazy(
-    "SimplifiedUserProfileContent",
-);
+// BUG FIX — same class of failure as patchProfile.ts:
+// findByTypeNameLazy's forceLoad() throws when the module is absent,
+// crashing the plugin with "type is not a function in Object" or
+// "SimplifiedUserProfileContent is undefined! (id unknown)".
+//
+// Fix: use the synchronous (non-throwing) findByTypeName and guard
+// explicitly. If the module isn't found we skip the patch gracefully.
+export default () => {
+    const SimplifiedUserProfileContent = findByTypeName("SimplifiedUserProfileContent");
 
-export default () =>
-    after("type", SimplifiedUserProfileContent, (args, ret) => {
+    if (!SimplifiedUserProfileContent) {
+        if (__DEV__) {
+            console.warn(
+                "[reviewdb/patchSimplifiedProfile] SimplifiedUserProfileContent " +
+                "not found in Metro — skipping simplified profile patch.",
+            );
+        }
+        return () => false;
+    }
+
+    return after("type", SimplifiedUserProfileContent, (args, ret) => {
         const profileSections = findInReactTree(
             ret,
             r =>
@@ -35,3 +47,4 @@ export default () =>
             React.createElement(ReviewSection, { userId }),
         );
     });
+};

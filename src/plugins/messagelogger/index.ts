@@ -1,4 +1,5 @@
 import { before } from "@api/patcher";
+import { React } from "@metro/common";
 import { showToast } from "@api/ui/toasts";
 import { findByName, findByNameLazy, findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
 import { definePlugin } from "@plugins";

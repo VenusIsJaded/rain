@@ -1,20 +1,30 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByFilePathLazy } from "@metro";
+import { findByFilePath } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-// NOTE: findByFilePathLazy returns a Proxy, never undefined, so the previous
-// `SegmentedControlPages !== undefined ? after(...) : () => false`
-// ternary always took the true branch. Simplified to a direct after() call.
-// Also: React was used but not imported — ReferenceError crash on profileSections.push.
-const SegmentedControlPages = findByFilePathLazy(
-    "design/components/SegmentedControl/native/SegmentedControlPages.native.tsx",
-);
+// BUG FIX — same class of failure as patchProfile.ts / patchSimplifiedProfile.ts:
+// findByFilePathLazy's internal forceLoad() throws when the module isn't in the
+// bundle, crashing the plugin startup. Use the synchronous (non-throwing)
+// findByFilePath and return a no-op unpatcher when the module is absent.
+export default () => {
+    const SegmentedControlPages = findByFilePath(
+        "design/components/SegmentedControl/native/SegmentedControlPages.native.tsx",
+    );
 
-export default () =>
-    after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
+    if (!SegmentedControlPages) {
+        if (__DEV__) {
+            console.warn(
+                "[reviewdb/patchSegmentedProfile] SegmentedControlPages not found " +
+                "in Metro — skipping segmented profile patch.",
+            );
+        }
+        return () => false;
+    }
+
+    return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
         const profileSections = findInReactTree(
             ret?.props?.children[0]?.props?.item?.page?.props?.children,
             r =>
@@ -34,6 +44,6 @@ export default () =>
         const userId = profileSections[profileSections.length - 1]?.props?.userId;
         if (!userId) return;
 
-        // BUG FIX: React was used here but never imported — would cause ReferenceError.
         profileSections.push(React.createElement(ReviewSection, { userId }));
     });
+};

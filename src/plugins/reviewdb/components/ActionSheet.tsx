@@ -1,6 +1,11 @@
 // Taken from https://github.com/nexpid/RevengePlugins/blob/main/src/stuff/components/ActionSheet.tsx
 import { findByPropsLazy } from "@metro";
-import { ReactNative as RN } from "@metro/common";
+// BUG FIX: React was used for type annotations (React.PropsWithChildren,
+// React.FunctionComponent) but never imported. In Metro, React is NOT a
+// global — every file that references React.* must import it explicitly.
+// Without the import React === undefined, causing a crash when the type
+// expressions are evaluated at runtime inside the module factory.
+import { React, ReactNative as RN } from "@metro/common";
 import { omit } from "es-toolkit";
 import type { ViewProps } from "react-native";
 

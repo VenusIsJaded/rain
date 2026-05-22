@@ -1,5 +1,7 @@
 import { findAssetId } from "@api/assets";
 import ErrorBoundary from "@api/ui/components/ErrorBoundary";
+// BUG FIX: React was used at runtime (React.useState) but never imported.
+import { React } from "@metro/common";
 import { TextInput } from "@metro/common/components";
 import { Strings } from "@rain/i18n";
 import { Image, View, ViewStyle } from "react-native";

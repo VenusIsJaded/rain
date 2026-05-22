@@ -1,6 +1,11 @@
 // Taken from https://github.com/nexpid/RevengePlugins
 import { showToast } from "@api/ui/toasts";
 import { findByPropsLazy } from "@metro";
+// BUG FIX: React was used for type annotations (React.FC, React.ReactNode,
+// React.useEffect) but never imported. In Metro, React is NOT a global.
+// Without this import React === undefined at runtime, causing a TypeError
+// when NotFound() calls React.useEffect(trigger, []).
+import { React } from "@metro/common";
 import {
     ImageSourcePropType,
     PressableProps,

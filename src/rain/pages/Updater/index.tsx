@@ -8,6 +8,7 @@ import { Strings } from "@i18n";
 import { CODEBERG } from "@lib/info";
 import { AlertActionButton, AlertActions, AlertModal, Button, Stack, TableRow, TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import { supportedVersions } from "rain-build-info";
+import { React } from "@metro/common";
 import { useState } from "react";
 import { Linking, Platform, ScrollView, View } from "react-native";
 

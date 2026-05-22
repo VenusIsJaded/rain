@@ -1,3 +1,6 @@
+// BUG FIX: React was used at runtime (React.useState) but never imported.
+// In Metro, React is NOT a global — every file that calls React.* must import it.
+import { React } from "@metro/common";
 import { LegacyAlert, LegacyFormInput } from "@metro/common/components";
 import { findByPropsLazy } from "@metro/wrappers";
 

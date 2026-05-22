@@ -1,4 +1,6 @@
 import { findAssetId } from "@api/assets";
+// BUG FIX: React was used at runtime (React.useState) but never imported.
+import { React } from "@metro/common";
 import { LegacyFormRow, TableRow } from "@metro/common/components";
 import { LayoutAnimation, View } from "react-native";
 
