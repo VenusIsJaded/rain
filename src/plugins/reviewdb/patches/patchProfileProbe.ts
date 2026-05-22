@@ -1,45 +1,43 @@
-// TEMPORARY PROBE — hooks React.createElement and logs any element
-// whose component name suggests it's part of a profile rendering path.
-// Once we see what component renders OTHER users' profiles on this
-// Discord build, we can target it with a real patch.
+// TEMPORARY PROBE — hooks React.createElement and logs every element
+// whose props carry a userId / user.id that ISN'T the viewer's id.
+// That instantly tells us which component renders other users' profiles
+// on this Discord build.
 
 import { React } from "@metro/common";
+import { findByStoreName } from "@metro";
 import { logger } from "@lib/utils/logger";
 
-const log = (...a: any[]) => { try { logger.log("[reviewdb/probe2]", ...a); } catch {} };
+const log = (...a: any[]) => { try { logger.log("[reviewdb/probe3]", ...a); } catch {} };
 
-const INTERESTING = /Profile|Simplified|Popout|Popover|UserSheet|ProfileSheet|ProfileModal|UserModal/;
-
-// Throttle so we don't drown Debug Logs.
-const seen = new Set<string>();
-const seenIds = new Set<string>();
-let lastFlush = 0;
+const seenKeys = new Set<string>();
 
 export default () => {
     const origCreateElement = React.createElement;
-    let installed = true;
+    let viewerId: string | undefined;
+
+    try {
+        const UserStore: any = findByStoreName("UserStore");
+        viewerId = UserStore?.getCurrentUser?.()?.id;
+    } catch {}
+    log("probe3 installed; viewerId=", viewerId ?? "<unknown>");
 
     (React as any).createElement = function (type: any, props: any, ...children: any[]) {
         try {
-            const name = typeof type === "string"
-                ? null
-                : (type?.name ?? type?.displayName ?? type?.type?.name);
-
-            if (name && INTERESTING.test(name)) {
-                // Log unique component names once
-                if (!seen.has(name)) {
-                    seen.add(name);
-                    log("first-seen component:", name);
-                }
-
-                // Log unique (name, userId) pairs so we can correlate names with
-                // who's profile is being viewed.
-                const uid = props?.userId ?? props?.user?.id;
-                if (uid) {
+            if (props && typeof props === "object") {
+                const uid =
+                    (typeof props.userId === "string" && props.userId) ||
+                    (typeof props.user?.id === "string" && props.user.id) ||
+                    null;
+                if (uid && uid !== viewerId) {
+                    const name =
+                        typeof type === "string"
+                            ? type
+                            : (type?.name ?? type?.displayName ?? type?.type?.name ?? "?");
                     const key = name + ":" + uid;
-                    if (!seenIds.has(key)) {
-                        seenIds.add(key);
-                        log("component+userId:", name, "userId=", uid);
+                    if (!seenKeys.has(key)) {
+                        seenKeys.add(key);
+                        log("NON-VIEWER userId on:", name, "userId=", uid,
+                            "propKeys=", Object.keys(props).slice(0, 10));
                     }
                 }
             }
@@ -47,15 +45,10 @@ export default () => {
         return origCreateElement.apply(this, [type, props, ...children]);
     };
 
-    log("probe2 installed (createElement hook)");
-
     return () => {
-        if (!installed) return false;
-        installed = false;
         (React as any).createElement = origCreateElement;
-        seen.clear();
-        seenIds.clear();
-        log("probe2 uninstalled");
+        seenKeys.clear();
+        log("probe3 uninstalled");
         return true;
     };
 };
