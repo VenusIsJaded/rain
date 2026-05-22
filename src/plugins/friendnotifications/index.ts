@@ -1,21 +1,25 @@
 import { definePlugin } from "@plugins";
-import { findByStoreNameLazy } from "@metro/wrappers";
-import { FluxDispatcher } from "@metro/common";
+import { findByStoreNameLazy, findByNameLazy } from "@metro/wrappers";
+import { FluxDispatcher, React } from "@metro/common";
 import { showToast } from "@api/ui/toasts";
 import { friendNotificationsSettings } from "./storage";
 import Settings from "./settings";
 import { logger } from "@lib/utils/logger";
+import { after } from "@api/patcher";
+import { findInReactTree } from "@lib/utils";
 
 const PresenceStore = findByStoreNameLazy("PresenceStore");
 const RelationshipStore = findByStoreNameLazy("RelationshipStore");
 const UserStore = findByStoreNameLazy("UserStore");
+const ToastComponent = findByNameLazy("Toast", false);
 
 let previousStatuses = new Map<string, string>();
 let isFirstRun = true;
+const patches: (() => void)[] = [];
 
 function onPresenceUpdate(event: any) {
     try {
-        if (!event || !event.updates) return;
+        if (!event || !Array.isArray(event.updates)) return;
         
         // Ignore the massive initial PRESENCE_UPDATES burst to prevent toast spam on launch
         if (isFirstRun) {
@@ -45,13 +49,18 @@ function onPresenceUpdate(event: any) {
                     const user = UserStore.getUser?.(userId);
                     if (user) {
                         const avatar = { uri: typeof user.getAvatarURL === "function" ? user.getAvatarURL(false, 128, true) : undefined };
-                        showToast(`${user.globalName || user.username} is now online`, avatar);
+                        // Pass a special flag inside the source object so our patch knows to round it!
+                        const sourceObj = { ...avatar, __friendAvatar: true };
+                        showToast(`${user.globalName || user.username} is now online`, sourceObj as any);
+                        setTimeout(() => showToast(`${user.globalName || user.username} is now online`, sourceObj as any), 3000);
                     }
                 } else if (!wasOffline && isOffline && friendNotificationsSettings.notifyOffline) {
                     const user = UserStore.getUser?.(userId);
                     if (user) {
                         const avatar = { uri: typeof user.getAvatarURL === "function" ? user.getAvatarURL(false, 128, true) : undefined };
-                        showToast(`${user.globalName || user.username} went offline`, avatar);
+                        const sourceObj = { ...avatar, __friendAvatar: true };
+                        showToast(`${user.globalName || user.username} went offline`, sourceObj as any);
+                        setTimeout(() => showToast(`${user.globalName || user.username} went offline`, sourceObj as any), 3000);
                     }
                 }
             }
@@ -71,10 +80,31 @@ export default definePlugin({
         previousStatuses.clear();
         isFirstRun = true;
         FluxDispatcher.subscribe("PRESENCE_UPDATES", onPresenceUpdate);
+
+        // Patch the Toast component directly in React space so we can force border radius.
+        patches.push(after("default", ToastComponent, (args, res) => {
+            const props = args[0];
+            // The toast's icon or source object might contain our __friendAvatar flag
+            if (props?.toast?.icon?.__friendAvatar || props?.toast?.source?.__friendAvatar) {
+                // Find the internal image component
+                const img = findInReactTree(res, n => n?.type?.name === "Image" || n?.type?.displayName === "Image" || !!n?.props?.source?.uri);
+                if (img?.props) {
+                    if (Array.isArray(img.props.style)) {
+                        img.props.style = [...img.props.style, { borderRadius: 100 }];
+                    } else if (img.props.style) {
+                        img.props.style = [img.props.style, { borderRadius: 100 }];
+                    } else {
+                        img.props.style = { borderRadius: 100 };
+                    }
+                }
+            }
+        }));
     },
     stop() {
         FluxDispatcher.unsubscribe("PRESENCE_UPDATES", onPresenceUpdate);
         previousStatuses.clear();
+        for (const u of patches) u();
+        patches.length = 0;
     },
     settings: Settings
 });

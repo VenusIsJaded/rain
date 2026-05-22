@@ -4,11 +4,13 @@ import { Strings } from "@rain/i18n";
 
 let _toastId = 0;
 
-export const showToast = (content: string, asset?: number | Record<string, any>) => toasts.open({
+export const showToast = (content: string, asset?: number | Record<string, any>, duration?: number) => toasts.open({
     key: `rain-toast-${++_toastId}`,
     content: content,
     source: asset,
     icon: asset,
+    duration: duration,
+    timeout: duration,
 });
 
 showToast.showCopyToClipboard = (message = Strings.COPIED_TO_CLIPBOARD) => {

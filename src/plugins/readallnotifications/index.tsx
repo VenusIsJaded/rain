@@ -1,5 +1,5 @@
 import { definePlugin } from "@plugins";
-import { findByPropsLazy, findByStoreNameLazy, findByNameLazy } from "@metro/wrappers";
+import { findByPropsLazy, findByStoreNameLazy } from "@metro/wrappers";
 import { showToast } from "@api/ui/toasts";
 import { findAssetId } from "@api/assets";
 import { registerCommand } from "@api/commands";
@@ -13,7 +13,10 @@ import { findInReactTree } from "@lib/utils";
 
 const GuildStore = findByStoreNameLazy("GuildStore");
 const UnreadStore = findByStoreNameLazy("UnreadStore");
-const AckActionCreators = findByPropsLazy("ackGuild");
+const markGuildAsReadModule = findByPropsLazy("markGuildAsRead");
+const ackModule = findByPropsLazy("ackGuild");
+const markAsReadModule = findByPropsLazy("markAsRead");
+const ackActionModule = findByPropsLazy("ack");
 const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
 const { FormIcon } = lazyDestructure(() => findByPropsLazy("FormRow"));
 const { hideActionSheet } = lazyDestructure(() => findByPropsLazy("openLazy", "hideActionSheet"));
@@ -23,7 +26,8 @@ let unregister: (() => void) | undefined;
 
 function markAllRead() {
     try {
-        if (!GuildStore.getGuilds || !AckActionCreators.ackGuild) {
+        const markFn = markGuildAsReadModule?.markGuildAsRead || ackModule?.ackGuild || ackActionModule?.ack || markAsReadModule?.markAsRead;
+        if (!GuildStore.getGuilds || !markFn) {
             showToast("Failed to mark servers as read.", findAssetId("CircleXIcon-primary"));
             return;
         }
@@ -33,7 +37,7 @@ function markAllRead() {
 
         for (const guildId in guilds) {
             if (UnreadStore.hasUnread(guildId) || UnreadStore.getMentionCount(guildId) > 0) {
-                AckActionCreators.ackGuild(guildId);
+                markFn(guildId);
                 count++;
             }
         }
