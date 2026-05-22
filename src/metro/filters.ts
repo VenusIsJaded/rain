@@ -7,17 +7,43 @@ export const byProps = createFilterDefinition(
 );
 
 export const byName = createFilterDefinition<[string]>(
-    ([name], m) => m.name === name,
+    ([name], m) => {
+        if (!m) return false;
+        if (m.name === name) return true;
+        if (m.displayName === name) return true;
+        if (m.type && (m.type.name === name || m.type.displayName === name)) return true;
+        if (m.render && (m.render.name === name || m.render.displayName === name)) return true;
+        return false;
+    },
     name => `rain.metro.byName(${name})`
 );
 
 export const byDisplayName = createFilterDefinition<[string]>(
-    ([displayName], m) => m.displayName === displayName,
+    ([displayName], m) => {
+        if (!m) return false;
+        if (m.displayName === displayName) return true;
+        if (m.type?.displayName === displayName) return true;
+        if (m.render?.displayName === displayName) return true;
+        return false;
+    },
     name => `rain.metro.byDisplayName(${name})`
 );
 
 export const byTypeName = createFilterDefinition<[string]>(
-    ([typeName], m) => m.type?.name === typeName,
+    ([typeName], m) => {
+        if (!m) return false;
+        if (m.type?.name === typeName) return true;
+        
+        const check = (t: any): boolean => {
+            if (!t) return false;
+            if (t.name === typeName || t.displayName === typeName) return true;
+            if (t.render && (t.render.name === typeName || t.render.displayName === typeName)) return true;
+            if (t.type && check(t.type)) return true;
+            return false;
+        };
+        
+        return check(m.type) || check(m);
+    },
     name => `rain.metro.byTypeName(${name})`
 );
 
@@ -27,7 +53,20 @@ export const byStoreName = createFilterDefinition<[string]>(
 );
 
 export const byTypeDisplayName = createFilterDefinition<[string]>(
-    ([displayName], m) => m.type?.displayName === displayName,
+    ([displayName], m) => {
+        if (!m) return false;
+        if (m.type?.displayName === displayName) return true;
+        
+        const check = (t: any): boolean => {
+            if (!t) return false;
+            if (t.displayName === displayName) return true;
+            if (t.render && t.render.displayName === displayName) return true;
+            if (t.type && check(t.type)) return true;
+            return false;
+        };
+        
+        return check(m.type) || check(m);
+    },
     name => `rain.metro.byTypeDisplayName(${name})`
 );
 
