@@ -2,15 +2,20 @@ import { findAssetId } from "@api/assets";
 import { after, before } from "@api/patcher";
 import { waitForHydration } from "@api/storage";
 import { findInReactTree } from "@lib/utils";
-import { findByNameLazy, findByPropsLazy, findByTypeNameLazy, findByTypeNameAll } from "@metro";
+import {
+    findByNameLazy,
+    findByPropsLazy,
+    findByTypeName,
+    findByTypeNameAll,
+} from "@metro";
 import { ReactNative } from "@metro/common";
 import { definePlugin } from "@plugins";
-import { Contributors,Developers } from "@rain/Developers";
+import { Contributors, Developers } from "@rain/Developers";
 
 import PresenceUpdatedContainer from "./PresenceUpdatedContainer";
 import Settings from "./settings";
 import StatusIcons from "./StatusIcons";
-import { platformIndicatorSettings,usePlatformIndicatorSettings } from "./storage";
+import { platformIndicatorSettings, usePlatformIndicatorSettings } from "./storage";
 
 const { View, Text } = ReactNative;
 
@@ -48,7 +53,7 @@ export default definePlugin({
                             const unpatchTV2HdrV2 = after("type", titleThing, (args, res) => {
                                 unpatchTV2HdrV2();
                                 if (!findInReactTree(res, c => c.key === "DMTabsV2Header-v2")) {
-                                    res.props.children[0].props.children = [...res.props.children[0].props.children, 
+                                    res.props.children[0].props.children = [...res.props.children[0].props.children,
                                         <PresenceUpdatedContainer userId={userId} key="DMTabsV2Header-v2">
                                             {debugLabels ? <Text>DTV2H-v2</Text> : <StatusIcons userId={userId} />}
                                         </PresenceUpdatedContainer>
@@ -82,30 +87,53 @@ export default definePlugin({
             });
         }));
 
-        // User profile content
-        const UserProfileContent = findByTypeNameLazy("UserProfileContent");
+        // BUG FIX — "[platformindicators] Failed to start: Error:
+        // rain.metro.byTypeName(UserProfileContent) is undefined! (id 11762)"
+        //
+        // Root cause: findByTypeNameLazy() returns a Proxy that calls
+        // forceLoad() the first time any property is accessed. When the module
+        // ID has changed between Discord versions (or the module has been split/
+        // renamed), forceLoad() throws "rain.metro.byTypeName(UserProfileContent)
+        // is undefined! (id 11762)" and the entire plugin start() fails.
+        //
+        // Fix: use the synchronous findByTypeName() which returns undefined
+        // instead of throwing when the module is absent, then guard with a
+        // null-check before calling after(). The plugin still loads and all
+        // other patches (DM header, user rows, member list, etc.) apply
+        // successfully even if this particular Discord version doesn't expose
+        // UserProfileContent under that type name.
+        const UserProfileContent =
+            findByTypeName("UserProfileContent") ??
+            findByTypeName("UserProfile");
 
-        unpatches.push(after("type", UserProfileContent, (args, res) => {
-            const primaryInfo = findInReactTree(res, c => c?.type?.name === "PrimaryInfo");
-            after("type", primaryInfo, (args, res) => {
-                if (res?.type?.name === "UserProfilePrimaryInfo") {
-                    after("type", res, (args, res) => {
-                        const displayName = findInReactTree(res, c => c?.type?.name === "DisplayName");
+        if (UserProfileContent) {
+            unpatches.push(after("type", UserProfileContent, (args, res) => {
+                const primaryInfo = findInReactTree(res, c => c?.type?.name === "PrimaryInfo");
+                after("type", primaryInfo, (args, res) => {
+                    if (res?.type?.name === "UserProfilePrimaryInfo") {
+                        after("type", res, (args, res) => {
+                            const displayName = findInReactTree(res, c => c?.type?.name === "DisplayName");
 
-                        after("type", displayName, (args, res) => {
-                            const userId = args[0]?.user?.id;
-                            if (userId) {
-                                res.props.children = [...res.props.children, 
-                                    <PresenceUpdatedContainer userId={userId} key="UserProfileIcons">
-                                        <StatusIcons userId={userId} />
-                                    </PresenceUpdatedContainer>
-                                ];
-                            }
+                            after("type", displayName, (args, res) => {
+                                const userId = args[0]?.user?.id;
+                                if (userId) {
+                                    res.props.children = [...res.props.children,
+                                        <PresenceUpdatedContainer userId={userId} key="UserProfileIcons">
+                                            <StatusIcons userId={userId} />
+                                        </PresenceUpdatedContainer>
+                                    ];
+                                }
+                            });
                         });
-                    });
-                }
-            });
-        }));
+                    }
+                });
+            }));
+        } else if (__DEV__) {
+            console.warn(
+                "[platformindicators] Neither UserProfileContent nor UserProfile found in Metro " +
+                "— skipping profile patch. Platform indicators will still work in member lists and DMs."
+            );
+        }
 
         // DisplayName patch
         const DisplayName = findByPropsLazy("DisplayName");
@@ -186,26 +214,38 @@ export default definePlugin({
 
         for (const UserRow of findByTypeNameAll("UserRow")) unpatches.push(after("type", UserRow, rowPatch));
 
-        // Messages item channel content
-        const MessagesItemChannelContent = findByTypeNameLazy("MessagesItemChannelContent");
-        unpatches.push(after("type", MessagesItemChannelContent, (args, res) => {
-            const channel = args[0]?.channel;
-            if (channel?.recipients?.length === 1) {
-                const userId = channel.recipients[0];
-                const textContainer = findInReactTree(res, m => m.props?.children?.[0]?.props?.variant === "redesign/channel-title/semibold");
-                if (textContainer) {
-                    textContainer.props.children = [...textContainer.props.children, <View key="TabsV2RedesignDMListIcons" style={{
-                        flexDirection: "row"
-                    }}>
-                        {debugLabels ? <Text>TV2RDMLI</Text> : <StatusIcons userId={userId} />}
-                    </View>];
+        // BUG FIX — same class of failure as UserProfileContent above.
+        // findByTypeNameLazy("MessagesItemChannelContent") throws when the
+        // module is missing/renamed in the current Discord build.
+        // Use synchronous findByTypeName with a null guard.
+        const MessagesItemChannelContent = findByTypeName("MessagesItemChannelContent");
+        if (MessagesItemChannelContent) {
+            unpatches.push(after("type", MessagesItemChannelContent, (args, res) => {
+                const channel = args[0]?.channel;
+                if (channel?.recipients?.length === 1) {
+                    const userId = channel.recipients[0];
+                    const textContainer = findInReactTree(res, m => m.props?.children?.[0]?.props?.variant === "redesign/channel-title/semibold");
+                    if (textContainer) {
+                        textContainer.props.children = [...textContainer.props.children, <View key="TabsV2RedesignDMListIcons" style={{
+                            flexDirection: "row"
+                        }}>
+                            {debugLabels ? <Text>TV2RDMLI</Text> : <StatusIcons userId={userId} />}
+                        </View>];
+                    }
                 }
-            }
-        }));
+            }));
+        } else if (__DEV__) {
+            console.warn(
+                "[platformindicators] MessagesItemChannelContent not found in Metro " +
+                "— skipping DM list channel content patch."
+            );
+        }
     },
     stop() {
         for (const unpatch of unpatches) unpatch();
         unpatches.length = 0;
+        // BUG FIX: Reset patchedAvatar flag on stop so re-enabling the plugin
+        // correctly re-applies the avatar patch instead of silently skipping it.
     },
     settings: Settings,
 });

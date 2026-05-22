@@ -1,5 +1,10 @@
 import { lazyDestructure } from "@lib/utils/lazy";
 import { findByProps } from "@metro";
+// BUG FIX: React.ComponentType<any> and React.createElement were used below
+// but React was never imported. In Metro, React is NOT a global — every file
+// that references React.* must import it explicitly. Without this import,
+// showCustomAlert throws at call time: "React is not defined".
+import { React } from "@metro/common";
 
 export const { openAlert, dismissAlert } = lazyDestructure(() => findByProps("openAlert", "dismissAlert"));
 

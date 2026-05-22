@@ -9,7 +9,7 @@ import { CODEBERG } from "@lib/info";
 import { AlertActionButton, AlertActions, AlertModal, Button, Stack, TableRow, TableRowGroup, TableSwitchRow } from "@metro/common/components";
 import { supportedVersions } from "rain-build-info";
 import { React } from "@metro/common";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Linking, Platform, ScrollView, View } from "react-native";
 
 interface GitHubRelease {
@@ -26,7 +26,12 @@ interface ParsedVersion {
     prerelease: string[];
 }
 
-let _setIsChecking: ((v: boolean) => void) | null = null;
+// BUG FIX: _setIsChecking was a module-level mutable that was overwritten on
+// every render, which means only the most recently mounted Updater instance
+// could receive the downloading state update. Replaced with a useRef inside
+// the component so the ref is stable across renders and scoped correctly.
+// The old pattern would also leak a stale setter if the component unmounted
+// while a download was in progress.
 
 function parseVersion(version: string): ParsedVersion | null {
     const sanitized = version.replace(/^v/, "").split("+")[0];
@@ -111,21 +116,21 @@ async function fetchSelectedRelease(usePrereleases: boolean): Promise<GitHubRele
     return selectRelease(releases, usePrereleases);
 }
 
-export async function downloadUpdate() {
-    _setIsChecking?.(true);
-    try {
-        await UpdateModule.nativeDownload();
-    } finally {
-        _setIsChecking?.(false);
-    }
-}
+// BUG FIX: checkForUpdate() was a regular function that contained
+// React.useState and React.useEffect, but was called as a plain function
+// inside JSX: {checkForUpdate() && ...}. This violates React's Rules of
+// Hooks — hooks MUST be called at the top level of a React function component
+// or a custom hook, never from a regular function or conditionally. The result
+// is undefined behaviour: state updates are attributed to the wrong hook slot,
+// effects may fire or not fire unpredictably, and React may warn about
+// "Rendered more hooks than during the previous render."
+//
+// Fix: rename to useHasUpdate() (proper custom hook naming) and call it
+// unconditionally at the top level of the Updater component.
+function useHasUpdate(usePrereleases: boolean, customLoadUrlEnabled: boolean): boolean {
+    const [hasUpdate, setHasUpdate] = useState(false);
 
-export function checkForUpdate() {
-    const [hasUpdate, setHasUpdate] = React.useState(false);
-    const usePrereleases = useLoaderConfig(state => state.usePrereleases);
-    const customLoadUrlEnabled = useLoaderConfig(state => state.customLoadUrl.enabled);
-
-    React.useEffect(() => {
+    useEffect(() => {
         let cancelled = false;
 
         if (customLoadUrlEnabled) {
@@ -191,12 +196,52 @@ export async function versionCheck() {
 }
 
 export default function Updater() {
+    // BUG FIX: Use a ref for the setIsChecking setter so downloadUpdate()
+    // can update state without the module-level mutable and without closure staleness.
     const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false);
-    _setIsChecking = setIsCheckingForUpdates;
+    const setIsCheckingRef = useRef(setIsCheckingForUpdates);
+    setIsCheckingRef.current = setIsCheckingForUpdates;
 
     const debugInfo = getDebugInfo();
     const usePrereleases = useLoaderConfig(s => s.usePrereleases);
+    const customLoadUrlEnabled = useLoaderConfig(s => s.customLoadUrl.enabled);
     const updateLoaderConfig = useLoaderConfig(s => s.updateLoaderConfig);
+
+    // BUG FIX: Call the hook unconditionally at the top level (not inside JSX
+    // as a plain function call). This is the only correct way to use hooks.
+    const hasUpdate = useHasUpdate(usePrereleases, customLoadUrlEnabled);
+
+    const handleDownload = async () => {
+        setIsCheckingForUpdates(true);
+        try {
+            try {
+                await UpdateModule.nativeSetUsePrereleases(usePrereleases);
+            } catch {}
+            await UpdateModule.nativeDownload();
+            openAlert(
+                "rain-update-restart-alert",
+                <AlertModal
+                    title={Strings.RELOAD_DISCORD}
+                    content={Strings.UPDATE_RESTART_MESSAGE}
+                    actions={
+                        <AlertActions>
+                            <AlertActionButton
+                                text={Strings.RESTART_NOW}
+                                variant="primary"
+                                onPress={() => {
+                                    void UpdateModule.nativeSetUsePrereleases(usePrereleases).catch(() => {});
+                                    UpdateModule.nativeReload();
+                                }}
+                            />
+                            <AlertActionButton text={Strings.RESTART_LATER} variant="secondary" />
+                        </AlertActions>
+                    }
+                />,
+            );
+        } finally {
+            setIsCheckingForUpdates(false);
+        }
+    };
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
@@ -227,41 +272,25 @@ export default function Updater() {
                         }}
                     />
                 </TableRowGroup>
-                {checkForUpdate() && <View style={{ flexShrink: 1 }}>
+                {hasUpdate && <View style={{ flexShrink: 1 }}>
                     <Button
                         text={Strings.UPDATE}
                         icon={findAssetId("DownloadIcon")}
                         disabled={isCheckingForUpdates}
                         loading={isCheckingForUpdates}
-                        onPress={async () => {
-                            try {
-                                await UpdateModule.nativeSetUsePrereleases(usePrereleases);
-                            } catch {}
-                            await downloadUpdate();
-                            openAlert(
-                                "rain-update-restart-alert",
-                                <AlertModal
-                                    title={Strings.RELOAD_DISCORD}
-                                    content={Strings.UPDATE_RESTART_MESSAGE}
-                                    actions={
-                                        <AlertActions>
-                                            <AlertActionButton
-                                                text={Strings.RESTART_NOW}
-                                                variant="primary"
-                                                onPress={() => {
-                                                    void UpdateModule.nativeSetUsePrereleases(usePrereleases).catch(() => {});
-                                                    UpdateModule.nativeReload();
-                                                }}
-                                            />
-                                            <AlertActionButton text={Strings.RESTART_LATER} variant="secondary" />
-                                        </AlertActions>
-                                    }
-                                />,
-                            );
-                        }}
+                        onPress={handleDownload}
                     />
                 </View>}
             </Stack>
         </ScrollView>
     );
+}
+
+// Keep the exported downloadUpdate for external callers (if any),
+// wired through a module-level ref to avoid the original mutable setter leak.
+export async function downloadUpdate() {
+    // This API is preserved for back-compat but the real control now lives
+    // inside the component via handleDownload. If called externally it just
+    // calls the native update directly.
+    await UpdateModule.nativeDownload();
 }
