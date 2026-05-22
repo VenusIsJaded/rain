@@ -37,7 +37,7 @@ export default () => {
 
     if (!UserProfile) {
         // Module not present in this Discord version — skip gracefully.
-        if (__DEV__) {
+        if (true) {
             console.warn(
                 "[reviewdb/patchProfile] Neither UserProfile nor UserProfileContent " +
                 "found in Metro — skipping profile patch.",

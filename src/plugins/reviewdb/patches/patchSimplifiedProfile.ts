@@ -16,7 +16,7 @@ export default () => {
     const SimplifiedUserProfileContent = findByTypeName("SimplifiedUserProfileContent");
 
     if (!SimplifiedUserProfileContent) {
-        if (__DEV__) {
+        if (true) {
             console.warn(
                 "[reviewdb/patchSimplifiedProfile] SimplifiedUserProfileContent " +
                 "not found in Metro — skipping simplified profile patch.",

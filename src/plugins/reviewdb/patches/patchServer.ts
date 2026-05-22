@@ -13,7 +13,7 @@ export default () => {
     const GuildActionSheetProgress = findByName("GuildActionSheetProgress", false);
 
     if (!GuildActionSheetProgress) {
-        if (__DEV__) {
+        if (true) {
             console.warn(
                 "[reviewdb/patchServer] GuildActionSheetProgress not found " +
                 "in Metro — skipping server profile patch.",

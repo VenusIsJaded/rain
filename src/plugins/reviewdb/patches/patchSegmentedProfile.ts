@@ -15,7 +15,7 @@ export default () => {
     );
 
     if (!SegmentedControlPages) {
-        if (__DEV__) {
+        if (true) {
             console.warn(
                 "[reviewdb/patchSegmentedProfile] SegmentedControlPages not found " +
                 "in Metro — skipping segmented profile patch.",
