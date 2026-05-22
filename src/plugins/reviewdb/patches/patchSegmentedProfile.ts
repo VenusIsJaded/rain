@@ -6,14 +6,7 @@ import { logger } from "@lib/utils/logger";
 
 import ReviewSection from "../components/ReviewSection";
 
-// Diagnostic logger — throttled to one entry per 500ms to keep Debug Logs readable.
-let lastLog = 0;
-const dlog = (...a: any[]) => {
-    const now = Date.now();
-    if (now - lastLog < 500) return;
-    lastLog = now;
-    try { logger.log("[reviewdb/seg]", ...a); } catch {}
-};
+const log = (...a: any[]) => { try { logger.log("[reviewdb/seg]", ...a); } catch {} };
 
 export default () => {
     const SegmentedControlPages = findByFilePath(
@@ -34,23 +27,17 @@ export default () => {
                 ) !== -1,
         )?.props?.children;
 
-        if (!Array.isArray(profileSections)) return;
-
-        // Dump every section component + any userId/user.id it carries on its props.
-        // This is the ONE thing we need to see to fix this for real.
-        const dump = profileSections.map((c: any, i: number) => ({
-            i,
-            name: c?.type?.name ?? c?.type?.displayName ?? "?",
-            userId: c?.props?.userId ?? null,
-            userDotId: c?.props?.user?.id ?? null,
-        }));
-        dlog("section dump:", JSON.stringify(dump));
+        if (!Array.isArray(profileSections)) { log("no sections"); return; }
 
         const userId = profileSections[profileSections.length - 1]?.props?.userId;
-        if (!userId) { dlog("no userId on last sibling"); return; }
-        if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
+        if (!userId) { log("no userId on last sibling"); return; }
+
+        if (profileSections.some((c: any) => c?.type === ReviewSection)) {
+            log("already injected for", userId);
+            return;
+        }
 
         profileSections.push(React.createElement(ReviewSection, { userId }));
-        dlog("injected userId=", userId);
+        log("INJECTED userId=", userId, "(arr len now", profileSections.length, ")");
     });
 };

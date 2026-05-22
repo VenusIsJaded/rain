@@ -2,6 +2,7 @@ import { lazyDestructure } from "@lib/utils/lazy";
 import { ErrorBoundary } from "@api/ui/components";
 import { semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
+import { logger as _rdbLogger } from "@lib/utils/logger";
 import { findByNameLazy, findByProps, findByStoreName } from "@metro";
 import { React, ReactNative as RN } from "@metro/common";
 
@@ -43,7 +44,9 @@ const useStyles = createStyles({
 // to unmount/remount separators on every render. Hoisted to a stable reference.
 const ItemSeparator = () => <RN.View style={{ height: 8 }} />;
 
+
 export default function ReviewSection({ userId }: ReviewSectionProps) {
+    _rdbLogger.log("[reviewdb/section] RENDER for userId=", userId);
     const [reviews, setReviews] = React.useState<Review[]>([]);
 
     // BUG FIX: Define fetchReviews as a stable callback so it can be passed
