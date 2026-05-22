@@ -1,5 +1,3 @@
-import { before } from "@api/patcher";
-import { findByPropsLazy } from "@metro";
 import { waitForHydration } from "@api/storage";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
@@ -28,33 +26,11 @@ export default definePlugin({
     async start() {
         await waitForHydration(useReviewDBSettings);
 
-        // Always patch the context menu since its target is ready at startup
         patches.push(patchContextMenu());
-
-        // Defer profile and server patches until the lazy UserProfile action sheet is triggered
-        const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
-        let profilePatchesApplied = false;
-
-        const unpatchLazy = before("openLazy", LazyActionSheet, (args) => {
-            const [componentPromise, key] = args;
-            if (typeof key === "string" && key.startsWith("UserProfile")) {
-                if (profilePatchesApplied) return;
-                profilePatchesApplied = true;
-
-                if (componentPromise && typeof componentPromise.then === "function") {
-                    componentPromise.then(() => {
-                        // Defer slightly to ensure Metro registry is fully populated
-                        setTimeout(() => {
-                            patches.push(patchProfile());
-                            patches.push(patchSimplifiedProfile());
-                            patches.push(patchServer());
-                            patches.push(patchSegmentedProfile());
-                        }, 0);
-                    });
-                }
-            }
-        });
-        patches.push(unpatchLazy);
+        patches.push(patchProfile());
+        patches.push(patchSimplifiedProfile());
+        patches.push(patchServer());
+        patches.push(patchSegmentedProfile());
 
         getAdmins()
             .then(i => admins.push(...i))
