@@ -1,14 +1,16 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByFilePathLazy } from "@metro";
+import { findByFilePath } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
 export default () => {
-    const SegmentedControlPages = findByFilePathLazy(
+    const SegmentedControlPages = findByFilePath(
         "design/components/SegmentedControl/native/SegmentedControlPages.native.tsx",
     );
+
+    if (!SegmentedControlPages) return () => false;
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
         const profileSections = findInReactTree(

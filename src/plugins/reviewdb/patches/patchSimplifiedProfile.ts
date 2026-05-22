@@ -1,12 +1,14 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByTypeNameLazy } from "@metro";
+import { findByTypeName } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
 export default () => {
-    const SimplifiedUserProfileContent = findByTypeNameLazy("SimplifiedUserProfileContent");
+    const SimplifiedUserProfileContent = findByTypeName("SimplifiedUserProfileContent");
+
+    if (!SimplifiedUserProfileContent) return () => false;
 
     return after("type", SimplifiedUserProfileContent, (args, ret) => {
         const userId = args[0]?.user?.id;

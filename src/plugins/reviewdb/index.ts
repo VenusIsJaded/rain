@@ -1,3 +1,5 @@
+import { before } from "@api/patcher";
+import { findByPropsLazy } from "@metro";
 import { waitForHydration } from "@api/storage";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
@@ -26,11 +28,33 @@ export default definePlugin({
     async start() {
         await waitForHydration(useReviewDBSettings);
 
+        // Context Menu works cleanly on boot
         patches.push(patchContextMenu());
-        patches.push(patchProfile());
-        patches.push(patchSimplifiedProfile());
-        patches.push(patchServer());
-        patches.push(patchSegmentedProfile());
+
+        // Defer UI patches until a profile action sheet is opened
+        const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
+        let profilePatchesApplied = false;
+
+        const unpatchLazy = before("openLazy", LazyActionSheet, (args) => {
+            const [componentPromise, key] = args;
+            if (typeof key === "string" && key.startsWith("UserProfile")) {
+                if (profilePatchesApplied) return;
+                profilePatchesApplied = true;
+
+                if (componentPromise && typeof componentPromise.then === "function") {
+                    componentPromise.then(() => {
+                        // Defer slightly to allow Metro registry to populate completely
+                        setTimeout(() => {
+                            patches.push(patchProfile());
+                            patches.push(patchSimplifiedProfile());
+                            patches.push(patchServer());
+                            patches.push(patchSegmentedProfile());
+                        }, 100);
+                    });
+                }
+            }
+        });
+        patches.push(unpatchLazy);
 
         getAdmins()
             .then(i => admins.push(...i))
