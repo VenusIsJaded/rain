@@ -13,8 +13,9 @@ export default () => {
     if (!SegmentedControlPages) return () => false;
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
+        // Search the ENTIRE rendered tree of SegmentedControlPages recursively
         const profileSections = findInReactTree(
-            ret?.props?.children[0]?.props?.item?.page?.props?.children,
+            ret,
             r =>
                 r?.type?.displayName === "View" &&
                 r?.props?.children?.findIndex(
@@ -28,11 +29,14 @@ export default () => {
                 ) !== -1,
         )?.props?.children;
 
-        const userId = profileSections?.[profileSections.length - 1]?.props?.userId;
+        // Extract userId robustly by finding any profile child component that carries it
+        const userId = 
+            profileSections?.find((c: any) => c?.props?.userId)?.props?.userId ||
+            profileSections?.find((c: any) => c?.props?.user?.id)?.props?.user?.id ||
+            profileSections?.[profileSections.length - 1]?.props?.userId;
 
-        if (!profileSections) return;
+        if (!profileSections || !userId) return;
         if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
-        if (!userId) return;
 
         profileSections.push(React.createElement(ReviewSection, { userId }));
     });
