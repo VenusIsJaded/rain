@@ -1,9 +1,5 @@
 import { after } from "@api/patcher";
-import { findInReactTree } from "@lib/utils";
 import { findByFilePath } from "@metro";
-import { React } from "@metro/common";
-
-import ReviewSection from "../components/ReviewSection";
 
 export default () => {
     const SegmentedControlPages = findByFilePath(
@@ -13,40 +9,34 @@ export default () => {
     if (!SegmentedControlPages) return () => false;
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
-        // 1. Safely extract the page node to bypass circular navigation fibers
-        const page = 
-            ret?.props?.children?.[0]?.props?.item?.page || 
-            ret?.props?.item?.page;
+        console.log("[ReviewDB-Segmented] Hook triggered successfully!");
 
-        if (!page) return;
+        // Circular-safe search to find all arrays in the React element tree
+        const findArrays = (obj: any, path = "ret", depth = 0): string[] => {
+            if (!obj || depth > 4) return [];
+            const found: string[] = [];
+            
+            if (Array.isArray(obj)) {
+                if (obj.length > 0) {
+                    found.push(`${path} (Length: ${obj.length})`);
+                }
+            } else if (typeof obj === "object") {
+                for (const k of Object.keys(obj)) {
+                    // Skip circular fiber loops and heavy style blocks
+                    if (["_owner", "_store", "theme", "style", "styles", "navigator"].includes(k)) continue;
+                    try {
+                        found.push(...findArrays(obj[k], `${path}.${k}`, depth + 1));
+                    } catch {}
+                }
+            }
+            return found;
+        };
 
-        // 2. Walk only the page props (clean tree, no circular fiber loops)
-        const profileSections = findInReactTree(
-            page.props || page,
-            r =>
-                r?.type?.displayName === "View" &&
-                r?.props?.children?.findIndex(
-                    (i: any) =>
-                        typeof i?.type?.name === "string" &&
-                        (i.type.name.startsWith("UserProfile") ||
-                         i.type.name.startsWith("SimplifiedUserProfile") ||
-                         i.type.name.includes("Bio") ||
-                         i.type.name.includes("AboutMe") ||
-                         i.type.name.includes("Connections"))
-                ) !== -1,
-        )?.props?.children;
-
-        if (!profileSections) return;
-
-        // 3. Extract userId robustly from the children elements
-        const userId = 
-            profileSections.find((c: any) => c?.props?.userId)?.props?.userId ||
-            profileSections.find((c: any) => c?.props?.user?.id)?.props?.user?.id ||
-            profileSections[profileSections.length - 1]?.props?.userId;
-
-        if (!userId) return;
-        if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
-
-        profileSections.push(React.createElement(ReviewSection, { userId }));
+        try {
+            const arrayPaths = findArrays(ret);
+            console.log("[ReviewDB-Segmented] Discovered array paths inside ret:\n" + arrayPaths.join("\n"));
+        } catch (e) {
+            console.log("[ReviewDB-Segmented] Scanning error: " + e);
+        }
     });
 };
