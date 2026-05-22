@@ -31,11 +31,8 @@ export default ({ username, badges, timestamp }: ReviewUsernameProps) => {
                 style={{ color: useThemedColor("TEXT_NORMAL") }}
             />
             <RN.View style={styles.row}>
-                {/* BUG FIX: Added key prop to ReviewBadge items.
-                    Without it React uses array index, which causes incorrect
-                    reconciliation if the badge list changes order. */}
                 {badges.map(b => (
-                    <ReviewBadge key={b.name} badge={b} />
+                    <ReviewBadge badge={b} />
                 ))}
             </RN.View>
             <FormLabel

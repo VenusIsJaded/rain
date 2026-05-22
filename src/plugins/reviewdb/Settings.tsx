@@ -1,12 +1,11 @@
-import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
-import { findByProps, findByPropsLazy } from "@metro";
+import { findByProps } from "@metro";
 
 import showAuthModal from "./lib/showAuthModal";
 import { useReviewDBSettings } from "./storage";
 
-const { TableRow, TableSwitchRow, TableRowGroup } = lazyDestructure(() => findByProps("TableRow"));
-const { Stack } = lazyDestructure(() => findByProps("Stack"));
+const { TableRow, TableSwitchRow, TableRowGroup } = findByProps("TableRow");
+const { Stack } = findByProps("Stack");
 
 export default () => {
     const reviewdbSettings = useReviewDBSettings();

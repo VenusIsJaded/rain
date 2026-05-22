@@ -1,18 +1,12 @@
-import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { rawColors, semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
 import { findByProps } from "@metro";
-// BUG FIX: React was used (React.useState) but never imported.
-// In Metro, React is NOT a global — every file that uses React.* or JSX
-// must import it explicitly. Without this import React === undefined at
-// runtime, causing: "[reviewdb] Failed to start: Error: type is not a
-// function in Object" because React.useState is called on undefined.
-import { React, constants, ReactNative as RN } from "@metro/common";
+import { constants, ReactNative as RN } from "@metro/common";
 
 import { addReview } from "../lib/api";
-import { Button, TextInput } from "../lib/redesign";
+import { Button,TextInput } from "../lib/redesign";
 import { useThemedColor } from "../lib/utils";
 import { useReviewDBSettings } from "../storage";
 
@@ -55,7 +49,7 @@ const useStyles = createStyles({
     },
 });
 
-const { useThemeContext } = lazyDestructure(() => findByProps("useThemeContext"));
+const { useThemeContext } = findByProps("useThemeContext");
 
 export default function ReviewInput({
     userId,
@@ -130,11 +124,7 @@ export default function ReviewInput({
                     ...styles.textInput,
                     color: useThemedColor("TEXT_NORMAL"),
                 }}
-                // BUG FIX: `editable` was set to `disableTextArea` which is
-                // true when there's NO auth token — meaning the text area was
-                // editable precisely when it shouldn't be, and non-editable
-                // when the user IS authenticated. Negated to fix.
-                editable={!disableTextArea}
+                editable={disableTextArea}
                 placeholder={
                     disableTextArea
                         ? "You must be authenticated to add a review."
