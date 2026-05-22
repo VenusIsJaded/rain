@@ -7,6 +7,7 @@ import patchContextMenu from "./patches/patchContextMenu";
 import patchProfile from "./patches/patchProfile";
 import patchSegmentedProfile from "./patches/patchSegmentedProfile";
 import patchServer from "./patches/patchServer";
+import patchProfileProbe from "./patches/patchProfileProbe";
 import patchSimplifiedProfile from "./patches/patchSimplifiedProfile";
 import Settings from "./Settings";
 import { useReviewDBSettings } from "./storage";
@@ -35,6 +36,7 @@ export default definePlugin({
         patches.push(patchSimplifiedProfile());
         patches.push(patchServer());
         patches.push(patchSegmentedProfile());
+        patches.push(patchProfileProbe());
 
         getAdmins()
             .then(i => admins.push(...i))
