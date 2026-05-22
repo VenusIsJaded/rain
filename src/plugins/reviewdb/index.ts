@@ -1,5 +1,3 @@
-import { before } from "@api/patcher";
-import { findByPropsLazy } from "@metro";
 import { waitForHydration } from "@api/storage";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
@@ -21,47 +19,31 @@ export default definePlugin({
     description: "Display and post reviews on user profiles.",
     author: [
         Developers.John,
-        Contributors.maisy
+        Contributors.maisy,
     ],
     id: "reviewdb",
     version: "1.0.0",
     async start() {
+        // Hydration must complete before any settings read.
         await waitForHydration(useReviewDBSettings);
 
-        // Context Menu works cleanly on boot
+        // All find* calls inside these patch modules are lazy now,
+        // so applying them at start is safe — the underlying modules
+        // resolve when first touched, not when we install the hook.
         patches.push(patchContextMenu());
-
-        // Defer UI patches until a profile action sheet is opened
-        const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
-        let profilePatchesApplied = false;
-
-        const unpatchLazy = before("openLazy", LazyActionSheet, (args) => {
-            const [componentPromise, key] = args;
-            if (typeof key === "string" && key.startsWith("UserProfile")) {
-                if (profilePatchesApplied) return;
-                profilePatchesApplied = true;
-
-                if (componentPromise && typeof componentPromise.then === "function") {
-                    componentPromise.then(() => {
-                        // Defer slightly to allow Metro registry to populate completely
-                        setTimeout(() => {
-                            patches.push(patchProfile());
-                            patches.push(patchSimplifiedProfile());
-                            patches.push(patchServer());
-                            patches.push(patchSegmentedProfile());
-                        }, 100);
-                    });
-                }
-            }
-        });
-        patches.push(unpatchLazy);
+        patches.push(patchProfile());
+        patches.push(patchSimplifiedProfile());
+        patches.push(patchServer());
+        patches.push(patchSegmentedProfile());
 
         getAdmins()
             .then(i => admins.push(...i))
             .catch(() => {});
     },
     stop() {
-        for (const unpatch of patches) unpatch();
+        for (const unpatch of patches) {
+            try { unpatch(); } catch {}
+        }
         patches.length = 0;
         admins.length = 0;
     },
