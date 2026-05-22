@@ -7,7 +7,11 @@ import { findByPropsLazy } from "@metro";
 import { definePlugin } from "@plugins";
 import { Developers } from "@rain/Developers";
 import { Strings } from "@rain/i18n";
-import { checkForUpdate } from "@rain/pages/Updater";
+// BUG FIX (build error): checkForUpdate was removed; import the proper hook.
+// useTrailing is called by the settings panel renderer as a React hook
+// (it follows the "use" prefix convention and is called at the top of each
+// settings row render), so calling useCheckForUpdate() inside it is valid.
+import { useCheckForUpdate } from "@rain/pages/Updater";
 import { version } from "rain-build-info";
 import React, { lazy } from "react";
 import { Image, type ImageURISource } from "react-native";
@@ -39,8 +43,11 @@ function initSettings() {
                 title: () => Strings.RAIN,
                 icon: { uri: RainIcon },
                 render: () => import("@rain/pages/Rain"),
+                // BUG FIX: useTrailing is invoked as a hook by the settings panel
+                // renderer. Calling useCheckForUpdate() here is therefore valid.
                 useTrailing: () => {
-                    if (checkForUpdate()) return <Image source={findAssetId("ic_warning_24px")} style={{ width: 26, height: 26, tintColor: resolveSemanticColor(semanticColors.STATUS_WARNING) }} />;
+                    const hasUpdate = useCheckForUpdate();
+                    if (hasUpdate) return <Image source={findAssetId("ic_warning_24px")} style={{ width: 26, height: 26, tintColor: resolveSemanticColor(semanticColors.STATUS_WARNING) }} />;
                     return `(${version})`;
                 }
             },

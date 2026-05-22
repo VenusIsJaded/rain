@@ -4,14 +4,14 @@ import { BundleUpdaterManager } from "@api/native/modules";
 import { useSettings } from "@api/settings";
 import { openAlert } from "@api/ui/alerts";
 import { resolveSemanticColor, semanticColors } from "@api/ui/components/color";
-import { CodebergIcon, KofiIcon,RainIcon } from "@assets";
+import { CodebergIcon, KofiIcon, RainIcon } from "@assets";
 import { Strings } from "@i18n";
 import { CODEBERG, DISCORD_SERVER, GITHUB, KOFI } from "@lib/info";
 import { NavigationNative } from "@metro/common";
 import { AlertActionButton, AlertActions, AlertModal, Stack, TableRow, TableRowGroup, TableSwitchRow, Text } from "@metro/common/components";
 import { Image, Linking, ScrollView, View } from "react-native";
 
-import Updater, { checkForUpdate } from "../Updater";
+import Updater, { useCheckForUpdate } from "../Updater";
 import About from "./About";
 import { InfoCard } from "./components/InfoCard";
 import Developers from "./Developers";
@@ -41,6 +41,11 @@ export default function General() {
     const safeMode = useSettings(s => s.safeMode);
     const updateSettings = useSettings(s => s.updateSettings);
 
+    // BUG FIX: useCheckForUpdate must be called unconditionally at the top
+    // level of this component (Rules of Hooks). The previous code called
+    // checkForUpdate() inside an IIFE in JSX which violated hook rules.
+    const hasUpdate = useCheckForUpdate();
+
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
             <Stack style={{ paddingVertical: 24, paddingHorizontal: 12 }} spacing={24}>
@@ -57,19 +62,16 @@ export default function General() {
                             })
                         }
                         trailing={
-                            (() => {
-                                if (checkForUpdate()) {
-                                    return (
-                                        <View >
-                                            <Image
-                                                source={findAssetId("ic_warning_24px")}
-                                                style={{ width: 32, height: 32, tintColor: resolveSemanticColor(semanticColors.STATUS_WARNING) }}
-                                            />
-                                        </View>
-                                    );
-                                }
-                                return `(${debugInfo.rain.version})`;
-                            })()
+                            hasUpdate
+                                ? (
+                                    <View>
+                                        <Image
+                                            source={findAssetId("ic_warning_24px")}
+                                            style={{ width: 32, height: 32, tintColor: resolveSemanticColor(semanticColors.STATUS_WARNING) }}
+                                        />
+                                    </View>
+                                )
+                                : `(${debugInfo.rain.version})`
                         }
                     />
                 </View>

@@ -26,13 +26,6 @@ interface ParsedVersion {
     prerelease: string[];
 }
 
-// BUG FIX: _setIsChecking was a module-level mutable that was overwritten on
-// every render, which means only the most recently mounted Updater instance
-// could receive the downloading state update. Replaced with a useRef inside
-// the component so the ref is stable across renders and scoped correctly.
-// The old pattern would also leak a stale setter if the component unmounted
-// while a download was in progress.
-
 function parseVersion(version: string): ParsedVersion | null {
     const sanitized = version.replace(/^v/, "").split("+")[0];
     const [core, prereleasePart] = sanitized.split(/-(.+)/, 2);
@@ -116,17 +109,8 @@ async function fetchSelectedRelease(usePrereleases: boolean): Promise<GitHubRele
     return selectRelease(releases, usePrereleases);
 }
 
-// BUG FIX: checkForUpdate() was a regular function that contained
-// React.useState and React.useEffect, but was called as a plain function
-// inside JSX: {checkForUpdate() && ...}. This violates React's Rules of
-// Hooks — hooks MUST be called at the top level of a React function component
-// or a custom hook, never from a regular function or conditionally. The result
-// is undefined behaviour: state updates are attributed to the wrong hook slot,
-// effects may fire or not fire unpredictably, and React may warn about
-// "Rendered more hooks than during the previous render."
-//
-// Fix: rename to useHasUpdate() (proper custom hook naming) and call it
-// unconditionally at the top level of the Updater component.
+// Internal hook used by Updater component — takes explicit args so the
+// Updater component can share already-read loader config state.
 function useHasUpdate(usePrereleases: boolean, customLoadUrlEnabled: boolean): boolean {
     const [hasUpdate, setHasUpdate] = useState(false);
 
@@ -153,6 +137,18 @@ function useHasUpdate(usePrereleases: boolean, customLoadUrlEnabled: boolean): b
     }, [usePrereleases, customLoadUrlEnabled]);
 
     return hasUpdate;
+}
+
+// BUG FIX (build error): checkForUpdate was removed/renamed in the prior hooks
+// fix but three callers (ErrorBoundaryScreen, settings/index, Rain/index) still
+// imported it, causing three esbuild "No matching export" errors that broke the
+// entire build. Re-exported as useCheckForUpdate — a proper zero-argument React
+// custom hook that pulls its own loader config internally. All callers have been
+// updated to call this at the top level of their component (Rules of Hooks).
+export function useCheckForUpdate(): boolean {
+    const usePrereleases = useLoaderConfig(s => s.usePrereleases);
+    const customLoadUrlEnabled = useLoaderConfig(s => s.customLoadUrl.enabled);
+    return useHasUpdate(usePrereleases, customLoadUrlEnabled);
 }
 
 export async function versionCheck() {
@@ -196,8 +192,8 @@ export async function versionCheck() {
 }
 
 export default function Updater() {
-    // BUG FIX: Use a ref for the setIsChecking setter so downloadUpdate()
-    // can update state without the module-level mutable and without closure staleness.
+    // Stable ref for the setter so handleDownload's try/finally always resets
+    // loading state even if the component re-rendered mid-download.
     const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false);
     const setIsCheckingRef = useRef(setIsCheckingForUpdates);
     setIsCheckingRef.current = setIsCheckingForUpdates;
@@ -207,8 +203,7 @@ export default function Updater() {
     const customLoadUrlEnabled = useLoaderConfig(s => s.customLoadUrl.enabled);
     const updateLoaderConfig = useLoaderConfig(s => s.updateLoaderConfig);
 
-    // BUG FIX: Call the hook unconditionally at the top level (not inside JSX
-    // as a plain function call). This is the only correct way to use hooks.
+    // Call unconditionally at the top level — Rules of Hooks.
     const hasUpdate = useHasUpdate(usePrereleases, customLoadUrlEnabled);
 
     const handleDownload = async () => {
@@ -286,11 +281,7 @@ export default function Updater() {
     );
 }
 
-// Keep the exported downloadUpdate for external callers (if any),
-// wired through a module-level ref to avoid the original mutable setter leak.
+// Preserved for any external callers — triggers a native download directly.
 export async function downloadUpdate() {
-    // This API is preserved for back-compat but the real control now lives
-    // inside the component via handleDownload. If called externally it just
-    // calls the native update directly.
     await UpdateModule.nativeDownload();
 }

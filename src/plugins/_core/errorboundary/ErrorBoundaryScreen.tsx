@@ -6,7 +6,9 @@ import { Codeblock, ErrorBoundary } from "@api/ui/components";
 import { createStyles } from "@api/ui/styles";
 import { tokens } from "@metro/common";
 import { Button, Card, SafeAreaProvider, SafeAreaView, Text } from "@metro/common/components";
-import { checkForUpdate } from "@rain/pages/Updater";
+// BUG FIX (build error): checkForUpdate was removed; import the proper hook
+// useCheckForUpdate and call it at the top level of this component.
+import { useCheckForUpdate } from "@rain/pages/Updater";
 import { ScrollView, View } from "react-native";
 
 import ErrorComponentStackCard from "./ErrorComponentStackCard";
@@ -33,6 +35,11 @@ export default function ErrorBoundaryScreen(props: {
     const safeMode = useSettings(s => s.safeMode);
     const updateSettings = useSettings(s => s.updateSettings);
 
+    // BUG FIX: call the hook unconditionally at the top level of the component
+    // (Rules of Hooks). The old code called checkForUpdate() inside JSX which
+    // violated hook rules, causing unpredictable state slot mis-attribution.
+    const hasUpdate = useCheckForUpdate();
+
     return <ErrorBoundary>
         <SafeAreaProvider>
             <SafeAreaView style={styles.container}>
@@ -49,7 +56,7 @@ export default function ErrorBoundaryScreen(props: {
                 <Card style={{ gap: 6 }}>
                     <Button text="Reload Discord" onPress={() => BundleUpdaterManager.reload()} />
                     {!safeMode && <Button text="Reload in Safe Mode" onPress={() => updateSettings({ safeMode: true })} />}
-                    {checkForUpdate() && <Button text="Download latest Rain update" onPress={() => { UpdateModule.nativeReload(); }} />}
+                    {hasUpdate && <Button text="Download latest Rain update" onPress={() => { UpdateModule.nativeReload(); }} />}
                     <Button variant="destructive" text="Retry Render" onPress={() => props.rerender()} />
                 </Card>
             </SafeAreaView>
