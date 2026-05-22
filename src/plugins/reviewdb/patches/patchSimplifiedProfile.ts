@@ -5,27 +5,20 @@ import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-// BUG FIX — same class of failure as patchProfile.ts:
-// findByTypeNameLazy's forceLoad() throws when the module is absent,
-// crashing the plugin with "type is not a function in Object" or
-// "SimplifiedUserProfileContent is undefined! (id unknown)".
-//
-// Fix: use the synchronous (non-throwing) findByTypeName and guard
-// explicitly. If the module isn't found we skip the patch gracefully.
 export default () => {
     const SimplifiedUserProfileContent = findByTypeName("SimplifiedUserProfileContent");
 
     if (!SimplifiedUserProfileContent) {
-        if (true) {
-            console.warn(
-                "[reviewdb/patchSimplifiedProfile] SimplifiedUserProfileContent " +
-                "not found in Metro — skipping simplified profile patch.",
-            );
-        }
+        console.log("[ReviewDB-Simplified] SimplifiedUserProfileContent module not found.");
         return () => false;
     }
 
+    console.log("[ReviewDB-Simplified] SimplifiedUserProfileContent module successfully hooked!");
+
     return after("type", SimplifiedUserProfileContent, (args, ret) => {
+        const userId = args[0]?.user?.id;
+        console.log(`[ReviewDB-Simplified] Rendering simplified profile for user: ${userId}`);
+
         const profileSections = findInReactTree(
             ret,
             r =>
@@ -37,9 +30,8 @@ export default () => {
                 ) !== -1,
         )?.props?.children;
 
-        const userId = args[0]?.user?.id;
+        console.log(`[ReviewDB-Simplified] profileSections found: ${!!profileSections}`);
 
-        // Guard against missing userId/sections + duplicate injection
         if (!userId || !profileSections) return;
         if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
 
