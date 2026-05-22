@@ -1,7 +1,7 @@
-// TEMPORARY PROBE — logs every action-sheet key opened and every
-// component name rendered by ActionSheet/Modal so we can identify which
-// component is used to render OTHER users' profiles when UserProfile,
-// UserProfileContent, and SimplifiedUserProfileContent are all absent.
+// TEMPORARY PROBE — logs every action-sheet key, every modal key, and
+// every navigation push so we can find out *how* other users' profiles
+// are opened on this Discord build (since UserProfile/UserProfileContent/
+// SimplifiedUserProfileContent are all missing).
 
 import { before } from "@api/patcher";
 import { findByPropsLazy } from "@metro";
@@ -12,33 +12,68 @@ const log = (...a: any[]) => { try { logger.log("[reviewdb/probe]", ...a); } cat
 export default () => {
     const unpatches: (() => boolean)[] = [];
 
+    // Action sheets
     try {
         const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
-        const u1 = before("openLazy", LazyActionSheet, (args) => {
+        unpatches.push(before("openLazy", LazyActionSheet, (args) => {
             const [, key, props] = args;
             log("openLazy key=", key,
-                "propKeys=", props ? Object.keys(props).slice(0, 15) : null,
-                "userId?", props?.userId ?? props?.user?.id ?? null);
-        });
-        unpatches.push(u1);
-        log("probe installed on openLazy");
-    } catch (e) {
-        log("openLazy probe failed", String(e));
-    }
+                "userId?", props?.userId ?? props?.user?.id ?? null,
+                "propKeys=", props ? Object.keys(props).slice(0, 15) : null);
+        }));
+        log("probe: openLazy hooked");
+    } catch (e) { log("probe: openLazy hook failed", String(e)); }
 
+    // Modals
     try {
         const modals = findByPropsLazy("pushModal", "popModal");
-        const u2 = before("pushModal", modals, (args) => {
+        unpatches.push(before("pushModal", modals, (args) => {
             const m = args?.[0];
             log("pushModal key=", m?.key,
                 "componentName=", m?.modal?.name ?? m?.modal?.displayName,
+                "userId?", m?.props?.userId ?? m?.props?.user?.id ?? null,
                 "propKeys=", m?.props ? Object.keys(m.props).slice(0, 15) : null);
-        });
-        unpatches.push(u2);
-        log("probe installed on pushModal");
-    } catch (e) {
-        log("pushModal probe failed", String(e));
-    }
+        }));
+        log("probe: pushModal hooked");
+    } catch (e) { log("probe: pushModal hook failed", String(e)); }
+
+    // Navigation push / pushLazy
+    try {
+        const navigation = findByPropsLazy("pushLazy");
+        unpatches.push(before("pushLazy", navigation, (args) => {
+            const [screen, props] = args;
+            log("nav.pushLazy screen=", typeof screen === "function" ? (screen.name || "<fn>") : screen,
+                "userId?", props?.userId ?? props?.user?.id ?? null,
+                "propKeys=", props ? Object.keys(props).slice(0, 15) : null);
+        }));
+        log("probe: nav.pushLazy hooked");
+    } catch (e) { log("probe: pushLazy hook failed", String(e)); }
+
+    // Generic navigation.push if present
+    try {
+        const navigation: any = findByPropsLazy("pushLazy");
+        if (typeof navigation?.push === "function") {
+            unpatches.push(before("push", navigation, (args) => {
+                const [screen, props] = args;
+                log("nav.push screen=", screen,
+                    "userId?", props?.userId ?? props?.user?.id ?? null,
+                    "propKeys=", props ? Object.keys(props).slice(0, 15) : null);
+            }));
+            log("probe: nav.push hooked");
+        }
+    } catch (e) { log("probe: nav.push hook failed", String(e)); }
+
+    // showSimpleActionSheet
+    try {
+        const sas = findByPropsLazy("showSimpleActionSheet");
+        unpatches.push(before("showSimpleActionSheet", sas, (args) => {
+            const a = args?.[0];
+            log("showSimpleActionSheet key=", a?.key,
+                "title=", a?.header?.title,
+                "userId?", a?.userId ?? a?.user?.id ?? null);
+        }));
+        log("probe: showSimpleActionSheet hooked");
+    } catch (e) { log("probe: showSimpleActionSheet hook failed", String(e)); }
 
     return () => {
         let ok = true;
