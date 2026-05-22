@@ -1,8 +1,9 @@
 import { after } from "@api/patcher";
 import findInReactTree from "@lib/utils/findInReactTree";
 import { i18n, NavigationNative } from "@metro/common";
-import { LegacyFormDivider,LegacyFormIcon, LegacyFormRow, LegacyFormSection } from "@metro/common/components";
+import { LegacyFormDivider, LegacyFormIcon, LegacyFormRow, LegacyFormSection } from "@metro/common/components";
 import { findByNameLazy } from "@metro/wrappers";
+import React from "react";
 
 import { registeredSections } from "..";
 import { wrapOnPress } from "./shared";
@@ -16,9 +17,11 @@ function SettingsSection() {
             if (rows.length === 0) return null;
             return (
                 <LegacyFormSection key={sect} title={sect}>
-                    { /** Is usePredicate here safe? */}
                     {rows.filter(r => r.usePredicate?.() ?? true).map((row, i, arr) => (
-                        <>
+                        // BUG FIX: React.Fragment shorthand (<>) cannot take a key prop.
+                        // Using React.Fragment explicitly so each item has a stable key,
+                        // preventing React from destroying and recreating rows on re-render.
+                        <React.Fragment key={row.key ?? i}>
                             <LegacyFormRow
                                 label={row.title()}
                                 leading={<LegacyFormIcon source={row.icon} />}
@@ -26,7 +29,7 @@ function SettingsSection() {
                                 onPress={wrapOnPress(row.onPress, navigation, row.render, row.title())}
                             />
                             {i !== arr.length - 1 && <LegacyFormDivider />}
-                        </>
+                        </React.Fragment>
                     ))}
                 </LegacyFormSection>
             );
@@ -60,4 +63,3 @@ export function patchPanelUI(unpatches: (() => void | boolean)[]) {
 
     unpatches.push(unpatch);
 }
-

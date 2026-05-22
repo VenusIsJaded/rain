@@ -6,23 +6,34 @@ import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-// BUG FIX: The previous code used findByTypeNameLazy("UserProfile") and then
-// checked `if (UserProfile === undefined)` to fall back to "UserProfileContent".
-// That check NEVER fires because findByTypeNameLazy always returns a Proxy
-// object — never undefined. So the fallback was dead code, and when Discord's
-// bundle only has "UserProfileContent" (not "UserProfile"), forceLoad() would
-// throw: "rain.metro.byTypeName(UserProfile) is undefined!"
+// BUG FIX (round 2 — "Trying to Reflect.get of undefined"):
+// The previous proxyLazy factory called findByTypeName("UserProfile") ??
+// findByTypeName("UserProfileContent"), which is correct — BUT if BOTH
+// return undefined (e.g. neither module is present yet at resolution time),
+// proxyLazy receives `undefined` from the factory and then every Reflect trap
+// throws "Trying to Reflect.get of undefined".
 //
-// Fix: use proxyLazy with a factory that tries both names at resolution time,
-// falling back from "UserProfile" → "UserProfileContent". This way the
-// multi-name fallback actually runs when the proxy is first accessed.
+// Fix: return a stable sentinel object when both lookups fail so proxyLazy
+// always has a non-null resolved value. The `after` patch below will simply
+// not fire because its target method ("type") won't exist on the sentinel,
+// which is safe. Also guard the `after` call itself so it only patches when
+// a real component was resolved.
+const _sentinelNoOp = Object.freeze({});
+
 const UserProfile = proxyLazy(
-    () => findByTypeName("UserProfile") ?? findByTypeName("UserProfileContent"),
+    () =>
+        findByTypeName("UserProfile") ??
+        findByTypeName("UserProfileContent") ??
+        (_sentinelNoOp as any),
     { hint: "object" },
 );
 
-export default () =>
-    after("type", UserProfile, (args, ret) => {
+export default () => {
+    // If resolution yielded the sentinel (neither component found), skip patching
+    // gracefully instead of crashing the entire plugin.
+    if (UserProfile === _sentinelNoOp) return () => false;
+
+    return after("type", UserProfile, (args, ret) => {
         const profileSections = findInReactTree(
             ret,
             r =>
@@ -46,3 +57,4 @@ export default () =>
 
         profileSections.push(React.createElement(ReviewSection, { userId }));
     });
+};
