@@ -10,29 +10,31 @@ export default () => {
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
         const children = ret?.props?.children;
-        if (!Array.isArray(children)) {
-            console.log("[ReviewDB-Segmented] ret.props.children is not an array!");
+        if (!children) {
+            console.log("[ReviewDB-Segmented] ret.props.children is null or undefined");
             return;
         }
 
-        console.log(`[ReviewDB-Segmented] Inspecting children (Length: ${children.length})`);
+        // Normalize children into an array regardless of count
+        const childrenArray = Array.isArray(children) ? children : [children];
 
-        children.forEach((child, index) => {
+        console.log(`[ReviewDB-Segmented] Inspecting children array (Length: ${childrenArray.length})`);
+
+        childrenArray.forEach((child, index) => {
             if (!child) {
-                console.log(`  [Child ${index}] is null/undefined`);
+                console.log(`[ReviewDB-Segmented] [Child ${index}] is null or undefined`);
                 return;
             }
 
             const typeName = child.type?.name || child.type?.displayName || typeof child.type;
             const propsKeys = child.props ? Object.keys(child.props) : [];
             
-            console.log(`  [Child ${index}] type: ${typeName}, props keys: ${JSON.stringify(propsKeys)}`);
+            console.log(`[ReviewDB-Segmented] [Child ${index}] type: ${typeName}, props keys: ${JSON.stringify(propsKeys)}`);
 
-            // If it has children inside its props, check if they contain our target components
             if (child.props?.children) {
                 const subChildren = Array.isArray(child.props.children) ? child.props.children : [child.props.children];
                 const names = subChildren.map(sc => sc?.type?.name || sc?.type?.displayName || typeof sc?.type);
-                console.log(`    Sub-children types: ${JSON.stringify(names)}`);
+                console.log(`[ReviewDB-Segmented] [Child ${index}] Sub-children types: ${JSON.stringify(names)}`);
             }
         });
     });
