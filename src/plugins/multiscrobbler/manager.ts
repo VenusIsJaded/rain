@@ -409,6 +409,8 @@ class PluginManager {
 
     // stop everything and clean up
     public stop() {
+        if (this.reconnectTimer) clearInterval(this.reconnectTimer);
+        if (this.updateTimer) clearInterval(this.updateTimer);
         if (pluginState.pluginStopped) {
             return;
         }
