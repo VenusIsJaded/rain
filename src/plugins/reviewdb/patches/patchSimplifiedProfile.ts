@@ -1,36 +1,30 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByTypeName } from "@metro";
+import { findByTypeNameLazy } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
 export default () => {
-    const SimplifiedUserProfileContent = findByTypeName("SimplifiedUserProfileContent");
-
-    if (!SimplifiedUserProfileContent) {
-        console.log("[ReviewDB-Simplified] SimplifiedUserProfileContent module not found.");
-        return () => false;
-    }
-
-    console.log("[ReviewDB-Simplified] SimplifiedUserProfileContent module successfully hooked!");
+    const SimplifiedUserProfileContent = findByTypeNameLazy("SimplifiedUserProfileContent");
 
     return after("type", SimplifiedUserProfileContent, (args, ret) => {
         const userId = args[0]?.user?.id;
-        console.log(`[ReviewDB-Simplified] Rendering simplified profile for user: ${userId}`);
 
         const profileSections = findInReactTree(
             ret,
             r =>
                 r?.type?.displayName === "View" &&
-                r?.props?.children.findIndex(
+                r?.props?.children?.findIndex(
                     (i: any) =>
-                        i?.type?.name ===
-                        "SimplifiedUserProfileAboutMeCard",
+                        typeof i?.type?.name === "string" &&
+                        (i.type.name.startsWith("UserProfile") ||
+                         i.type.name.startsWith("SimplifiedUserProfile") ||
+                         i.type.name.includes("Bio") ||
+                         i.type.name.includes("AboutMe") ||
+                         i.type.name.includes("Connections"))
                 ) !== -1,
         )?.props?.children;
-
-        console.log(`[ReviewDB-Simplified] profileSections found: ${!!profileSections}`);
 
         if (!userId || !profileSections) return;
         if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
