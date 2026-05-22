@@ -2,8 +2,18 @@ import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
 import { findByFilePath } from "@metro";
 import { React } from "@metro/common";
+import { logger } from "@lib/utils/logger";
 
 import ReviewSection from "../components/ReviewSection";
+
+// Diagnostic logger — throttled to one entry per 500ms to keep Debug Logs readable.
+let lastLog = 0;
+const dlog = (...a: any[]) => {
+    const now = Date.now();
+    if (now - lastLog < 500) return;
+    lastLog = now;
+    try { logger.log("[reviewdb/seg]", ...a); } catch {}
+};
 
 export default () => {
     const SegmentedControlPages = findByFilePath(
@@ -13,8 +23,6 @@ export default () => {
     if (!SegmentedControlPages) return () => false;
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
-        // Official's exact walk: ret.props.children[0].props.item.page.props.children
-        // Don't search anywhere else — that's how the wishlist-experiment fix works.
         const profileSections = findInReactTree(
             ret?.props?.children?.[0]?.props?.item?.page?.props?.children,
             r =>
@@ -28,14 +36,21 @@ export default () => {
 
         if (!Array.isArray(profileSections)) return;
 
-        // Official's userId source — last sibling component's props.userId.
-        // This is the wishlist-experiment fix (codeberg commit 103bf82).
-        const userId = profileSections[profileSections.length - 1]?.props?.userId;
-        if (!userId) return;
+        // Dump every section component + any userId/user.id it carries on its props.
+        // This is the ONE thing we need to see to fix this for real.
+        const dump = profileSections.map((c: any, i: number) => ({
+            i,
+            name: c?.type?.name ?? c?.type?.displayName ?? "?",
+            userId: c?.props?.userId ?? null,
+            userDotId: c?.props?.user?.id ?? null,
+        }));
+        dlog("section dump:", JSON.stringify(dump));
 
-        // Idempotency guard — segmented hook fires on every re-render.
+        const userId = profileSections[profileSections.length - 1]?.props?.userId;
+        if (!userId) { dlog("no userId on last sibling"); return; }
         if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
 
         profileSections.push(React.createElement(ReviewSection, { userId }));
+        dlog("injected userId=", userId);
     });
 };
