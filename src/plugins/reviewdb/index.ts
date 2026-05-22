@@ -1,3 +1,5 @@
+import { before } from "@api/patcher";
+import { findByPropsLazy } from "@metro";
 import { waitForHydration } from "@api/storage";
 import { definePlugin } from "@plugins";
 import { Contributors, Developers } from "@rain/Developers";
@@ -12,7 +14,7 @@ import Settings from "./Settings";
 import { useReviewDBSettings } from "./storage";
 
 const patches: (() => boolean)[] = [];
-export const admins: string[] = []; // BUG FIX: typed as string[] instead of any[]
+export const admins: string[] = [];
 
 export default definePlugin({
     name: "ReviewDB",
@@ -24,18 +26,36 @@ export default definePlugin({
     id: "reviewdb",
     version: "1.0.0",
     async start() {
-        // BUG FIX: await hydration instead of fire-and-forget so patches
-        // that read settings don't race against storage loading.
         await waitForHydration(useReviewDBSettings);
 
-        patches.push(patchProfile());
-        patches.push(patchSimplifiedProfile());
-        patches.push(patchServer());
+        // Always patch the context menu since its target is ready at startup
         patches.push(patchContextMenu());
-        patches.push(patchSegmentedProfile());
 
-        // BUG FIX: Added catch so a network failure doesn't leave an
-        // unhandled promise rejection.
+        // Defer profile and server patches until the lazy UserProfile action sheet is triggered
+        const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet");
+        let profilePatchesApplied = false;
+
+        const unpatchLazy = before("openLazy", LazyActionSheet, (args) => {
+            const [componentPromise, key] = args;
+            if (typeof key === "string" && key.startsWith("UserProfile")) {
+                if (profilePatchesApplied) return;
+                profilePatchesApplied = true;
+
+                if (componentPromise && typeof componentPromise.then === "function") {
+                    componentPromise.then(() => {
+                        // Defer slightly to ensure Metro registry is fully populated
+                        setTimeout(() => {
+                            patches.push(patchProfile());
+                            patches.push(patchSimplifiedProfile());
+                            patches.push(patchServer());
+                            patches.push(patchSegmentedProfile());
+                        }, 0);
+                    });
+                }
+            }
+        });
+        patches.push(unpatchLazy);
+
         getAdmins()
             .then(i => admins.push(...i))
             .catch(() => {});
@@ -43,7 +63,6 @@ export default definePlugin({
     stop() {
         for (const unpatch of patches) unpatch();
         patches.length = 0;
-        // BUG FIX: Clear admins on stop so a re-start doesn't duplicate entries.
         admins.length = 0;
     },
     settings: Settings,
