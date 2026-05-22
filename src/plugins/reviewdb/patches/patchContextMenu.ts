@@ -1,10 +1,10 @@
 import { before } from "@api/patcher";
-import { findByPropsLazy } from "@metro";
+import { findByProps } from "@metro";
 
 import { ActionSheet } from "../components/ActionSheet";
 import ReviewActionSheet from "../components/ReviewActionSheet";
 
-const ContextMenuPopout = findByPropsLazy("ContextMenuPopout");
+const ContextMenuPopout = findByProps("ContextMenuPopout");
 
 export default () =>
     before("ContextMenuPopout", ContextMenuPopout, args => {
@@ -14,14 +14,6 @@ export default () =>
             args[0]?.menu?.items?.length === 3 &&
             userId?.length >= 17
         ) {
-            // BUG FIX: Check if a "Reviews" item already exists before pushing.
-            // Without this, opening the context menu multiple times would
-            // duplicate the "Reviews" entry each time.
-            const alreadyHasReviews = args[0].menu.items.some(
-                (item: any) => item.label === "Reviews"
-            );
-            if (alreadyHasReviews) return;
-
             args[0].menu.items.push({
                 label: "Reviews",
                 action: () => {

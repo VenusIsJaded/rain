@@ -1,25 +1,20 @@
 // Taken from https://github.com/nexpid/RevengePlugins/blob/main/src/stuff/components/ActionSheet.tsx
-import { findByPropsLazy } from "@metro";
-// BUG FIX: React was used for type annotations (React.PropsWithChildren,
-// React.FunctionComponent) but never imported. In Metro, React is NOT a
-// global — every file that references React.* must import it explicitly.
-// Without the import React === undefined, causing a crash when the type
-// expressions are evaluated at runtime inside the module factory.
-import { React, ReactNative as RN } from "@metro/common";
+import { findByProps } from "@metro";
+import { ReactNative as RN } from "@metro/common";
 import { omit } from "es-toolkit";
 import type { ViewProps } from "react-native";
 
 import { find } from "../lib/utils";
 
 const _ActionSheet =
-    findByPropsLazy("ActionSheet")?.ActionSheet ??
+    findByProps("ActionSheet")?.ActionSheet ??
     find(x => x.render?.name === "ActionSheet"); // thank you to @pylixonly for fixing this
 
-const actionSheetComponents = findByPropsLazy(
+const { ActionSheetCloseButton, BottomSheetTitleHeader } = findByProps(
     "ActionSheetCloseButton",
 );
 
-export const LazyActionSheet = findByPropsLazy("openLazy", "hideActionSheet") as unknown as {
+export const LazyActionSheet = findByProps("openLazy", "hideActionSheet") as {
     openLazy: (component: Promise<any>, key: string, props?: object) => void;
     hideActionSheet: () => void;
 };
@@ -35,10 +30,10 @@ type ActionSheetProps = React.PropsWithChildren<
 export const ActionSheet = ((props: ActionSheetProps) => {
     return (
         <_ActionSheet>
-            <actionSheetComponents.BottomSheetTitleHeader
+            <BottomSheetTitleHeader
                 title={props.title}
                 trailing={
-                    <actionSheetComponents.ActionSheetCloseButton
+                    <ActionSheetCloseButton
                         onPress={
                             props.onClose ??
                             (() => {
@@ -61,9 +56,11 @@ export const ActionSheet = ((props: ActionSheetProps) => {
 
 ActionSheet.open = (sheet, props) => {
     openLazy(
-        // OPTIMIZATION: Use Promise.resolve() instead of `new Promise(res => res(...))`
-        // — avoids one microtask + closure allocation.
-        Promise.resolve({ default: sheet }) as any,
+        new Promise(res => {
+            res({
+                default: sheet,
+            });
+        }) as any,
         "ActionSheet",
         props,
     );

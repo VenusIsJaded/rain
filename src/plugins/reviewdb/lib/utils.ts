@@ -1,4 +1,3 @@
-import { lazyDestructure } from "@lib/utils/lazy";
 import { semanticColors } from "@api/ui/components/color";
 import { metro } from "@lib";
 import { cyrb64Hash } from "@lib/utils/cyrb64";
@@ -16,13 +15,13 @@ export const find = (filter: (m: any) => boolean) => {
     );
 };
 
-const { getCurrentUser } = lazyDestructure(() => findByStoreName("UserStore"));
+const { getCurrentUser } = findByStoreName("UserStore");
 const resolveSemanticColor: (theme: string, semanticColor: object) => string =
     find(m => m.default?.internal?.resolveSemanticColor)?.default.internal
         .resolveSemanticColor ??
     find(m => m.meta?.resolveSemanticColor)?.meta.resolveSemanticColor ??
     (() => {});
-const { useThemeContext } = lazyDestructure(() => findByProps("useThemeContext"));
+const { useThemeContext } = findByProps("useThemeContext");
 
 export const canDeleteReview = (review: Review) =>
     review.sender.discordID === getCurrentUser()?.id ||
@@ -39,12 +38,6 @@ export async function jsonFetch<T = APIResponse>(
         },
         ...options,
     });
-
-    // BUG FIX: Check HTTP status before parsing. A 500/404 response with
-    // non-JSON body would throw a confusing SyntaxError from .json().
-    if (!req.ok) {
-        throw new Error(`ReviewDB request failed: ${req.status} ${req.statusText}`);
-    }
 
     const json = await req.json();
     if (json.success === false) throw new Error(json.message);

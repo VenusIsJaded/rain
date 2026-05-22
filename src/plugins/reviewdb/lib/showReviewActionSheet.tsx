@@ -1,16 +1,15 @@
-import { lazyDestructure } from "@lib/utils/lazy";
 import { findAssetId } from "@api/assets";
 import { showConfirmationAlert } from "@api/ui/alerts";
 import { showToast } from "@api/ui/toasts";
-import { findByProps, findByPropsLazy } from "@metro";
+import { findByProps } from "@metro";
 import { clipboard } from "@metro/common";
 
 import { Review } from "../def";
 import { useReviewDBSettings } from "../storage";
 import { deleteReview, reportReview } from "./api";
 import { canDeleteReview } from "./utils";
-const { hideActionSheet } = lazyDestructure(() => findByProps("openLazy", "hideActionSheet"));
-const { showSimpleActionSheet } = lazyDestructure(() => findByProps("showSimpleActionSheet"));
+const { hideActionSheet } = findByProps("openLazy", "hideActionSheet");
+const { showSimpleActionSheet } = findByProps("showSimpleActionSheet");
 
 export default (review: Review) =>
     showSimpleActionSheet({
@@ -34,7 +33,7 @@ export default (review: Review) =>
                     );
                 },
             },
-            ...(useReviewDBSettings.getState().authToken && review.type !== 3
+            ...(useReviewDBSettings().authToken && review.type !== 3
                 ? [
                     ...(canDeleteReview(review)
                         ? [
