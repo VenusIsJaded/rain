@@ -156,7 +156,7 @@ export default definePlugin({
         }));
 
         // Guild member row
-        const Rows = findByPropsLazy("GuildMemberRow");
+        let Rows: any; try { Rows = findByPropsLazy("GuildMemberRow"); } catch (e) {}
         if (Rows?.GuildMemberRow) {
             unpatches.push(after("type", Rows.GuildMemberRow, (args: any[], res: any) => {
                 const user = args[0]?.user;
