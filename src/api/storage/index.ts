@@ -65,22 +65,35 @@ export const createFlattenedFileStorage = <T>(filePath: string) => {
 
 export async function waitForHydration(usePluginSettings: any): Promise<void> {
     return new Promise(resolve => {
-        if (usePluginSettings.getState()._hasHydrated) {
+        // BUG FIX: Added a `resolved` flag to prevent double-resolve if the
+        // subscription fires and the timeout fires in the same tick (e.g. when
+        // storage is synchronously available). Calling resolve() twice on the
+        // same Promise is a no-op per spec, but clearing the timeout promptly
+        // avoids the stray console.warn appearing after a successful hydration.
+        let resolved = false;
+        const done = () => {
+            if (resolved) return;
+            resolved = true;
+            clearTimeout(timeoutId);
             resolve();
+        };
+
+        if (usePluginSettings.getState()._hasHydrated) {
+            done();
             return;
         }
 
         const unsubscribe = usePluginSettings.subscribe((state: any) => {
             if (state._hasHydrated) {
                 unsubscribe();
-                resolve();
+                done();
             }
         });
 
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
             console.warn("[rain/storage] waitForHydration timed out after 5s — resolving anyway");
             unsubscribe();
-            resolve();
+            done();
         }, 5000);
     });
 }

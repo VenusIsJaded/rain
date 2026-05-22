@@ -1,3 +1,4 @@
+import { FluxDispatcher } from "@metro/common";
 import { findByStoreNameLazy } from "@metro";
 
 import { getStatusColor } from "./colors";
@@ -26,9 +27,16 @@ function queryPresenceStoreWithCache() {
     return statusCache;
 }
 
-// OPTIMIZATION: Cache currentUserId and clear on LOGIN/LOGOUT so we don't call
-// getCurrentUser() on every single StatusIcons render.
+// BUG FIX: currentUserId was a module-level mutable that was set once and
+// never cleared, meaning if a user logged out or switched accounts the wrong
+// userId would be used indefinitely, causing the current user's platform
+// indicators to be fetched from the presence cache (wrong) instead of their
+// own sessions (correct). Now reset on CONNECTION_OPEN (login) and LOGOUT.
 let currentUserId: string | null = null;
+
+const resetCurrentUser = () => { currentUserId = null; };
+FluxDispatcher.subscribe("CONNECTION_OPEN", resetCurrentUser);
+FluxDispatcher.subscribe("LOGOUT", resetCurrentUser);
 
 function getUserStatuses(userId: string): Record<string, string> | undefined {
     let statuses: Record<string, string> | undefined;

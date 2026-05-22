@@ -68,13 +68,16 @@ export default function About() {
             version: debugInfo.device.model,
             icon: "MobilePhoneIcon"
         },
-        {
-            ...(Platform.OS === "ios" ? [{
-                label: Strings.MODEL_ID,
-                version: debugInfo.device.codename,
-                icon: "TagIcon"
-            }] : []),
-        }
+        // BUG FIX: was `{ ...(Platform.OS === "ios" ? [{ ... }] : []) }` which
+        // spreads an array into a plain object literal, producing { 0: {...} }
+        // — a broken entry that always passes the version/icon undefined filter
+        // and silently renders nothing on iOS. Moved to a proper conditional
+        // array spread at the platformInfo array level.
+        ...(Platform.OS === "ios" ? [{
+            label: Strings.MODEL_ID,
+            version: debugInfo.device.codename,
+            icon: "TagIcon"
+        }] : []),
     ];
 
     return (
