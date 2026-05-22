@@ -4,9 +4,9 @@ import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-// Circular-safe finder to locate elements without traversing heavy React internals
+// Circular-safe finder. Returns the first node matching `filter`.
 function findSafe(obj: any, filter: (o: any) => boolean, depth = 0): any {
-    if (!obj || depth > 10) return;
+    if (!obj || depth > 12) return;
     if (filter(obj)) return obj;
 
     if (Array.isArray(obj)) {
@@ -16,8 +16,7 @@ function findSafe(obj: any, filter: (o: any) => boolean, depth = 0): any {
         }
     } else if (typeof obj === "object") {
         for (const key of Object.keys(obj)) {
-            // Cut off heavy or circular properties
-            if (["_owner", "_store", "theme", "style", "styles", "navigator"].includes(key)) continue;
+            if (["_owner", "_store", "theme", "style", "styles", "navigator", "stateNode", "return", "child", "sibling", "alternate"].includes(key)) continue;
             try {
                 const res = findSafe(obj[key], filter, depth + 1);
                 if (res) return res;
@@ -25,6 +24,44 @@ function findSafe(obj: any, filter: (o: any) => boolean, depth = 0): any {
         }
     }
 }
+
+// Walk a subtree and return the first userId-looking value we find on
+// component props. Used as a fallback when no sibling section component
+// exposes userId on its own props.
+function findUserIdDeep(node: any, depth = 0): string | undefined {
+    if (!node || depth > 12) return;
+    if (typeof node !== "object") return;
+
+    const p = node.props;
+    if (p) {
+        if (typeof p.userId === "string") return p.userId;
+        if (typeof p.user?.id === "string") return p.user.id;
+        if (typeof p.userInfo?.id === "string") return p.userInfo.id;
+    }
+    const children = node.props?.children ?? node.children;
+    if (children) {
+        const arr = Array.isArray(children) ? children : [children];
+        for (const c of arr) {
+            const r = findUserIdDeep(c, depth + 1);
+            if (r) return r;
+        }
+    }
+}
+
+const isProfileSectionView = (r: any) =>
+    r?.type?.displayName === "View" &&
+    Array.isArray(r?.props?.children) &&
+    r.props.children.some((i: any) => {
+        const n = i?.type?.name;
+        return typeof n === "string" && (
+            n === "UserProfileBio" ||
+            n === "UserProfileAboutMeCard" ||
+            n === "SimplifiedUserProfileAboutMeCard" ||
+            n.includes("AboutMe") ||
+            n.includes("Bio") ||
+            n.includes("Connections")
+        );
+    });
 
 export default () => {
     const SegmentedControlPages = findByFilePath(
@@ -37,44 +74,33 @@ export default () => {
         const children = ret?.props?.children;
         if (!children) return;
 
+        // Try to lift userId off the outer args first — frequently passed in
+        // via the page items themselves.
+        const outerUserId = findUserIdDeep(args?.[0]);
+
         const childrenArray = Array.isArray(children) ? children : [children];
 
-        // Search through all of the tab page components
+        // Inject into EVERY matching page so position doesn't depend on
+        // which tab Discord happens to put first.
         for (const child of childrenArray) {
             const page = child?.props?.item?.page;
             if (!page) continue;
 
-            // Search the page tree safely for the View containing the profile sections
-            const profileSections = findSafe(
-                page.props || page,
-                r =>
-                    r?.type?.displayName === "View" &&
-                    r?.props?.children?.findIndex(
-                        (i: any) =>
-                            typeof i?.type?.name === "string" &&
-                            (i.type.name.startsWith("UserProfile") ||
-                             i.type.name.startsWith("SimplifiedUserProfile") ||
-                             i.type.name.includes("Bio") ||
-                             i.type.name.includes("AboutMe") ||
-                             i.type.name.includes("Connections"))
-                    ) !== -1,
-            )?.props?.children;
+            const sectionView = findSafe(page.props || page, isProfileSectionView);
+            const profileSections = sectionView?.props?.children;
+            if (!Array.isArray(profileSections)) continue;
 
-            if (profileSections) {
-                // Extract the user ID directly from the children components
-                const userId = 
-                    profileSections.find((c: any) => c?.props?.userId)?.props?.userId ||
-                    profileSections.find((c: any) => c?.props?.user?.id)?.props?.user?.id ||
-                    profileSections[profileSections.length - 1]?.props?.userId;
+            // Resolve userId: sibling props → deep walk of this page → outer args.
+            const userId =
+                profileSections.find((c: any) => typeof c?.props?.userId === "string")?.props?.userId ||
+                profileSections.find((c: any) => typeof c?.props?.user?.id === "string")?.props?.user?.id ||
+                findUserIdDeep(page) ||
+                outerUserId;
 
-                if (userId) {
-                    if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
-                    
-                    console.log(`[ReviewDB-Segmented] Successfully injected into page for user: ${userId}`);
-                    profileSections.push(React.createElement(ReviewSection, { userId }));
-                    break; // Successfully injected into the active tab page
-                }
-            }
+            if (!userId) continue;
+            if (profileSections.some((c: any) => c?.type === ReviewSection)) continue;
+
+            profileSections.push(React.createElement(ReviewSection, { userId }));
         }
     });
 };
