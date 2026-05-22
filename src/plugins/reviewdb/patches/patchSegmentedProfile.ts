@@ -1,44 +1,29 @@
 import { after } from "@api/patcher";
+import { findInReactTree } from "@lib/utils";
 import { findByFilePath } from "@metro";
 import { React } from "@metro/common";
+import { logger } from "@lib/utils/logger";
 
 import ReviewSection from "../components/ReviewSection";
 
-// Circular-safe finder. Returns the first node matching `filter`.
-function findSafe(obj: any, filter: (o: any) => boolean, depth = 0): any {
-    if (!obj || depth > 12) return;
-    if (filter(obj)) return obj;
+// DIAGNOSTIC: throttle so we don't spam the log on every render.
+let lastLogAt = 0;
+const dlog = (...a: any[]) => {
+    const now = Date.now();
+    if (now - lastLogAt < 200) return;
+    lastLogAt = now;
+    try { logger.log("[reviewdb/segmented]", ...a); } catch {}
+};
 
-    if (Array.isArray(obj)) {
-        for (const item of obj) {
-            const res = findSafe(item, filter, depth + 1);
-            if (res) return res;
-        }
-    } else if (typeof obj === "object") {
-        for (const key of Object.keys(obj)) {
-            if (["_owner", "_store", "theme", "style", "styles", "navigator", "stateNode", "return", "child", "sibling", "alternate"].includes(key)) continue;
-            try {
-                const res = findSafe(obj[key], filter, depth + 1);
-                if (res) return res;
-            } catch {}
-        }
-    }
-}
-
-// Walk a subtree and return the first userId-looking value we find on
-// component props. Used as a fallback when no sibling section component
-// exposes userId on its own props.
 function findUserIdDeep(node: any, depth = 0): string | undefined {
-    if (!node || depth > 12) return;
-    if (typeof node !== "object") return;
-
+    if (!node || depth > 12 || typeof node !== "object") return;
     const p = node.props;
     if (p) {
         if (typeof p.userId === "string") return p.userId;
         if (typeof p.user?.id === "string") return p.user.id;
         if (typeof p.userInfo?.id === "string") return p.userInfo.id;
     }
-    const children = node.props?.children ?? node.children;
+    const children = p?.children ?? node.children;
     if (children) {
         const arr = Array.isArray(children) ? children : [children];
         for (const c of arr) {
@@ -48,59 +33,77 @@ function findUserIdDeep(node: any, depth = 0): string | undefined {
     }
 }
 
-const isProfileSectionView = (r: any) =>
-    r?.type?.displayName === "View" &&
-    Array.isArray(r?.props?.children) &&
-    r.props.children.some((i: any) => {
+const sectionFilter = (r: any) => {
+    if (r?.type?.displayName !== "View") return false;
+    const c = r?.props?.children;
+    if (!Array.isArray(c)) return false;
+    return c.some((i: any) => {
         const n = i?.type?.name;
-        return typeof n === "string" && (
-            n === "UserProfileBio" ||
-            n === "UserProfileAboutMeCard" ||
-            n === "SimplifiedUserProfileAboutMeCard" ||
-            n.includes("AboutMe") ||
-            n.includes("Bio") ||
-            n.includes("Connections")
-        );
+        return n === "UserProfileBio"
+            || n === "UserProfileAboutMeCard"
+            || n === "SimplifiedUserProfileAboutMeCard"
+            || (typeof n === "string" && (n.includes("AboutMe") || n.includes("Bio")));
     });
+};
 
 export default () => {
     const SegmentedControlPages = findByFilePath(
         "design/components/SegmentedControl/native/SegmentedControlPages.native.tsx",
     );
 
-    if (!SegmentedControlPages) return () => false;
+    if (!SegmentedControlPages) {
+        logger.warn("[reviewdb/segmented] SegmentedControlPages not found — patch skipped.");
+        return () => false;
+    }
+
+    logger.log("[reviewdb/segmented] patch installed");
 
     return after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
         const children = ret?.props?.children;
-        if (!children) return;
+        if (!children) { dlog("no ret.props.children"); return; }
 
-        // Try to lift userId off the outer args first — frequently passed in
-        // via the page items themselves.
         const outerUserId = findUserIdDeep(args?.[0]);
-
         const childrenArray = Array.isArray(children) ? children : [children];
+        dlog("hook fired; pages=", childrenArray.length, "outerUserId=", outerUserId);
 
-        // Inject into EVERY matching page so position doesn't depend on
-        // which tab Discord happens to put first.
-        for (const child of childrenArray) {
+        let injected = false;
+
+        for (let idx = 0; idx < childrenArray.length; idx++) {
+            const child = childrenArray[idx];
             const page = child?.props?.item?.page;
-            if (!page) continue;
+            if (!page) { dlog("page missing on idx", idx); continue; }
 
-            const sectionView = findSafe(page.props || page, isProfileSectionView);
+            // Use findInReactTree on page.props.children — same root the official uses.
+            const sectionView = findInReactTree(page?.props?.children ?? page, sectionFilter);
             const profileSections = sectionView?.props?.children;
-            if (!Array.isArray(profileSections)) continue;
+            if (!Array.isArray(profileSections)) {
+                dlog("idx", idx, "no section view (page keys:", Object.keys(page?.props ?? {}), ")");
+                continue;
+            }
 
-            // Resolve userId: sibling props → deep walk of this page → outer args.
             const userId =
                 profileSections.find((c: any) => typeof c?.props?.userId === "string")?.props?.userId ||
                 profileSections.find((c: any) => typeof c?.props?.user?.id === "string")?.props?.user?.id ||
                 findUserIdDeep(page) ||
                 outerUserId;
 
-            if (!userId) continue;
-            if (profileSections.some((c: any) => c?.type === ReviewSection)) continue;
+            if (!userId) {
+                dlog("idx", idx, "found sections but no userId; section types=",
+                    profileSections.map((c: any) => c?.type?.name ?? c?.type?.displayName));
+                continue;
+            }
+
+            if (profileSections.some((c: any) => c?.type === ReviewSection)) {
+                dlog("idx", idx, "already injected for", userId);
+                injected = true;
+                continue;
+            }
 
             profileSections.push(React.createElement(ReviewSection, { userId }));
+            dlog("idx", idx, "INJECTED for", userId);
+            injected = true;
         }
+
+        if (!injected) dlog("hook fired but no page matched");
     });
 };
