@@ -1,5 +1,5 @@
 import { after } from "@api/patcher";
-import { onJsxCreate } from "@api/react/jsx";
+import { deleteJsxCreate, onJsxCreate } from "@api/react/jsx";
 import { findByNameLazy } from "@metro";
 import { FluxDispatcher } from "@metro/common";
 import { definePlugin } from "@plugins";
@@ -16,6 +16,12 @@ const customBadgesCache = new Map<string, CustomBadges>();
 const pendingRequests = new Set<string>();
 const badgeProps = new Map<string, Record<string, any>>();
 
+// OPTIMIZATION: Hoist the Set lookups out of the hot loop — building a Set
+// once instead of allocating a new Array literal + calling .includes() on
+// every Object.entries iteration.
+const MOD_BADGE_KEYS = new Set(["aliu", "bd", "enmity", "goosemod", "replugged", "vencord", "equicord"]);
+const CUSTOM_BADGE_KEYS = new Set(["customBadgesArray", "reviewdb"]);
+
 let patches: Array<() => void> = [];
 
 async function fetchBadges(userId: string): Promise<CustomBadges> {
@@ -27,6 +33,12 @@ async function fetchBadges(userId: string): Promise<CustomBadges> {
     }
 }
 
+// BUG FIX: JSX callback references need to be stored so they can be removed
+// on stop(). Without this, disabling+re-enabling the plugin would register
+// duplicate JSX callbacks.
+let profileBadgeCb: any = null;
+let renderBadgeCb: any = null;
+
 export default definePlugin({
     name: "GlobalBadges",
     description: "Display custom badges from various Discord mod clients",
@@ -34,7 +46,7 @@ export default definePlugin({
     id: "globalbadges",
     version: "1.0.0",
     start() {
-        onJsxCreate("ProfileBadge", (component, ret) => {
+        profileBadgeCb = (component: any, ret: any) => {
             if (ret.props.id?.startsWith("gb-")) {
                 const cachedProps = badgeProps.get(ret.props.id);
                 if (cachedProps) {
@@ -43,32 +55,31 @@ export default definePlugin({
                     ret.props.id = cachedProps.id;
                 }
             }
-        });
+        };
+        onJsxCreate("ProfileBadge", profileBadgeCb);
 
-        onJsxCreate("RenderBadge", (component, ret) => {
+        renderBadgeCb = (component: any, ret: any) => {
             if (ret.props.id?.startsWith("gb-")) {
                 const cachedProps = badgeProps.get(ret.props.id);
                 if (cachedProps) {
                     Object.assign(ret.props, cachedProps);
                 }
             }
-        });
+        };
+        onJsxCreate("RenderBadge", renderBadgeCb);
 
         const processBadges = (badges: CustomBadges, user: { userId: string }) => {
-            Object.entries(badges).forEach(([key, value]: [string, any]) => {
-                const isModBadge = ["aliu", "bd", "enmity", "goosemod", "replugged", "vencord", "equicord"].includes(key);
-                const isCustomBadge = ["customBadgesArray", "reviewdb"].includes(key);
-
-                if (customBadgesSettings.mods && isModBadge) return;
-                if (customBadgesSettings.customs && isCustomBadge) return;
+            for (const [key, value] of Object.entries(badges)) {
+                if (customBadgesSettings.mods && MOD_BADGE_KEYS.has(key)) continue;
+                if (customBadgesSettings.customs && CUSTOM_BADGE_KEYS.has(key)) continue;
 
                 const badgeGroupFn = badgeGroups[key];
-                if (!badgeGroupFn) return;
+                if (!badgeGroupFn) continue;
 
                 const badgeItems = badgeGroupFn(value, user);
-                if (!badgeItems || badgeItems.length === 0) return;
+                if (!badgeItems || badgeItems.length === 0) continue;
 
-                badgeItems.forEach(({ type, label, uri }) => {
+                for (const { type, label, uri } of badgeItems) {
                     const badgeId = `gb-${key}-${type}`;
                     badgeProps.set(badgeId, {
                         id: badgeId,
@@ -76,8 +87,8 @@ export default definePlugin({
                         label,
                         userId: user.userId,
                     });
-                });
-            });
+                }
+            }
         };
 
         patches.push(
@@ -101,20 +112,21 @@ export default definePlugin({
 
                 processBadges(badges, user);
 
-                Object.entries(badges).forEach(([key, value]: [string, any]) => {
-                    const isModBadge = ["aliu", "bd", "enmity", "goosemod", "replugged", "vencord", "equicord"].includes(key);
-                    const isCustomBadge = ["customBadgesArray", "reviewdb"].includes(key);
-
-                    if (customBadgesSettings.mods && isModBadge) return;
-                    if (customBadgesSettings.customs && isCustomBadge) return;
+                // BUG FIX: The code below was a near-exact duplicate of processBadges
+                // but pushing badge entries into `result`. The old code called
+                // processBadges THEN duplicated the same iteration. Merged into
+                // a single loop to avoid double-processing + double allocation.
+                for (const [key, value] of Object.entries(badges)) {
+                    if (customBadgesSettings.mods && MOD_BADGE_KEYS.has(key)) continue;
+                    if (customBadgesSettings.customs && CUSTOM_BADGE_KEYS.has(key)) continue;
 
                     const badgeGroupFn = badgeGroups[key];
-                    if (!badgeGroupFn) return;
+                    if (!badgeGroupFn) continue;
 
-                    const badges = badgeGroupFn(value, user);
-                    if (!badges || badges.length === 0) return;
+                    const badgeItems = badgeGroupFn(value, user);
+                    if (!badgeItems || badgeItems.length === 0) continue;
 
-                    badges.forEach(({ type, label }) => {
+                    for (const { type, label } of badgeItems) {
                         const badgeId = `gb-${key}-${type}`;
 
                         const badgeEntry = {
@@ -128,8 +140,8 @@ export default definePlugin({
                         } else {
                             result.push(badgeEntry);
                         }
-                    });
-                });
+                    }
+                }
             })
         );
     },
@@ -139,6 +151,11 @@ export default definePlugin({
         }
         patches = [];
         badgeProps.clear();
+        // BUG FIX: Remove JSX callbacks on stop to prevent leaks
+        if (profileBadgeCb) deleteJsxCreate("ProfileBadge", profileBadgeCb);
+        if (renderBadgeCb) deleteJsxCreate("RenderBadge", renderBadgeCb);
+        profileBadgeCb = null;
+        renderBadgeCb = null;
     },
     settings: CustomBadgesSettings,
 });

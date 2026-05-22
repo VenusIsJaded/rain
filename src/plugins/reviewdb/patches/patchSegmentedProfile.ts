@@ -19,9 +19,15 @@ export default () =>
                         i?.type?.name === "UserProfileAboutMeCard"
                 ) !== -1,
         )?.props?.children;
-        const userId = profileSections?.[profileSections?.length - 1]?.props?.userId;
 
-        profileSections?.push(React.createElement(ReviewSection, { userId }));
+        // BUG FIX: Guard against missing profileSections and duplicate injection
+        if (!profileSections) return;
+        if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
+
+        const userId = profileSections[profileSections.length - 1]?.props?.userId;
+        if (!userId) return;
+
+        profileSections.push(React.createElement(ReviewSection, { userId }));
     }) : (): boolean => {
         return false;
     };

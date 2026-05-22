@@ -1,5 +1,5 @@
 // Taken from https://github.com/nexpid/RevengePlugins/blob/main/src/stuff/components/ActionSheet.tsx
-import { findByProps, findByPropsLazy } from "@metro";
+import { findByPropsLazy } from "@metro";
 import { ReactNative as RN } from "@metro/common";
 import { omit } from "es-toolkit";
 import type { ViewProps } from "react-native";
@@ -56,11 +56,9 @@ export const ActionSheet = ((props: ActionSheetProps) => {
 
 ActionSheet.open = (sheet, props) => {
     openLazy(
-        new Promise(res => {
-            res({
-                default: sheet,
-            });
-        }) as any,
+        // OPTIMIZATION: Use Promise.resolve() instead of `new Promise(res => res(...))`
+        // — avoids one microtask + closure allocation.
+        Promise.resolve({ default: sheet }) as any,
         "ActionSheet",
         props,
     );

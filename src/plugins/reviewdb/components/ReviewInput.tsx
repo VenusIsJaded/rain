@@ -3,11 +3,11 @@ import { findAssetId } from "@api/assets";
 import { rawColors, semanticColors } from "@api/ui/components/color";
 import { createStyles } from "@api/ui/styles";
 import { showToast } from "@api/ui/toasts";
-import { findByProps, findByPropsLazy } from "@metro";
+import { findByProps } from "@metro";
 import { constants, ReactNative as RN } from "@metro/common";
 
 import { addReview } from "../lib/api";
-import { Button,TextInput } from "../lib/redesign";
+import { Button, TextInput } from "../lib/redesign";
 import { useThemedColor } from "../lib/utils";
 import { useReviewDBSettings } from "../storage";
 
@@ -125,7 +125,11 @@ export default function ReviewInput({
                     ...styles.textInput,
                     color: useThemedColor("TEXT_NORMAL"),
                 }}
-                editable={disableTextArea}
+                // BUG FIX: `editable` was set to `disableTextArea` which is
+                // true when there's NO auth token — meaning the text area was
+                // editable precisely when it shouldn't be, and non-editable
+                // when the user IS authenticated. Negated to fix.
+                editable={!disableTextArea}
                 placeholder={
                     disableTextArea
                         ? "You must be authenticated to add a review."

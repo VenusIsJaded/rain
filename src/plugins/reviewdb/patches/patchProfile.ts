@@ -26,5 +26,11 @@ export default () =>
         let userId = args[0]?.userId;
         if (userId === undefined) userId = args[0]?.user?.id;
 
-        profileSections?.push(React.createElement(ReviewSection, { userId }));
+        // BUG FIX: Guard against undefined userId AND duplicate injection.
+        // Without the duplication check, navigating back to a profile could
+        // stack multiple ReviewSection elements.
+        if (!userId || !profileSections) return;
+        if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
+
+        profileSections.push(React.createElement(ReviewSection, { userId }));
     });

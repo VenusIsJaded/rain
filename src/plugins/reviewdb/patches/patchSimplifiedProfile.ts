@@ -23,7 +23,12 @@ export default () =>
             )?.props?.children;
 
             const userId = args[0]?.user?.id;
-            profileSections?.push(
+
+            // BUG FIX: Guard against missing userId/sections + duplicate injection
+            if (!userId || !profileSections) return;
+            if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
+
+            profileSections.push(
                 React.createElement(ReviewSection, { userId }),
             );
         })

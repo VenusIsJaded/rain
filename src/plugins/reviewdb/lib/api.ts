@@ -1,10 +1,16 @@
 import { Review } from "../def";
 import { reviewdbSettings } from "../storage";
-import { API_URL,BASE_URL } from "./constants";
+import { API_URL, BASE_URL } from "./constants";
 import { jsonFetch } from "./utils";
 
-export const getReviews = async (userId: string): Promise<Review[]> =>
-    (await jsonFetch(API_URL + `/users/${userId}/reviews`)).reviews;
+export const getReviews = async (userId: string): Promise<Review[]> => {
+    // BUG FIX: Added guard — if userId is falsy (undefined/null/""), skip the
+    // fetch entirely. patchProfile and patchSegmentedProfile can pass
+    // undefined userId when the profile data isn't ready yet, causing a
+    // request to "/users/undefined/reviews" which returns a server error.
+    if (!userId) return [];
+    return (await jsonFetch(API_URL + `/users/${userId}/reviews`)).reviews ?? [];
+};
 
 export const getAdmins = async () =>
     await jsonFetch<string[]>(BASE_URL + "/admins");

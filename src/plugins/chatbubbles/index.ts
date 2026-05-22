@@ -41,7 +41,12 @@ export default definePlugin({
             if (bubbleChatColor) return bubbleChatColor;
             try {
                 const token = tokens.colors.BACKGROUND_SECONDARY_ALT;
+                // BUG FIX: `theme` was referenced but never declared — this
+                // was a ReferenceError crash. Also findByStoreNameLazy was
+                // called inside this function on every invocation (unnecessary
+                // overhead). Now we actually retrieve the theme string.
                 const ThemeStore = findByStoreNameLazy("ThemeStore");
+                const theme = ThemeStore?.getState?.()?.theme ?? "dark";
                 const resolved = tokens.internal.resolveSemanticColor(theme, token);
                 if (typeof resolved === "string" && resolved.startsWith("#")) return resolved;
             } catch {}

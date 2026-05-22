@@ -2,7 +2,7 @@ import { lazyDestructure } from "@lib/utils/lazy";
 import { semanticColors } from "@api/ui/components/color";
 import { metro } from "@lib";
 import { cyrb64Hash } from "@lib/utils/cyrb64";
-import { findByProps, findByPropsLazy, findByStoreName, findByStoreNameLazy } from "@metro";
+import { findByProps, findByStoreName } from "@metro";
 
 import { admins } from "..";
 import { APIResponse, Review } from "../def";
@@ -39,6 +39,12 @@ export async function jsonFetch<T = APIResponse>(
         },
         ...options,
     });
+
+    // BUG FIX: Check HTTP status before parsing. A 500/404 response with
+    // non-JSON body would throw a confusing SyntaxError from .json().
+    if (!req.ok) {
+        throw new Error(`ReviewDB request failed: ${req.status} ${req.statusText}`);
+    }
 
     const json = await req.json();
     if (json.success === false) throw new Error(json.message);
