@@ -1,5 +1,5 @@
 import { before } from "@api/patcher";
-import { findByPropsLazy } from "@metro";
+import { findByProps } from "@metro";
 
 import { customVoiceMessagesSettings } from "../storage";
 
@@ -14,7 +14,13 @@ const unpatches: (() => void)[] = [];
 
 function patchUploadMethod(methodName: string) {
     try {
-        const mod = findByPropsLazy(methodName);
+        // BUG FIX: Was using findByPropsLazy which returns a Proxy — never falsy
+        // — so the `!mod` guard never triggered and mod[methodName] threw when
+        // the module wasn't present (log: "[CVM] Failed to patch uploadLocalFiles:
+        // rain.metro.byProps(uploadLocalFiles) is undefined!").
+        // Use the synchronous findByProps here: it returns undefined when the
+        // module is absent, so the guard below correctly skips patching.
+        const mod = findByProps(methodName);
         if (!mod || typeof mod[methodName] !== "function") {
             console.warn(`[CVM] Module "${methodName}" not found, skipping`);
             return;

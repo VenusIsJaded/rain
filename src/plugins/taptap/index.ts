@@ -342,7 +342,7 @@ export default definePlugin({
     id: "taptap",
     version: "1.0.0",
     async start() {
-        waitForHydration(useTapTapSettings);
+        await waitForHydration(useTapTapSettings);
 
         
 

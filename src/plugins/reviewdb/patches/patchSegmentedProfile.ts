@@ -1,13 +1,20 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
 import { findByFilePathLazy } from "@metro";
+import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-const SegmentedControlPages = findByFilePathLazy("design/components/SegmentedControl/native/SegmentedControlPages.native.tsx");
+// NOTE: findByFilePathLazy returns a Proxy, never undefined, so the previous
+// `SegmentedControlPages !== undefined ? after(...) : () => false`
+// ternary always took the true branch. Simplified to a direct after() call.
+// Also: React was used but not imported — ReferenceError crash on profileSections.push.
+const SegmentedControlPages = findByFilePathLazy(
+    "design/components/SegmentedControl/native/SegmentedControlPages.native.tsx",
+);
 
 export default () =>
-    SegmentedControlPages !== undefined ? after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
+    after("SegmentedControlPages", SegmentedControlPages, (args, ret) => {
         const profileSections = findInReactTree(
             ret?.props?.children[0]?.props?.item?.page?.props?.children,
             r =>
@@ -16,18 +23,17 @@ export default () =>
                 r?.props?.children.findIndex(
                     (i: any) =>
                         i?.type?.name === "UserProfileBio" ||
-                        i?.type?.name === "UserProfileAboutMeCard"
+                        i?.type?.name === "UserProfileAboutMeCard",
                 ) !== -1,
         )?.props?.children;
 
-        // BUG FIX: Guard against missing profileSections and duplicate injection
+        // Guard against missing profileSections and duplicate injection
         if (!profileSections) return;
         if (profileSections.some((c: any) => c?.type === ReviewSection)) return;
 
         const userId = profileSections[profileSections.length - 1]?.props?.userId;
         if (!userId) return;
 
+        // BUG FIX: React was used here but never imported — would cause ReferenceError.
         profileSections.push(React.createElement(ReviewSection, { userId }));
-    }) : (): boolean => {
-        return false;
-    };
+    });

@@ -1,13 +1,25 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByTypeNameLazy } from "@metro";
+import { proxyLazy } from "@lib/utils/lazy";
+import { findByTypeName } from "@metro";
 import { React } from "@metro/common";
 
 import ReviewSection from "../components/ReviewSection";
 
-let UserProfile = findByTypeNameLazy("UserProfile");
-if (UserProfile === undefined)
-    UserProfile = findByTypeNameLazy("UserProfileContent");
+// BUG FIX: The previous code used findByTypeNameLazy("UserProfile") and then
+// checked `if (UserProfile === undefined)` to fall back to "UserProfileContent".
+// That check NEVER fires because findByTypeNameLazy always returns a Proxy
+// object — never undefined. So the fallback was dead code, and when Discord's
+// bundle only has "UserProfileContent" (not "UserProfile"), forceLoad() would
+// throw: "rain.metro.byTypeName(UserProfile) is undefined!"
+//
+// Fix: use proxyLazy with a factory that tries both names at resolution time,
+// falling back from "UserProfile" → "UserProfileContent". This way the
+// multi-name fallback actually runs when the proxy is first accessed.
+const UserProfile = proxyLazy(
+    () => findByTypeName("UserProfile") ?? findByTypeName("UserProfileContent"),
+    { hint: "object" },
+);
 
 export default () =>
     after("type", UserProfile, (args, ret) => {
@@ -26,7 +38,7 @@ export default () =>
         let userId = args[0]?.userId;
         if (userId === undefined) userId = args[0]?.user?.id;
 
-        // BUG FIX: Guard against undefined userId AND duplicate injection.
+        // Guard against undefined userId AND duplicate injection.
         // Without the duplication check, navigating back to a profile could
         // stack multiple ReviewSection elements.
         if (!userId || !profileSections) return;

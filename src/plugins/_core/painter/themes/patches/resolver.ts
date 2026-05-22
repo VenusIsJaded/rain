@@ -28,16 +28,23 @@ const SEMANTIC_FALLBACK_MAP: Record<string, string> = {
 export default function patchDefinitionAndResolver() {
     const callback = ([theme]: any[]) => theme === _colorRef.key ? [_colorRef.current!.reference] : void 0;
 
-    if (themeTypes) {
-        origDarker = themeModule?.ThemeTypes?.DARKER as string;
-        origLight = themeModule?.ThemeTypes?.LIGHT as string;
+    // BUG FIX: `themeTypes` was used as a bare variable but was never declared.
+    // This caused the startup error: "[Rain]: Failed to initialize themes,
+    // [ReferenceError: Property 'themeTypes' doesn't exist]".
+    // The correct value is `themeModule?.ThemeTypes` — captured into a local
+    // so we don't repeatedly proxy-dereference it inside the closures below.
+    const themeTypes = themeModule?.ThemeTypes;
 
-        Object.defineProperty(themeModule?.ThemeTypes, "DARKER", {
+    if (themeTypes) {
+        origDarker = themeTypes.DARKER as string;
+        origLight = themeTypes.LIGHT as string;
+
+        Object.defineProperty(themeTypes, "DARKER", {
             configurable: true,
             enumerable: true,
             get: () => _colorRef.current?.reference === "darker" ? _colorRef.key : origDarker,
         });
-        Object.defineProperty(themeModule?.ThemeTypes, "LIGHT", {
+        Object.defineProperty(themeTypes, "LIGHT", {
             configurable: true,
             enumerable: true,
             get: () => _colorRef.current?.reference === "light" ? _colorRef.key : origLight,
@@ -79,19 +86,17 @@ export default function patchDefinitionAndResolver() {
 
             const rawValue = _colorRef.current.raw[colorDef.raw];
             if (rawValue) {
-                // Set opacity if needed
                 return colorDef.opacity === 1 ? rawValue : chroma(rawValue).alpha(colorDef.opacity).hex();
             }
 
-            // Fallback to default
             return orig(...args);
         }),
         () => {
             if (themeTypes) {
-                Object.defineProperty(themeModule?.ThemeTypes, "DARKER", {
+                Object.defineProperty(themeTypes, "DARKER", {
                     configurable: true, writable: true, value: origDarker
                 });
-                Object.defineProperty(themeModule?.ThemeTypes, "LIGHT", {
+                Object.defineProperty(themeTypes, "LIGHT", {
                     configurable: true, writable: true, value: origLight
                 });
             }

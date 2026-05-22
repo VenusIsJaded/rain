@@ -25,7 +25,7 @@ export default definePlugin({
     id: "platformindicators",
     version: "1.0.0",
     async start() {
-        waitForHydration(usePlatformIndicatorSettings);
+        await waitForHydration(usePlatformIndicatorSettings);
 
         const debugLabels = false;
 
