@@ -10,25 +10,25 @@ if (UserProfile === undefined)
     UserProfile = findByTypeName("UserProfileContent");
 
 export default () =>
-    UserProfile !== undefined
-        ? after("type", UserProfile, (args, ret) => {
-            const profileSections = findInReactTree(
-                ret,
-                r =>
-                    r?.type?.displayName === "View" &&
-                    // UserProfileBio still exists even when the user has no bio. Yep.
-                    r?.props?.children.findIndex(
-                        (i: any) =>
-                            i?.type?.name === "UserProfileBio" ||
-                            i?.type?.name === "UserProfileAboutMeCard",
-                    ) !== -1,
-            )?.props?.children;
+    if (!UserProfile) {
+        console.error("[ReviewDB] Failed to find UserProfile module! The plugin will not inject.");
+        return () => {};
+    }
 
-            let userId = args[0]?.userId;
-            if (userId === undefined) userId = args[0]?.user?.id;
+    return after("type", UserProfile, (args, ret) => {
+        const profileSections = findInReactTree(
+            ret,
+            r =>
+                r?.type?.displayName === "View" &&
+                r?.props?.children.findIndex(
+                    (i: any) =>
+                        i?.type?.name === "UserProfileBio" ||
+                        i?.type?.name === "UserProfileAboutMeCard",
+                ) !== -1,
+        )?.props?.children;
 
-            profileSections?.push(React.createElement(ReviewSection, { userId }));
-        })
-        : (): boolean => {
-            return false;
-        };
+        let userId = args[0]?.userId;
+        if (userId === undefined) userId = args[0]?.user?.id;
+
+        profileSections?.push(React.createElement(ReviewSection, { userId }));
+    });
