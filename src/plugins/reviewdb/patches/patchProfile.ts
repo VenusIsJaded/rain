@@ -20,7 +20,6 @@ export default () => {
             ret,
             r =>
                 r?.type?.displayName === "View" &&
-                // UserProfileBio still exists even when the user has no bio. Yep.
                 r?.props?.children.findIndex(
                     (i: any) =>
                         i?.type?.name === "UserProfileBio" ||
