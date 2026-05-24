@@ -8,8 +8,14 @@ import ReviewCard from "../components/ReviewCard";
 const GuildActionSheetProgress = findByName("GuildActionSheetProgress", false);
 logger.log(GuildActionSheetProgress);
 
-export default () =>
-    instead("default", GuildActionSheetProgress, (args, ret) => {
+export default () => {
+    if (!GuildActionSheetProgress) {
+        console.error("[ReviewDB] Failed to find GuildActionSheetProgress module! The server-profile patch will not inject.");
+        return () => false;
+    }
+
+    return instead("default", GuildActionSheetProgress, (args, ret) => {
         const guildId = args[0]?.guild?.id;
         return React.createElement(ReviewCard, { userId: guildId });
     });
+};

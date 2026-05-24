@@ -6,8 +6,13 @@ import ReviewActionSheet from "../components/ReviewActionSheet";
 
 const ContextMenuPopout = findByProps("ContextMenuPopout");
 
-export default () =>
-    before("ContextMenuPopout", ContextMenuPopout, args => {
+export default () => {
+    if (!ContextMenuPopout) {
+        console.error("[ReviewDB] Failed to find ContextMenuPopout module! The context-menu patch will not inject.");
+        return () => false;
+    }
+
+    return before("ContextMenuPopout", ContextMenuPopout, args => {
         const userId = args[0]?.menu?.key;
         if (
             userId !== undefined &&
@@ -22,3 +27,4 @@ export default () =>
             });
         }
     });
+};
