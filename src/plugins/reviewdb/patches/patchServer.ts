@@ -1,21 +1,41 @@
 import { instead } from "@api/patcher";
-import { logger } from "@lib/utils/logger";
-import { findByNameLazy } from "@metro/wrappers";
+import { findByName } from "@metro";
 import { React } from "@metro/common";
+import { logger } from "@lib/utils/logger";
 
 import ReviewCard from "../components/ReviewCard";
 
-// "GuildActionSheetProgress" was likely renamed to "GuildActionSheet" in recent updates
-const GuildActionSheet = findByNameLazy("GuildActionSheet", false);
-
 export default () => {
-    try {
-        return instead("default", GuildActionSheet, (args, ret) => {
-            const guildId = args[0]?.guild?.id;
-            return React.createElement(ReviewCard, { userId: guildId });
-        });
-    } catch (e) {
-        logger.error("[ReviewDB] Failed to patch GuildActionSheet (module might not exist):", e);
-        return () => {};
+    const tryPatch = () => {
+        let GuildSheet = findByName("GuildActionSheetProgress", false);
+        if (!GuildSheet) GuildSheet = findByName("GuildActionSheet", false);
+        
+        if (GuildSheet) {
+            return instead("default", GuildSheet, (args, ret) => {
+                const guildId = args[0]?.guild?.id;
+                return React.createElement(ReviewCard, { userId: guildId });
+            });
+        }
+        return null;
+    };
+
+    let unpatch = tryPatch();
+    let interval: any = null;
+
+    if (!unpatch) {
+        let attempts = 0;
+        interval = setInterval(() => {
+            unpatch = tryPatch();
+            attempts++;
+            if (unpatch || attempts > 20) {
+                clearInterval(interval);
+                if (!unpatch) logger.error("[ReviewDB] Failed to find GuildActionSheet module after 10s!");
+            }
+        }, 500);
     }
+
+    return () => {
+        if (interval) clearInterval(interval);
+        if (unpatch) unpatch();
+    };
 };
