@@ -1,17 +1,17 @@
 import { instead } from "@api/patcher";
 import { logger } from "@lib/utils/logger";
-import { findByName } from "@metro";
+import { findByNameLazy } from "@metro/wrappers";
 import { React } from "@metro/common";
 
 import ReviewCard from "../components/ReviewCard";
 
-const GuildActionSheetProgress = findByName("GuildActionSheetProgress", false);
-logger.log(GuildActionSheetProgress);
+// Use lazy finder to preserve startup speed optimizations
+const GuildActionSheetProgress = findByNameLazy("GuildActionSheetProgress", false);
 
 export default () => {
     if (!GuildActionSheetProgress) {
         console.error("[ReviewDB] Failed to find GuildActionSheetProgress module! The server-profile patch will not inject.");
-        return () => false;
+        return () => {};
     }
 
     return instead("default", GuildActionSheetProgress, (args, ret) => {
