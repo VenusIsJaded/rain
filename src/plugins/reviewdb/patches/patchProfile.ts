@@ -9,7 +9,7 @@ let UserProfile = findByTypeName("UserProfile");
 if (UserProfile === undefined)
     UserProfile = findByTypeName("UserProfileContent");
 
-export default () =>
+export default () => {
     if (!UserProfile) {
         console.error("[ReviewDB] Failed to find UserProfile module! The plugin will not inject.");
         return () => {};
@@ -20,6 +20,7 @@ export default () =>
             ret,
             r =>
                 r?.type?.displayName === "View" &&
+                // UserProfileBio still exists even when the user has no bio. Yep.
                 r?.props?.children.findIndex(
                     (i: any) =>
                         i?.type?.name === "UserProfileBio" ||
@@ -32,3 +33,4 @@ export default () =>
 
         profileSections?.push(React.createElement(ReviewSection, { userId }));
     });
+};
