@@ -5,17 +5,17 @@ import { React } from "@metro/common";
 
 import ReviewCard from "../components/ReviewCard";
 
-// Use lazy finder to preserve startup speed optimizations
-const GuildActionSheetProgress = findByNameLazy("GuildActionSheetProgress", false);
+// "GuildActionSheetProgress" was likely renamed to "GuildActionSheet" in recent updates
+const GuildActionSheet = findByNameLazy("GuildActionSheet", false);
 
 export default () => {
-    if (!GuildActionSheetProgress) {
-        console.error("[ReviewDB] Failed to find GuildActionSheetProgress module! The server-profile patch will not inject.");
+    try {
+        return instead("default", GuildActionSheet, (args, ret) => {
+            const guildId = args[0]?.guild?.id;
+            return React.createElement(ReviewCard, { userId: guildId });
+        });
+    } catch (e) {
+        logger.error("[ReviewDB] Failed to patch GuildActionSheet (module might not exist):", e);
         return () => {};
     }
-
-    return instead("default", GuildActionSheetProgress, (args, ret) => {
-        const guildId = args[0]?.guild?.id;
-        return React.createElement(ReviewCard, { userId: guildId });
-    });
 };
