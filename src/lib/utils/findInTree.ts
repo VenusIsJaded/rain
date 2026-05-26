@@ -6,47 +6,70 @@ export interface FindInTreeOptions {
     maxDepth?: number;
 }
 
+// Use a Symbol for visited tracking to completely avoid Set hashing overhead
+const VISITED_SYMBOL = Symbol.for("rain.findInTree.visited");
+
+// Module-level cache for maps to avoid recreating them on every single render
+let cachedWalkable: string[] | undefined;
+let cachedWalkableMap: Record<string, boolean> | undefined;
+let cachedIgnore: string[] | undefined;
+let cachedIgnoreMap: Record<string, boolean> | undefined;
+
 export default function findInTree(
     tree: SearchTree,
     filter: SearchFilter,
-    {
-        walkable = [],
-        ignore = [],
-        maxDepth = 100
-    }: FindInTreeOptions = {},
+    { walkable = [], ignore = [], maxDepth = 100 }: FindInTreeOptions = {},
 ): any | undefined {
-    if (!tree || typeof tree !== "object") return;
+    if (!tree || typeof tree !== "object") return undefined;
 
-    const walkableMap: Record<string, boolean> = {};
-    const hasWalkable = walkable.length > 0;
-    if (hasWalkable) {
-        for (let i = 0; i < walkable.length; i++) {
-            walkableMap[walkable[i]] = true;
+    let walkableMap: Record<string, boolean> | undefined;
+    if (walkable.length > 0) {
+        if (walkable === cachedWalkable && cachedWalkableMap) {
+            walkableMap = cachedWalkableMap;
+        } else {
+            walkableMap = {};
+            for (let i = 0; i < walkable.length; i++) walkableMap[walkable[i]] = true;
+            cachedWalkable = walkable;
+            cachedWalkableMap = walkableMap;
         }
     }
 
-    const ignoreMap: Record<string, boolean> = {};
-    const hasIgnore = ignore.length > 0;
-    if (hasIgnore) {
-        for (let i = 0; i < ignore.length; i++) {
-            ignoreMap[ignore[i]] = true;
+    let ignoreMap: Record<string, boolean> | undefined;
+    if (ignore.length > 0) {
+        if (ignore === cachedIgnore && cachedIgnoreMap) {
+            ignoreMap = cachedIgnoreMap;
+        } else {
+            ignoreMap = {};
+            for (let i = 0; i < ignore.length; i++) ignoreMap[ignore[i]] = true;
+            cachedIgnore = ignore;
+            cachedIgnoreMap = ignoreMap;
         }
     }
 
-    // Parallel stacks — avoids allocating [node, depth] tuple arrays per push
+    const hasWalkable = !!walkableMap;
+    const hasIgnore = !!ignoreMap;
+
     const nodeStack: any[] = [tree];
     const depthStack: number[] = [0];
-    const visited = new Set();
+    const visitedNodes: any[] = []; 
+
+    let result: any = undefined;
 
     while (nodeStack.length > 0) {
         const current = nodeStack.pop();
         const depth = depthStack.pop()!;
 
-        if (depth > maxDepth || !current || visited.has(current)) continue;
-        visited.add(current);
+        if (depth > maxDepth || !current || typeof current !== "object") continue;
+        if (current[VISITED_SYMBOL]) continue;
+
+        current[VISITED_SYMBOL] = true;
+        visitedNodes.push(current);
 
         try {
-            if (filter(current)) return current;
+            if (filter(current)) {
+                result = current;
+                break;
+            }
         } catch {}
 
         const nextDepth = depth + 1;
@@ -60,11 +83,11 @@ export default function findInTree(
                 }
             }
         } else {
-            const keys = Object.keys(current);
-            for (let i = keys.length - 1; i >= 0; i--) {
-                const key = keys[i];
-                if (hasWalkable && !walkableMap[key]) continue;
-                if (hasIgnore && ignoreMap[key]) continue;
+            // for...in avoids allocating a new array via Object.keys() on every node
+            for (const key in current) {
+                if (!Object.prototype.hasOwnProperty.call(current, key)) continue;
+                if (hasWalkable && !walkableMap![key]) continue;
+                if (hasIgnore && ignoreMap![key]) continue;
 
                 const value = current[key];
                 if (value && typeof value === "object") {
@@ -74,4 +97,11 @@ export default function findInTree(
             }
         }
     }
+
+    // Clean up the symbol (setting to false is much faster than 'delete')
+    for (let i = 0; i < visitedNodes.length; i++) {
+        visitedNodes[i][VISITED_SYMBOL] = false;
+    }
+
+    return result;
 }

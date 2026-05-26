@@ -7,7 +7,7 @@ interface LazyOptions<E extends ExemptedEntries> {
 
 interface ContextHolder {
     options: LazyOptions<any>;
-    factory: any
+    factory: () => any;
 }
 
 const unconfigurable = new Set(["arguments", "caller", "prototype"]);
@@ -17,131 +17,106 @@ const factories = new WeakMap<any,() => any>();
 const proxyContextHolder = new WeakMap<any, ContextHolder>();
 
 const lazyHandler: ProxyHandler<any> = {
-    ...Object.fromEntries(Object.getOwnPropertyNames(Reflect)
-        .filter(fnName => fnName !== "apply")
-        .map(fnName => {
-            return [fnName, (target: any, ...args: any[]) => {
-                const contextHolder = proxyContextHolder.get(target);
-                const resolved = contextHolder?.factory();
-                if (!resolved) throw new Error(`Trying to Reflect.${fnName} of ${typeof resolved}`);
-                // @ts-expect-error
-                return Reflect[fnName](resolved, ...args);
-            }];
-        })),
-
     apply(target, thisArg, args) {
         const contextHolder = proxyContextHolder.get(target);
-        const resolved = contextHolder?.factory();
-
-        if (typeof resolved === "function") {
-            return Reflect.apply(resolved, thisArg, args);
-        }
-
-        if (window.React) {
-            return window.React.createElement(resolved, args[0]);
-        }
-
+        if (!contextHolder) throw new Error("Missing context");
+        const resolved = contextHolder.factory();
+        if (typeof resolved === "function") return resolved.apply(thisArg, args);
+        if (window.React) return window.React.createElement(resolved, args[0]);
         throw new Error(`Cannot call ${typeof resolved} as a function`);
     },
-
     has(target, p) {
         const contextHolder = proxyContextHolder.get(target);
-
-        if (contextHolder?.options) {
-            const { exemptedEntries: isolatedEntries } = contextHolder.options;
-            if (isolatedEntries && p in isolatedEntries) return true;
-        }
-
-        const resolved = contextHolder?.factory();
-        if (!resolved) throw new Error(`Trying to Reflect.has of ${typeof resolved}`);
-        return Reflect.has(resolved, p);
+        if (!contextHolder) return false;
+        const isolatedEntries = contextHolder.options?.exemptedEntries;
+        if (isolatedEntries && p in isolatedEntries) return true;
+        const resolved = contextHolder.factory();
+        return resolved ? p in resolved : false;
     },
     get(target, p, receiver) {
         if (__DEV__ && p === "__IS_RAIN_LAZY_PROXY__") return true;
-
         const contextHolder = proxyContextHolder.get(target);
-
-        if (contextHolder?.options) {
-            const { exemptedEntries: isolatedEntries } = contextHolder.options;
-            if (isolatedEntries?.[p]) return isolatedEntries[p];
-        }
-
-        const resolved = contextHolder?.factory();
-        if (!resolved) throw new Error(`Trying to Reflect.get of ${typeof resolved}`);
-        return Reflect.get(resolved, p, receiver);
+        if (!contextHolder) return undefined;
+        const isolatedEntries = contextHolder.options?.exemptedEntries;
+        if (isolatedEntries && p in isolatedEntries) return isolatedEntries[p];
+        const resolved = contextHolder.factory();
+        if (!resolved) throw new Error(`Trying to get property ${String(p)} of unresolved lazy proxy`);
+        return resolved[p];
     },
-    ownKeys: target => {
-        const contextHolder = proxyContextHolder.get(target);
-        const resolved = contextHolder?.factory();
-        if (!resolved) throw new Error(`Trying to Reflect.ownKeys of ${typeof resolved}`);
-
-        const cacheKeys = Reflect.ownKeys(resolved);
-        unconfigurable.forEach(key => !cacheKeys.includes(key) && cacheKeys.push(key));
+    set(target, p, value) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (resolved) { resolved[p] = value; return true; }
+        return false;
+    },
+    ownKeys(target) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (!resolved) return [];
+        const cacheKeys = Object.keys(resolved);
+        const symbols = Object.getOwnPropertySymbols(resolved);
+        for (let i = 0; i < symbols.length; i++) cacheKeys.push(symbols[i] as any);
+        unconfigurable.forEach(key => { if (!cacheKeys.includes(key)) cacheKeys.push(key); });
         return cacheKeys;
     },
-    getOwnPropertyDescriptor: (target, p) => {
-        if (isUnconfigurable(p)) return Reflect.getOwnPropertyDescriptor(target, p);
-
-        const contextHolder = proxyContextHolder.get(target);
-        const resolved = contextHolder?.factory();
-        if (!resolved) throw new Error(`Trying to getOwnPropertyDescriptor of ${typeof resolved}`);
-
-        const descriptor = Reflect.getOwnPropertyDescriptor(resolved, p);
+    getOwnPropertyDescriptor(target, p) {
+        if (isUnconfigurable(p)) return Object.getOwnPropertyDescriptor(target, p);
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (!resolved) return undefined;
+        const descriptor = Object.getOwnPropertyDescriptor(resolved, p);
         if (descriptor) Object.defineProperty(target, p, descriptor);
         return descriptor;
     },
+    getPrototypeOf(target) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        return resolved ? Object.getPrototypeOf(resolved) : null;
+    },
+    setPrototypeOf(target, v) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (resolved) { Object.setPrototypeOf(resolved, v); return true; }
+        return false;
+    },
+    isExtensible(target) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        return resolved ? Object.isExtensible(resolved) : true;
+    },
+    preventExtensions(target) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (resolved) { Object.preventExtensions(resolved); return true; }
+        return false;
+    },
+    deleteProperty(target, p) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (resolved) { delete resolved[p]; return true; }
+        return false;
+    },
+    defineProperty(target, p, attributes) {
+        const resolved = proxyContextHolder.get(target)?.factory();
+        if (resolved) { Object.defineProperty(resolved, p, attributes); return true; }
+        return false;
+    }
 };
 
-/**
- * Lazy proxy that will only call the factory function when needed (when a property is accessed)
- * @param factory Factory function to create the object
- * @param asFunction Mock the proxy as a function
- * @returns A proxy that will call the factory function only when needed
- * @example const ChannelStore = proxyLazy(() => findByProps("getChannelId"));
- */
 export function proxyLazy<T, I extends ExemptedEntries>(factory: () => T, opts: LazyOptions<I> = {}): T {
-    let cache: T;
-
+    let cache: T | undefined;
     const dummy = opts.hint !== "object" ? function () { } : {};
-    const proxyFactory = () => cache ??= factory();
-
+    const proxyFactory = () => { if (cache === undefined) cache = factory(); return cache; };
     const proxy = new Proxy(dummy, lazyHandler) as T & I;
     factories.set(proxy, proxyFactory);
-    proxyContextHolder.set(dummy, {
-        factory,
-        options: opts,
-    });
-
+    proxyContextHolder.set(dummy, { factory: proxyFactory, options: opts });
     return proxy;
 }
 
-/**
- * Lazily destructure an object with all the properties being lazified. This assumes all the properties are either an object or a function
- * @param factory Factory function which resolves to the object (and caches it)
- * @param asFunction Mock the proxy as a function
- * @example
- *
- * const { uuid4 } = lazyDestructure(() => findByProps("uuid4"))
- * uuid4; // <- is a lazy proxy!
- */
-export function lazyDestructure<
-    T extends Record<PropertyKey, unknown>,
-    I extends ExemptedEntries
->(factory: () => T, opts: LazyOptions<I> = {}): T {
+export function lazyDestructure<T extends Record<PropertyKey, unknown>, I extends ExemptedEntries>(factory: () => T, opts: LazyOptions<I> = {}): T {
     const proxiedObject = proxyLazy(factory);
-
     return new Proxy({}, {
         get(_, property) {
             if (property === Symbol.iterator) {
                 return function* () {
                     yield proxiedObject;
-                    yield new Proxy({}, {
-                        get: (_, p) => proxyLazy(() => proxiedObject[p], opts)
-                    });
+                    yield new Proxy({}, { get: (_, p) => proxyLazy(() => (proxiedObject as any)[p], opts) });
                     throw new Error("This is not a real iterator, this is likely used incorrectly");
                 };
             }
-            return proxyLazy(() => proxiedObject[property], opts);
+            return proxyLazy(() => (proxiedObject as any)[property], opts);
         }
     }) as T;
 }
