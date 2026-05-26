@@ -27,8 +27,6 @@ jobs:
 
       - name: Setup Bun
         run: npm install -g bun
-        with:
-          bun-version: latest
 
       - name: Set version from tag
         run: |
