@@ -1,27 +1,25 @@
 import { after } from "@api/patcher";
 import { findInReactTree } from "@lib/utils";
-import { findByFilePath } from "@metro";
+import { findByName, findByProps, findByFilePath } from "@metro";
 import { React } from "@metro/common";
-
 import ReviewSection from "../components/ReviewSection";
 
 export default () => {
-    let afterUnpatch: (() => void) | null = null;
+    let unpatch: (() => void) | null = null;
     let interval: any = null;
 
     const tryPatch = () => {
-        const Mod = findByFilePath("design/components/SegmentedControl/native/SegmentedControlPages.native.tsx");
+        // Try official path first, then fallback to name/props for optimized builds
+        let Mod = findByFilePath("design/components/SegmentedControl/native/SegmentedControlPages.native.tsx");
+        if (!Mod) Mod = findByName("SegmentedControlPages", false);
+        if (!Mod) Mod = findByProps("SegmentedControlPages");
+
         if (Mod) {
-            afterUnpatch = after("SegmentedControlPages", Mod, (args, ret) => {
+            const funcName = Mod.SegmentedControlPages ? "SegmentedControlPages" : (Mod.type ? "type" : "default");
+            unpatch = after(funcName, Mod, (args, ret) => {
                 const profileSections = findInReactTree(
                     ret?.props?.children[0]?.props?.item?.page?.props?.children,
-                    r =>
-                        r?.type?.displayName === "View" &&
-                        r?.props?.children.findIndex(
-                            (i: any) =>
-                                i?.type?.name === "UserProfileBio" ||
-                                i?.type?.name === "UserProfileAboutMeCard"
-                        ) !== -1,
+                    r => r?.type?.displayName === "View" && r?.props?.children.findIndex((i: any) => i?.type?.name === "UserProfileBio" || i?.type?.name === "UserProfileAboutMeCard") !== -1,
                 )?.props?.children;
                 const userId = profileSections?.[profileSections?.length - 1]?.props?.userId;
                 if (userId) profileSections?.push(React.createElement(ReviewSection, { userId }));
@@ -32,13 +30,7 @@ export default () => {
     };
 
     if (!tryPatch()) {
-        interval = setInterval(() => {
-            if (tryPatch()) clearInterval(interval);
-        }, 1000); // Checks quietly every 1 second
+        interval = setInterval(() => { if (tryPatch()) clearInterval(interval); }, 1000);
     }
-
-    return () => {
-        if (interval) clearInterval(interval);
-        if (afterUnpatch) afterUnpatch();
-    };
+    return () => { if (interval) clearInterval(interval); if (unpatch) unpatch(); };
 };
