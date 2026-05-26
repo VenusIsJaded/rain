@@ -73,14 +73,14 @@ export default function Developer() {
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
                 <Stack style={{ paddingVertical: 24, paddingHorizontal: 12 }} spacing={24}>
 
-                <TableRow title="Performance & Logging">
+                <TableRowGroup title="Performance & Logging">
                     <TableSwitchRow
                         label="Enable Logs"
                         subLabel="Show console logs in Metro/DevTools. Disable for maximum performance."
                         value={enableLogs}
                         onValueChange={(v: boolean) => updateSettings({ enableLogs: v })}
                     />
-                </TableRow>
+                </TableRowGroup>
 
 
                     <TableRowGroup title={Strings.DEBUGGER_URL}>
