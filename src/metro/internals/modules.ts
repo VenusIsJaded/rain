@@ -1,3 +1,4 @@
+import "@api/perf-switch";
 import { getMetroCache, indexBlacklistFlag } from "@metro/internals/caches";
 import { Metro } from "@metro/types";
 
