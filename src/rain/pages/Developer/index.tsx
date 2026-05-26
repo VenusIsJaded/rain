@@ -28,6 +28,7 @@ const useStyles = createStyles({
 
 export default function Developer() {
     const debuggerUrl = useSettings(s => s.debuggerUrl);
+    const enableLogs = useSettings(s => s.enableLogs);
     const autoDebugger = useSettings(s => s.autoDebugger);
     const devToolsUrl = useSettings(s => s.devToolsUrl);
     const autoDevTools = useSettings(s => s.autoDevTools);
@@ -71,6 +72,16 @@ export default function Developer() {
         <ErrorBoundary>
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
                 <Stack style={{ paddingVertical: 24, paddingHorizontal: 12 }} spacing={24}>
+
+                <TableRow title="Performance & Logging">
+                    <TableSwitchRow
+                        label="Enable Logs"
+                        subLabel="Show console logs in Metro/DevTools. Disable for maximum performance."
+                        value={enableLogs}
+                        onValueChange={(v: boolean) => updateSettings({ enableLogs: v })}
+                    />
+                </TableRow>
+
 
                     <TableRowGroup title={Strings.DEBUGGER_URL}>
                         <TextInput
