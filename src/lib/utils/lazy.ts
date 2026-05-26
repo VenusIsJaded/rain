@@ -32,7 +32,6 @@ const lazyHandler: ProxyHandler<any> = {
         if (typeof resolved !== "function") throw new Error(`Cannot construct ${typeof resolved}`);
         return Reflect.construct(resolved, args, newTarget);
     },
-
     has(target, p) {
         const contextHolder = proxyContextHolder.get(target);
         if (!contextHolder) return false;
@@ -43,13 +42,33 @@ const lazyHandler: ProxyHandler<any> = {
     },
     get(target, p, receiver) {
         if (__DEV__ && p === "__IS_RAIN_LAZY_PROXY__") return true;
+
         const contextHolder = proxyContextHolder.get(target);
         if (!contextHolder) return undefined;
+
         const isolatedEntries = contextHolder.options?.exemptedEntries;
         if (isolatedEntries && p in isolatedEntries) return isolatedEntries[p];
+
         const resolved = contextHolder.factory();
         if (!resolved) throw new Error(`Trying to get property ${String(p)} of unresolved lazy proxy`);
-        return resolved[p];
+        
+        const value = resolved[p];
+
+        // GHOST PROXY OPTIMIZATION:
+        // Once resolved, define the property directly on the dummy target.
+        // Future accesses will hit this native property and bypass the Proxy trap entirely.
+        if (typeof p === "string" || typeof p === "symbol") {
+            try {
+                Object.defineProperty(target, p, {
+                    value,
+                    writable: true,
+                    configurable: true,
+                    enumerable: true
+                });
+            } catch {}
+        }
+
+        return value;
     },
     set(target, p, value) {
         const resolved = proxyContextHolder.get(target)?.factory();
@@ -115,7 +134,6 @@ export function proxyLazy<T, I extends ExemptedEntries>(factory: () => T, opts: 
 
 export function lazyDestructure<T extends Record<PropertyKey, unknown>, I extends ExemptedEntries>(factory: () => T, opts: LazyOptions<I> = {}): T {
     const proxiedObject = proxyLazy(factory);
-    // Cache proxy wrappers to prevent allocating new objects on every property access
     const cache = Object.create(null);
 
     return new Proxy({}, {
