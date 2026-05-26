@@ -75,8 +75,8 @@ export default function Developer() {
 
                 <TableRowGroup title="Performance & Logging">
                     <TableSwitchRow
-                        label="Enable Logs"
-                        subLabel="Show console logs in Metro/DevTools. Disable for maximum performance."
+                        label="Enable Rain Logs"
+                        subLabel="Show debug logs from Rain and plugins."
                         value={enableLogs}
                         onValueChange={(v: boolean) => updateSettings({ enableLogs: v })}
                     />
