@@ -9,6 +9,7 @@ export interface Settings {
   devToolsUrl: string;
   hotReloadThemeUrl: string;
   developerSettings: boolean;
+  enableLogs: boolean;
   autoDebugger: boolean;
   autoDevTools: boolean;
   hotReloadTheme: boolean;
@@ -49,6 +50,7 @@ export const useSettings = create<SettingsStore>()(
             devToolsUrl: "",
             hotReloadThemeUrl: "",
             developerSettings: false,
+            enableLogs: false,
             autoDebugger: false,
             autoDevTools: false,
             hotReloadTheme: false,
