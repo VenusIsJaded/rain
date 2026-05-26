@@ -25,6 +25,14 @@ const lazyHandler: ProxyHandler<any> = {
         if (window.React) return window.React.createElement(resolved, args[0]);
         throw new Error(`Cannot call ${typeof resolved} as a function`);
     },
+    construct(target, args, newTarget) {
+        const contextHolder = proxyContextHolder.get(target);
+        if (!contextHolder) throw new Error("Missing context");
+        const resolved = contextHolder.factory();
+        if (typeof resolved !== "function") throw new Error(`Cannot construct ${typeof resolved}`);
+        return Reflect.construct(resolved, args, newTarget);
+    },
+
     has(target, p) {
         const contextHolder = proxyContextHolder.get(target);
         if (!contextHolder) return false;
