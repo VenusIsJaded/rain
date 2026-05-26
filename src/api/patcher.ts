@@ -22,22 +22,29 @@ type AfterFn = PatchFn<(args: any[], ret: any) => unknown>;
 
 function create(fn: Function) {
     function patchFn(this: any, ...args: any[]) {
-        if (typeof args[1][_patcherDelaySymbol] === "function") {
+        if (args[1] && typeof args[1][_patcherDelaySymbol] === "function") {
             const delayCallback: DelayCallback = args[1][_patcherDelaySymbol];
-
             let cancel = false;
             let unpatch = () => cancel = true;
 
             delayCallback(target => {
                 if (cancel) return;
                 args[1] = target;
-                unpatch = fn.apply(this, args);
+                unpatch = patchFn.apply(this, args);
             });
 
             return () => unpatch();
         }
 
-        return fn.apply(this, args);
+        // FAST PATH: Avoid Function.prototype.apply array unpacking overhead.
+        // Hermes and V8 can heavily optimize .call() with explicit arguments.
+        switch (args.length) {
+            case 1: return fn.call(this, args[0]);
+            case 2: return fn.call(this, args[0], args[1]);
+            case 3: return fn.call(this, args[0], args[1], args[2]);
+            case 4: return fn.call(this, args[0], args[1], args[2], args[3]);
+            default: return fn.apply(this, args);
+        }
     }
 
     function promisePatchFn(this: any, ...args: [any, Thenable, ...any]) {

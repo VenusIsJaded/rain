@@ -115,6 +115,9 @@ export function proxyLazy<T, I extends ExemptedEntries>(factory: () => T, opts: 
 
 export function lazyDestructure<T extends Record<PropertyKey, unknown>, I extends ExemptedEntries>(factory: () => T, opts: LazyOptions<I> = {}): T {
     const proxiedObject = proxyLazy(factory);
+    // Cache proxy wrappers to prevent allocating new objects on every property access
+    const cache = Object.create(null);
+
     return new Proxy({}, {
         get(_, property) {
             if (property === Symbol.iterator) {
@@ -124,7 +127,10 @@ export function lazyDestructure<T extends Record<PropertyKey, unknown>, I extend
                     throw new Error("This is not a real iterator, this is likely used incorrectly");
                 };
             }
-            return proxyLazy(() => (proxiedObject as any)[property], opts);
+            if (property in cache) return cache[property];
+            const lazyProp = proxyLazy(() => (proxiedObject as any)[property], opts);
+            cache[property] = lazyProp;
+            return lazyProp;
         }
     }) as T;
 }
