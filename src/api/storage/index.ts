@@ -5,6 +5,8 @@ import { createJSONStorage, persist, StorageValue } from "zustand/middleware";
 
 import { shallowEqual } from "../../lib/utils/shallowEqual";
 
+const writeQueues = new Map<string, { value: string, timeout: any }>();
+
 export const createFileStorage = (filePath: string) => {
     return {
         // _name is the Zustand store key — unused here since we key by filePath
@@ -19,11 +21,21 @@ export const createFileStorage = (filePath: string) => {
             }
         },
         setItem: async (_name: string, value: string): Promise<void> => {
-            try {
-                await writeFile(filePath, value);
-            } catch (e) {
-                console.error(`Failed to write storage to '${filePath}'`, e);
-            }
+            let queue = writeQueues.get(filePath);
+            if (queue) clearTimeout(queue.timeout);
+            
+            queue = {
+                value,
+                timeout: setTimeout(async () => {
+                    try {
+                        await writeFile(filePath, queue!.value);
+                    } catch (e) {
+                        console.error(`Failed to write storage to '${filePath}'`, e);
+                    }
+                    writeQueues.delete(filePath);
+                }, 300) // Debounce native bridge writes by 300ms
+            };
+            writeQueues.set(filePath, queue);
         },
         removeItem: async (_name: string): Promise<void> => {
             // intentionally no-op
@@ -134,17 +146,20 @@ export function createPluginStore<T extends object>(
         }
     });
 
+    const dotCache = Object.create(null) as Record<string, { p: string | null, c: string }>;
+
     const settingsProxy = new Proxy({} as T, {
         get(_, prop: string) {
             const state = useStore.getState();
-            // Single indexOf scan instead of includes() then split() (two scans)
-            const dotIdx = prop.indexOf(".");
-            if (dotIdx !== -1) {
-                const parent = prop.slice(0, dotIdx);
-                const child = prop.slice(dotIdx + 1);
-                return (state as any)[parent]?.[child];
+            let parsed = dotCache[prop];
+            if (!parsed) {
+                const dotIdx = prop.indexOf(".");
+                parsed = dotIdx !== -1 
+                    ? { p: prop.slice(0, dotIdx), c: prop.slice(dotIdx + 1) } 
+                    : { p: null, c: prop };
+                dotCache[prop] = parsed;
             }
-            return (state as any)[prop];
+            return parsed.p ? (state as any)[parsed.p]?.[parsed.c] : (state as any)[parsed.c];
         },
         set(_, prop: string, value: any) {
             const state = useStore.getState();
