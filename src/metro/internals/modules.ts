@@ -1,4 +1,5 @@
 import "@api/perf-switch";
+import "@api/flux-batcher";
 import { getMetroCache, indexBlacklistFlag } from "@metro/internals/caches";
 import { Metro } from "@metro/types";
 
