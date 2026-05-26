@@ -6,17 +6,20 @@ import { getMetroCache } from "./internals/caches";
 import { metroModules, subscribeModule } from "./internals/modules";
 import type { FilterFn, LazyModuleContext } from "./types";
 
-/** @internal */
 export const _lazyContextSymbol = Symbol.for("rain.metro.lazyContext");
-
 const _lazyContexts = new WeakMap<any, LazyModuleContext>();
 
 function getIndexedFind<A extends unknown[]>(filter: FilterFn<A>) {
     const modulesMap = getMetroCache().findIndex[filter.uniq];
     if (!modulesMap) return undefined;
 
-    for (const k in modulesMap)
+    // Object.keys is faster than for...in
+    const keys = Object.keys(modulesMap);
+    for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
         if (k[0] !== "_") return Number(k);
+    }
+    return undefined;
 }
 
 function subscribeLazyModule(proxy: any, callback: (exports: any) => void) {
@@ -42,7 +45,9 @@ export function createLazyModule<A extends unknown[]>(filter: FilterFn<A>) {
         indexed: !!moduleId,
         moduleId,
         getExports(cb: (exports: any) => void) {
-            if (!moduleId || metroModules[moduleId]?.isInitialized) {
+            // Removed optional chaining (?.) for Hermes optimization
+            const mod = moduleId ? metroModules[moduleId] : undefined;
+            if (!moduleId || (mod && mod.isInitialized)) {
                 cb(this.forceLoad());
                 return () => void 0;
             }
@@ -55,8 +60,11 @@ export function createLazyModule<A extends unknown[]>(filter: FilterFn<A>) {
             return cache;
         },
         forceLoad() {
-            cache ??= findExports(filter);
-            if (!cache) throw new Error(`${filter.uniq} is ${typeof cache}! (id ${context.moduleId ?? "unknown"})`);
+            // Replaced ??= with standard if check for older Hermes compatibility
+            if (cache === undefined) {
+                cache = findExports(filter);
+                if (!cache) throw new Error(`${filter.uniq} is ${typeof cache}! (id ${context.moduleId ?? "unknown"})`);
+            }
             return cache;
         }
     };
@@ -69,6 +77,5 @@ export function createLazyModule<A extends unknown[]>(filter: FilterFn<A>) {
     });
 
     _lazyContexts.set(proxy, context as LazyModuleContext<any>);
-
     return proxy;
 }
