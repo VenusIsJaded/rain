@@ -39,10 +39,11 @@ jobs:
         run: bun install
 
       - name: Build
-        # Publish both JS and Hermes bytecode bundles. RainXposed defaults to
-        # the faster .hbc artifact, while Rain Manager can persist a per-app
-        # JS fallback for Discord/Hermes builds that reject external bytecode.
-        run: bun run build --release-branch=main --build-bytecode
+        # Do not publish Hermes bytecode: some Discord/Hermes builds crash with
+        # "Buffer misaligned" when React Native loads an external .hbc file.
+        # The plain JS bundle is slower to parse but works across both old and
+        # new supported Discord versions.
+        run: bun run build --release-branch=main
 
       - name: Compute release flags
         id: flags
